@@ -6,7 +6,7 @@
 
 import * as d3 from 'd3';
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig } from '../types/config.js';
+import type { BubbleChartConfig, StreamingOptions, StreamingUpdateResult, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions } from '../types/config.js';
 import type { ProcessedDataPoint } from './data-processor.js';
 // import type { SVGElements } from './svg-manager.js';
 
@@ -253,6 +253,151 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   }
 
   /**
+   * Perform streaming update using D3 enter/update/exit pattern
+   * @param data - New data for streaming update
+   * @param options - Streaming animation options
+   * @returns Result summary of streaming update
+   */
+  streamingUpdate(
+    data: ProcessedDataPoint<T>[],
+    options: StreamingOptions
+  ): StreamingUpdateResult {
+    const { svg } = this.context;
+
+    // Create layout nodes from new data
+    const layoutNodes = this.createBubblePackLayout(data);
+
+    // Create data binding with key function
+    const keyFn = options.keyFunction || ((d: any) => {
+      // processed leaf -> original item nested in d.data.data
+      const original = d.data?.data ?? d.data;
+      return original.id ?? original.name;
+    });
+
+    const bubbleSelection = svg.selectAll('g.bubble')
+      .data(layoutNodes, keyFn as any);
+
+    // EXIT: Remove elements that no longer exist
+    const exitSelection = bubbleSelection.exit();
+    this.animateExit(exitSelection, options.exitAnimation);
+    const exitedCount = exitSelection.size();
+
+    // ENTER: Add new elements
+    const enterSelection = bubbleSelection.enter();
+    const enteredCount = enterSelection.size();
+    
+    if (enteredCount > 0) {
+      // Create new bubble groups
+      const enterGroups = enterSelection
+        .append('g')
+        .attr('class', 'bubble')
+        .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
+        .style('opacity', 0)
+        .style('cursor', 'pointer');
+
+      // Add circles to new bubbles
+      enterGroups.append('circle')
+        .attr('r', (d: LayoutNode) => d.r)
+        .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i))
+        .style('stroke', this.context.config.defaultColor || '#fff')
+        .style('stroke-width', 2);
+
+      // Add labels to new bubbles
+      enterGroups.append('text')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
+        .style('font-weight', 'bold')
+        .style('fill', '#333')
+        .style('pointer-events', 'none')
+        .text((d: LayoutNode, i: number) => {
+          const label = this.extractLabel(d, i, data);
+          return this.formatLabel(label, d.r);
+        });
+
+      // Animate new bubbles in
+      this.animateEnter(enterGroups, options.enterAnimation);
+    }
+
+    // UPDATE: Update existing elements
+    const updatedCount = bubbleSelection.size();
+    if (updatedCount > 0) {
+      this.animateUpdate(bubbleSelection, layoutNodes, data, options.updateAnimation);
+    }
+
+    return {
+      entered: enteredCount,
+      updated: updatedCount,
+      exited: exitedCount
+    };
+  }
+
+  /**
+   * Animate entering bubbles
+   * @param elements - D3 selection of entering elements
+   * @param animation - Enter animation options
+   */
+  private animateEnter(elements: any, animation: EnterAnimationOptions): void {
+    elements
+      .transition('enter')
+      .duration(animation.duration)
+      .delay((_d: any, i: number) => i * animation.staggerDelay)
+      .style('opacity', 1)
+      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
+  }
+
+  /**
+   * Animate exiting bubbles
+   * @param elements - D3 selection of exiting elements
+   * @param animation - Exit animation options
+   */
+  private animateExit(elements: any, animation: ExitAnimationOptions): void {
+    elements
+      .transition('exit')
+      .duration(animation.duration)
+      .style('opacity', 0)
+      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
+      .remove();
+  }
+
+  /**
+   * Animate updating bubbles
+   * @param elements - D3 selection of updating elements
+   * @param _layoutNodes - New layout nodes
+   * @param data - New data
+   * @param animation - Update animation options
+   */
+  private animateUpdate(
+    elements: any, 
+    _layoutNodes: LayoutNode[], 
+    data: ProcessedDataPoint<T>[], 
+    animation: UpdateAnimationOptions
+  ): void {
+    // Animate position changes
+    elements
+      .transition('update')
+      .duration(animation.duration)
+      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
+
+    // Animate circle changes
+    elements.select('circle')
+      .transition('update-circles')
+      .duration(animation.duration)
+      .attr('r', (d: LayoutNode) => d.r)
+      .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i));
+
+    // Animate text changes
+    elements.select('text')
+      .transition('update-text')
+      .duration(animation.duration)
+      .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
+      .text((d: LayoutNode, i: number) => {
+        const label = this.extractLabel(d, i, data);
+        return this.formatLabel(label, d.r);
+      });
+  }
+
+  /**
    * Calculate appropriate font size based on bubble radius
    * @param radius - Bubble radius
    * @returns Font size in pixels
@@ -268,19 +413,39 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
    * @param index - Node index
    * @returns Color string
    */
-  private getCircleColor(_layoutNode: LayoutNode, index: number): string {
+  private getCircleColor(layoutNode: LayoutNode, index: number): string {
     const { config } = this.context;
 
     if (config.color) {
-      // Use index as color key to match traditional implementation behavior
-      // This ensures each bubble gets a different color from the ordinal scale
-      return config.color(index.toString());
+      // Extract the original data object from the ProcessedDataPoint
+      // layoutNode.data is a ProcessedDataPoint, so layoutNode.data.data is the original data
+      const originalData = layoutNode.data?.data;
+      
+      // Check if this is a D3 scale (has domain/range methods)
+      if (typeof config.color === 'function' && 
+          ('domain' in config.color || 'range' in config.color)) {
+        // D3 scale - pass a string key (fallback to index if no suitable property)
+        const colorKey = originalData?.sector || originalData?.category || index.toString();
+        return (config.color as any)(colorKey);
+      } else if (typeof config.color === 'function') {
+        // Custom color function
+        const colorFunction = config.color as any;
+        if (colorFunction.length > 1) {
+          // Multi-parameter function - pass (originalData, index)
+          return colorFunction(originalData, index);
+        } else {
+          // Single-parameter function - pass the full original data object
+          return colorFunction(originalData);
+        }
+      } else {
+        // Fallback - treat as scale
+        const colorKey = originalData?.sector || originalData?.category || index.toString();
+        return (config.color as any)(colorKey);
+      }
     }
 
     return config.defaultColor || '#ddd';
   }
-
-
 
   /**
    * Extract label text from layout node

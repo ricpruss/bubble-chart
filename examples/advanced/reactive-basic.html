@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reactive Bubble Chart - New API</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <!-- no local dataset; will fetch Fortune-1000 CSV dynamically -->
+    <script src="../../dist/bubble-chart.min.js"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f5f7fa;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .header h1 {
+            color: #333;
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            font-weight: 300;
+        }
+        
+        .header p {
+            color: #666;
+            font-size: 1.1em;
+            margin: 0;
+        }
+        
+        .demo-section {
+            margin: 30px 0;
+        }
+        
+        .demo-section h2 {
+            color: #333;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 12px;
+            margin: 15px 0;
+        }
+        
+        .controls button {
+            background: #667eea;
+            color: #fff;
+            border: none;
+            padding: 8px 14px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.85rem;
+        }
+        
+        .controls button:hover {
+            background: #5a67d8;
+        }
+        
+        .controls button:active {
+            transform: translateY(0);
+        }
+        
+        .chart-container {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            min-height: 400px;
+        }
+        
+        .status {
+            margin-top: 10px;
+            color: #555;
+            font-size: 0.9rem;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎈 Reactive Bubble Chart - New API</h1>
+            <p>Demonstrating automatic data updates with reactive patterns</p>
+        </div>
+
+        <div class="demo-section">
+            <h2>Streaming Data Updates</h2>
+            
+            <div class="controls">
+                <button id="addBtn">Add</button>
+                <button id="removeBtn">Remove</button>
+                <button id="clearBtn">Clear</button>
+            </div>
+            
+            <div id="status" class="status">Initialised.</div>
+            
+            <div class="chart-container" id="chart"></div>
+        </div>
+
+        <div class="demo-section">
+            <h2>Code Example</h2>
+            
+            <div class="code-example">
+<span class="comment">// Traditional pattern (clears screen on each update)</span>
+<span class="keyword">const</span> chart = <span class="keyword">new</span> BubbleChart({
+    container: <span class="string">'#chart'</span>,
+    label: <span class="string">'name'</span>,
+    size: <span class="string">'value'</span>
+});
+chart.data(newData).update(); <span class="comment">// Clears and re-renders everything</span>
+
+<span class="comment">// Streaming pattern (smooth updates with D3 enter/update/exit)</span>
+bubbleGroups = svg.selectAll(<span class="string">'g.bubble'</span>)
+    .data(nodes, d => d.data.id);
+    
+<span class="comment">// New bubbles enter with animation</span>
+enterGroups.transition().style(<span class="string">'opacity'</span>, 1)
+    .attr(<span class="string">'transform'</span>, d => <span class="string">`translate(${d.x},${d.y}) scale(1)`</span>);
+            </div>
+            
+            <div class="info">
+                <h3>📚 Benefits of Streaming Updates</h3>
+                <p>
+                    • <strong>Smooth Animations:</strong> New bubbles appear with staggered entrance effects<br>
+                    • <strong>No Screen Clearing:</strong> Updates happen in-place using D3's enter/update/exit pattern<br>
+                    • <strong>Intelligent Layout:</strong> Existing bubbles smoothly transition to new positions<br>
+                    • <strong>Visual Continuity:</strong> Users can track individual bubbles through changes<br>
+                    • <strong>Performance:</strong> Only changed elements are updated, not the entire chart
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const colour = d3.scaleOrdinal(d3.schemeTableau10);
+
+        const chart = BubbleChart.createBubbleChart('#chart', {
+            label: 'Company',
+            size: 'Revenues_M',
+            width: 800,
+            height: 480,
+            key: d => d.Company,
+            color: d => colour(d.Sector) // Color by sector
+        });
+
+        // load local JSON dataset generated by fetch-fortune1000.js
+        const jsonUrl='../data/fortune1000.json';
+        let all=[];
+        let idx=0;
+
+        const statusEl=document.getElementById('status');
+        const setStatus=msg=>{ if(statusEl) statusEl.textContent=msg; };
+
+        d3.json(jsonUrl).then(dataArr=>{
+            all = dataArr;
+            setStatus(`Dataset loaded (${all.length} companies). Click Add to stream.`);
+        }).catch(err=>{
+            console.error('JSON load error',err);
+            setStatus('Failed to load dataset');
+        });
+
+        document.getElementById('addBtn').onclick=()=>{
+            if(!all.length) return;
+            if(idx>=all.length) return;
+            const item=all[idx++];
+            chart.store.add(item);
+            setStatus(`Added ${item.Company}. Total: ${chart.store.length()}`);
+        };
+
+        document.getElementById('removeBtn').onclick=()=>{
+            if(!chart.store.length()) return;
+            const keys=chart.store.keys();
+            const key=keys[Math.floor(Math.random()*keys.length)];
+            chart.store.remove(key);
+            setStatus(`Removed ${key}. Total: ${chart.store.length()}`);
+        };
+
+        document.getElementById('clearBtn').onclick=()=>{
+            chart.store.clear();
+            setStatus('Cleared');
+        };
+
+        chart.on('change', stats=>{
+            console.log('change',stats);
+        });
+
+        console.log('Reactive Bubble Chart Example loaded');
+        console.log('Available methods:', {
+            addBubble: 'addRandomBubble()',
+            removeBubble: 'removeRandomBubble()',
+            clearData: 'clearData()'
+        });
+    </script>
+</body>
+</html> 

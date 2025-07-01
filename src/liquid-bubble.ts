@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { BaseChartBuilder } from './core/index.js';
 import type { BubbleChartData } from './types/data.js';
 import type { BubbleChartConfig } from './types/config.js';
+import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * LiquidBubble – a gauge-style bubble chart where the fill level
@@ -90,8 +91,8 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
         .attr('width', (_d: any, i: number) => layoutNodes[i].r * 2)
         .attr('y', (_d: any, i: number) => layoutNodes[i].r)   // Start empty (positioned at bottom)
         .attr('height', 0)            // Zero height initially
-        .attr('fill', (_d: T, i: number) => {
-          return this.config.color ? this.config.color(i.toString()) : this.config.defaultColor || '#4CAF50';
+        .attr('fill', (d: T, i: number) => {
+          return resolveColor(this.config.color, d, i, this.config.defaultColor || '#4CAF50');
         })
         .attr('opacity', 0.7)
         .attr('stroke', 'none');

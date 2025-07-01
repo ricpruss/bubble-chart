@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import { BaseChartBuilder } from './core/index.js';
 import type { BubbleChartConfig } from './types/config.js';
 import type { BubbleChartData } from './types/data.js';
+import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * Motion configuration for force simulation
@@ -93,7 +94,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       // Create circles with motion-specific styling
       bubbleGroups.append('circle')
         .attr('r', (d: any) => d.r)
-        .attr('fill', (_d: any, i: number) => this.config.color ? this.config.color(i.toString()) : this.config.defaultColor || '#ddd')
+        .attr('fill', (d: any, i: number) => resolveColor(this.config.color, d.data, i, this.config.defaultColor || '#ddd'))
         .attr('stroke', '#fff')
         .attr('stroke-width', 1.5)
         .attr('opacity', 0.85)

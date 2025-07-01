@@ -381,36 +381,44 @@ class TestRunner {
     this.log('Testing error handling...', 'info');
     
     try {
-      // Test invalid container
+      // Test invalid container - should throw error when render() is called
       try {
         const builder = new BubbleBuilder({ container: '#nonexistent' });
-        builder.data(testData);
-        builder.render();
+        builder.data(testData);  // This should work
+        builder.render();        // This should throw container error
         
+        // If we get here, the error was handled gracefully
         this.addTest('Invalid Container Handling',
-          true, // If no error thrown, it's handled gracefully
-          'Invalid container handled gracefully'
+          true,
+          'Invalid container handled gracefully (no error thrown)'
         );
       } catch (error) {
+        // We expect a container-related error here
+        const isContainerError = error.message.includes('Container') || 
+                                error.message.includes('not found') ||
+                                error.message.includes('element');
+        
         this.addTest('Invalid Container Handling',
-          error.message.includes('container') || error.message.includes('element'),
-          `Expected container error: ${error.message}`
+          isContainerError,
+          isContainerError ? 
+            'Container error correctly thrown' : 
+            `Unexpected error: ${error.message}`
         );
       }
       
-      // Test invalid data
+      // Test invalid data - data() method should handle gracefully
       try {
         const builder = new BubbleBuilder(configs[0].config);
-        builder.data(null);
+        const result = builder.data(null);  // Should handle gracefully
         
         this.addTest('Invalid Data Handling',
-          true, // If no error thrown, it's handled gracefully
+          result === builder,  // Should return this for chaining even with null data
           'Invalid data handled gracefully'
         );
       } catch (error) {
         this.addTest('Invalid Data Handling',
-          error.message.includes('data') || error.message.includes('array'),
-          `Expected data error: ${error.message}`
+          false,
+          `Unexpected error on null data: ${error.message}`
         );
       }
       

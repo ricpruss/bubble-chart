@@ -2,6 +2,7 @@ import type { BubbleChartData, HierarchicalBubbleData } from './types/data.js';
 import type { BubbleChartConfig } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import * as d3 from 'd3';
+import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * Tree bubble chart builder for hierarchical data visualization
@@ -118,7 +119,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
         if (hierarchyNode?.children) {
           return 'none';
         }
-        return this.config.color ? this.config.color(i.toString()) : this.config.defaultColor || '#ddd';
+        return resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#ddd');
       })
       .attr('stroke', '#ccc')
       .attr('stroke-width', 1);

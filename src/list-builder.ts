@@ -2,6 +2,7 @@ import type { BubbleChartData } from './types/data.js';
 import type { BubbleChartConfig } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import * as d3 from 'd3';
+import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * ListBuilder – displays bubbles in a vertical list layout with labels.
@@ -71,7 +72,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .attr('cx', maxRadius)
         .attr('cy', 0)
         .attr('r', (d: any) => this.radiusScale!(d.size || 0))
-        .attr('fill', (_d: any, i: number) => this.config.color ? this.config.color(i.toString()) : this.config.defaultColor || '#2196F3')
+        .attr('fill', (d: any, i: number) => resolveColor(this.config.color, d, i, this.config.defaultColor || '#2196F3'))
         .attr('stroke', '#fff')
         .attr('stroke-width', 2)
         .style('opacity', 0.8);

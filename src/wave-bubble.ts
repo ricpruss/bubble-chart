@@ -2,6 +2,7 @@ import * as d3 from 'd3';
 import type { BubbleChartData } from './types/data.js';
 import type { BubbleChartConfig } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
+import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * Interface for wave animation data points
@@ -90,7 +91,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
       .attr('clip-path', (_d: any, i: number) => `url(#wave-clip-${i})`)
       .append('path')
       .attr('class', 'wave')
-      .attr('fill', (_d: any, i: number) => this.config.color ? this.config.color(i.toString()) : this.config.defaultColor || '#2196F3')
+      .attr('fill', (_d: any, i: number) => resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#2196F3'))
       .style('opacity', 0.6)
       .attr('stroke', 'none');
   }

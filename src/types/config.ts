@@ -164,8 +164,31 @@ export interface BubbleChartConfig {
   percentage?: boolean | ((d: BubbleChartData) => number);
   
   // Color and styling
-  /** D3.js color scale */
-  color?: d3.ScaleOrdinal<string, string>;
+  /** 
+   * Color configuration - determines bubble colors
+   * 
+   * **Single-parameter functions**: Receive the full data object
+   * ```typescript
+   * color: d => d.sector === 'Technology' ? '#blue' : '#gray'
+   * color: d => sectorColorMap[d.sector] || '#default'
+   * ```
+   * 
+   * **Multi-parameter functions**: Receive data object and index
+   * ```typescript
+   * color: (d, i) => i % 2 === 0 ? '#even' : '#odd'
+   * color: (d, i) => `color-${d.category}-${i}`
+   * ```
+   * 
+   * **D3 scales**: Pass sector/category strings for domain mapping
+   * ```typescript
+   * color: d3.scaleOrdinal(['#red', '#blue', '#green'])
+   * color: d3.scaleOrdinal(d3.schemeCategory10)
+   * ```
+   * 
+   * The system automatically detects D3 scales by checking for `domain`/`range` properties
+   * and extracts appropriate keys (sector → category → index) for scale input.
+   */
+  color?: d3.ScaleOrdinal<string, string> | ((data: BubbleChartData, index?: number) => string) | string;
   /** Property name for color grouping */
   colour?: string | boolean;
   
@@ -405,4 +428,56 @@ export function createDefaultConfig(): BubbleChartConfig {
       }
     }
   };
-} 
+}
+
+/**
+ * Streaming animation options
+ */
+export interface StreamingOptions {
+  enterAnimation: EnterAnimationOptions;
+  exitAnimation: ExitAnimationOptions;
+  updateAnimation: UpdateAnimationOptions;
+  keyFunction?: (d: any) => string | number;
+}
+
+export interface EnterAnimationOptions {
+  duration: number;
+  staggerDelay: number;
+  easing?: string;
+}
+
+export interface ExitAnimationOptions {
+  duration: number;
+  easing?: string;
+}
+
+export interface UpdateAnimationOptions {
+  duration: number;
+  easing?: string;
+}
+
+export interface StreamingUpdateResult {
+  entered: number;
+  updated: number;
+  exited: number;
+}
+
+/**
+ * Default streaming options
+ */
+export const defaultStreamingOptions: StreamingOptions = {
+  enterAnimation: {
+    duration: 800,
+    staggerDelay: 50,
+    easing: 'ease-out'
+  },
+  exitAnimation: {
+    duration: 600,
+    easing: 'ease-in'
+  },
+  updateAnimation: {
+    duration: 600,
+    easing: 'ease-in-out'
+  },
+  keyFunction: (d: any) => d.id || d.name
+}; 

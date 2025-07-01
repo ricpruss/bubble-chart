@@ -52,12 +52,18 @@ export type {
   SVGSelection,
   GroupSelection,
   CircleSelection,
-  TextSelection
+  TextSelection,
+  StreamingOptions,
+  EnterAnimationOptions,
+  ExitAnimationOptions,
+  UpdateAnimationOptions,
+  StreamingUpdateResult
 } from './config.js';
 
 export {
   validateConfig,
-  createDefaultConfig
+  createDefaultConfig,
+  defaultStreamingOptions
 } from './config.js';
 
 // Event Types

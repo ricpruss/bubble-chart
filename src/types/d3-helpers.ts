@@ -9,8 +9,8 @@ import type { BubbleChartData, HierarchicalBubbleData } from './data.js';
 /**
  * Common D3.js selection types for SVG elements
  */
-export type SVGSelection = d3.Selection<SVGSVGElement, unknown, null, undefined>;
-export type GroupSelection = d3.Selection<SVGGElement, unknown, null, undefined>;
+export type SVGSelection = d3.Selection<SVGSVGElement, unknown, HTMLElement, any>;
+export type GroupSelection = d3.Selection<SVGGElement, unknown, HTMLElement, any>;
 export type CircleSelection<T = BubbleChartData> = d3.Selection<SVGCircleElement, T, SVGGElement, unknown>;
 export type TextSelection<T = BubbleChartData> = d3.Selection<SVGTextElement, T, SVGGElement, unknown>;
 export type PathSelection<T = BubbleChartData> = d3.Selection<SVGPathElement, T, SVGGElement, unknown>;
@@ -167,13 +167,13 @@ export function createSVG(
   height: number,
   margin = { top: 0, right: 0, bottom: 0, left: 0 }
 ): { svg: SVGSelection; g: GroupSelection } {
-  const svg = d3.select(container)
+  const svg = (d3.select(container as any))
     .append('svg')
     .attr('width', width + margin.left + margin.right)
-    .attr('height', height + margin.top + margin.bottom);
+    .attr('height', height + margin.top + margin.bottom) as unknown as SVGSelection;
     
   const g = svg.append('g')
-    .attr('transform', `translate(${margin.left},${margin.top})`);
+    .attr('transform', `translate(${margin.left},${margin.top})`) as unknown as GroupSelection;
     
   return { svg, g };
 }
@@ -255,12 +255,12 @@ export function attachEventHandlers<TElement extends SVGElement, TData = BubbleC
 /**
  * Helper to safely select DOM elements with type checking
  */
-export function safeSelect(selector: string): d3.Selection<HTMLElement, unknown, null, undefined> {
+export function safeSelect(selector: string): d3.Selection<HTMLElement, unknown, HTMLElement, any> {
   const selection = d3.select<HTMLElement, unknown>(selector);
   if (selection.empty()) {
     throw new Error(`Element with selector "${selector}" not found`);
   }
-  return selection;
+  return selection as d3.Selection<HTMLElement, unknown, HTMLElement, any>;
 }
 
 /**
@@ -279,7 +279,7 @@ export function getElementDimensions(
 /**
  * Type-safe zoom behavior creation
  */
-export function createZoomBehavior<T = Element>(
+export function createZoomBehavior<T extends Element = Element>(
   onZoom: (event: d3.D3ZoomEvent<T, unknown>) => void
 ): d3.ZoomBehavior<T, unknown> {
   return d3.zoom<T, unknown>()
@@ -320,4 +320,49 @@ export function formatDate(
   format = '%Y-%m-%d'
 ): string {
   return d3.timeFormat(format)(date);
+}
+
+/**
+ * Resolves color based on different configuration types
+ * @param colorConfig - Color configuration (string, D3 scale, or function)
+ * @param data - Original data object
+ * @param index - Data index
+ * @param defaultColor - Fallback color
+ * @returns Resolved color string
+ */
+export function resolveColor<T extends BubbleChartData>(
+  colorConfig: d3.ScaleOrdinal<string, string> | ((data: T, index?: number) => string) | string | undefined,
+  data: T,
+  index: number,
+  defaultColor = '#ddd'
+): string {
+  if (!colorConfig) {
+    return defaultColor;
+  }
+
+  // If it's a string, return it directly
+  if (typeof colorConfig === 'string') {
+    return colorConfig;
+  }
+
+  // Check if this is a D3 scale (has domain/range methods)
+  if (typeof colorConfig === 'function' && 
+      ('domain' in colorConfig || 'range' in colorConfig)) {
+    // D3 scale - pass a string key (fallback to index if no suitable property)
+    const colorKey = (data as any)?.sector || (data as any)?.category || index.toString();
+    return (colorConfig as any)(colorKey);
+  } else if (typeof colorConfig === 'function') {
+    // Custom color function
+    const colorFunction = colorConfig as any;
+    if (colorFunction.length > 1) {
+      // Multi-parameter function - pass (data, index)
+      return colorFunction(data, index);
+    } else {
+      // Single-parameter function - pass the full data object
+      return colorFunction(data);
+    }
+  }
+
+  // Fallback to default color
+  return defaultColor;
 } 

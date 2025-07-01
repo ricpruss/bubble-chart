@@ -9,94 +9,36 @@ This document outlines the comprehensive, unified testing approach for the bubbl
 **Behaviour-Focused**: Tests verify what the library does, not how it does it
 **Fast Feedback**: Quick smoke tests for immediate verification, comprehensive tests for thorough validation
 
-## 🚀 Test Hierarchy
-
-### **1. Smoke Tests** (`npm run test:smoke`)
-- **Purpose**: "Does it work at all?" - Fast verification
-- **Runtime**: ~5 seconds
-- **Coverage**: Basic instantiation, rendering, cleanup
-- **When to use**: After builds, quick verification, first debugging step
+## 🏃‍♂️ Quick Start
 
 ```bash
-npm run test:smoke
+# one command does it all
+npm test   # alias for npm run test:all
 ```
 
-**What it tests:**
-- ✅ Library imports correctly
-- ✅ BubbleBuilder instantiates
-- ✅ Data processing works
-- ✅ SVG rendering creates elements
-- ✅ Method chaining functions
-- ✅ Resource cleanup works
+This single runner performs:
 
-### **2. Unit Tests** (`npm run test:unit`)
-- **Purpose**: Critical building blocks work correctly
-- **Runtime**: ~15 seconds  
-- **Coverage**: Core components that must work for anything to function
-- **When to use**: Development, CI/CD, debugging specific components
+1. Smoke sanity check
+2. Jest unit suites
+3. Integration script (Node-based)
 
-```bash
-npm run test:unit
-# OR
-npm test
-```
+Runtime ≈ 45 s.
 
-**What it tests:**
-- ✅ Type definitions and validation
-- ✅ Configuration handling
-- ✅ Data processing edge cases
-- ✅ SVG manager core functionality
-- ✅ Error handling for critical paths
+## 📦 What Gets Exercised
 
-### **3. Integration Tests** 
-- **Purpose**: Real-world scenarios and API compatibility
-- **Runtime**: ~30 seconds
-- **Coverage**: End-to-end behaviour, performance, compatibility
-- **When to use**: Pre-commit, releases, comprehensive verification
+| Stage | Tool | What it verifies |
+|-------|------|------------------|
+| Smoke | node scripts/smoke-test.js | Library imports, basic render, cleanup |
+| Unit  | Jest | Core logic, type guards, store, processors |
+| Integration | node scripts/test-integration.js | Real usage scenarios, performance checks |
 
-**Two approaches available:**
+Browser and visual tests remain manual (`npm run dev` → navigate to test files) for deep UI verification.
 
-**Option A: Node.js Environment** (`npm run test:integration`)
-```bash
-npm run test:integration
-```
-- Runs in virtual DOM (JSDOM) for automated testing
-- Best for CI/CD pipelines and automated verification
-- Some limitations with complex D3/SVG interactions
+## 🛠️ Developer Workflow
 
-**Option B: Real Browser Environment** (`npm run test:integration:browser`)
-```bash
-npm run test:integration:browser
-```
-- Runs in actual browser via Vite dev server
-- Full DOM and D3 support, no virtual DOM limitations
-- Real browser logs and debugging capabilities
-- **Recommended for debugging integration issues**
+• During dev: `npm test` for full sweep (≈45 s).  Most IDEs can re-run Jest only for faster feedback.
 
-**What both test:**
-- ✅ BubbleBuilder API functionality
-- ✅ Complex data processing scenarios  
-- ✅ Event handling workflows
-- ✅ Performance benchmarks
-- ✅ Configuration edge cases
-- ✅ Real DOM interactions (browser version has more reliable results)
-
-### **4. Browser Tests** (`npm run test:browser`)
-- **Purpose**: Visual verification and user interaction testing
-- **Runtime**: Manual
-- **Coverage**: Visual output, user interactions, responsiveness
-- **When to use**: Final verification, UI debugging, release validation
-
-```bash
-npm run test:browser
-```
-
-**What it tests:**
-- 🎨 Visual rendering correctness
-- 🖱️ User interaction (click, hover, keyboard)
-- 📱 Responsive behaviour
-- ⚡ Performance with large datasets
-- 🔄 Dynamic data updates
+• Pre-commit / CI: `npm test` plus `npm run build`.
 
 ## 📋 Test Commands Summary
 
@@ -105,51 +47,10 @@ npm run test:browser
 | `npm run test:smoke` | Quick verification | 5s | After builds, debugging |
 | `npm run test:unit` | Core components | 15s | Development, CI/CD |
 | `npm run test:integration` | Real scenarios (Node.js) | 30s | Pre-commit, CI/CD |
-| `npm run test:integration:browser` | Real scenarios (Browser) | Manual | Debugging integration issues |
-| `npm run test:browser` | Visual verification | Manual | Final validation |
+| `npm run dev` + navigate to `tests/integration-test.html` | Real scenarios (Browser) | Manual | Debugging integration issues |
+| `npm run dev` + navigate to `tests/browser-test.html` | Visual verification | Manual | Final validation |
 | `npm run test:all` | Unit + Integration | 45s | Comprehensive check |
 | `npm run test:quick` | Alias for smoke | 5s | Quick alias |
-
-## 🛠️ Running Tests
-
-### Prerequisites
-
-```bash
-# Install dependencies
-npm install
-
-# Build the library (required for most tests)
-npm run build
-
-# Optional: verify TypeScript compilation
-npm run type-check
-```
-
-### Common Workflows
-
-**Quick verification after changes:**
-```bash
-npm run test:smoke
-```
-
-**Development workflow:**
-```bash
-npm run test:unit        # Test specific components
-npm run test:smoke       # Quick overall check
-```
-
-**Pre-commit verification:**
-```bash
-npm run test:all         # Run comprehensive tests
-npm run build           # Ensure build works
-```
-
-**Release preparation:**
-```bash
-npm run test:all         # Comprehensive testing
-npm run test:browser     # Visual verification
-npm run build           # Final build
-```
 
 ## 📊 Test Coverage Areas
 
@@ -192,7 +93,7 @@ The browser test suite provides an interactive interface for visual verification
 - **Event Handling**: Test user interactions with real-time logging
 - **Performance**: Stress test with 100+ bubbles
 
-Access at: `npm run test:browser`
+Access at: `npm run dev` → navigate to `tests/browser-test.html`
 
 ## 🔧 Writing Tests
 
@@ -247,7 +148,7 @@ async testNewBehaviour(BubbleBuilder) {
 global.document = dom.window.document;
 
 # For debugging, use browser-based integration tests
-npm run test:integration:browser
+npm run dev  # Navigate to tests/integration-test.html
 ```
 
 **"Module not found" errors**
@@ -267,14 +168,14 @@ npm run type-check
 # Ensure D3 mocks are set up in unit tests
 jest.spyOn(d3, 'select').mockReturnValue(mockSelection);
 
-# For complex D3 issues, bypass virtual DOM limitations
-npm run test:integration:browser
+# For complex D3 issues, bypass virtual DOM limitations  
+npm run dev  # Navigate to tests/integration-test.html
 ```
 
 **Virtual DOM limitations with D3/SVG**
 ```bash
 # When JSDOM can't properly handle D3 operations:
-npm run test:integration:browser
+npm run dev  # Navigate to tests/integration-test.html
 
 # This runs tests in a real browser via Vite with:
 # - Full DOM API support
@@ -288,14 +189,14 @@ npm run test:integration:browser
 1. **Start with smoke tests** - `npm run test:smoke`
 2. **Check the build** - `npm run build`
 3. **Run unit tests** - `npm run test:unit`
-4. **Try browser tests** for visual debugging - `npm run test:browser`
+4. **Try browser tests** for visual debugging - `npm run dev` → navigate to `tests/browser-test.html`
 5. **Check integration tests** - `npm run test:integration`
 
 ### Getting Help
 
 **For Users:**
 - Run `npm run test:smoke` for quick issue identification
-- Use `npm run test:browser` for visual problem diagnosis
+- Use `npm run dev` → navigate to `tests/browser-test.html` for visual problem diagnosis
 - Check the console output for specific error messages
 
 **For Developers:**

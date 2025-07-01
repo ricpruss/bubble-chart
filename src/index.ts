@@ -37,6 +37,15 @@ export {
   type LayoutNode
 } from './core/index.js';
 
+// Export reactive functionality
+export {
+  DataStore,
+  createBubbleChart,
+  type BubbleChart as ReactiveBubbleChart,
+  type BubbleChartOptions as ReactiveBubbleChartOptions,
+  type ChangeStats
+} from './reactive/index.js';
+
 
 
 /**
@@ -346,4 +355,7 @@ export {
   LiquidBubble,
   OrbitBuilder,
   ListBuilder
-}; 
+};
+
+// Export reactive functionality (Phase 1 implementation)
+export * from './reactive/index.js'; 

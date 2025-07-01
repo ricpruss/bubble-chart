@@ -131,7 +131,7 @@ async function runSmokeTests() {
     console.log('🎉 All smoke tests passed! Library is working correctly.\n');
     console.log('Next steps:');
     console.log('  • Run integration tests: npm run test:integration');
-    console.log('  • Run browser tests: npm run test:browser');
+    console.log('  • Run browser tests: npm run dev → navigate to tests/browser-test.html');
     console.log('  • Run all tests: npm run test:all');
     return true;
   } else {
