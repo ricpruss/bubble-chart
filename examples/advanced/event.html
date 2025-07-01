@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BubbleChart – Event Handling (Modern)</title>
+
+    <!-- Styles -->
+    <link rel="stylesheet" href="../../dist/css/bubble-chart.css" />
+
+    <!-- Dependencies -->
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../../dist/bubble-chart.min.js"></script>
+    <script src="../js/companies.js"></script>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const chart = new BubbleChart({
+                container: '#test',
+                label: 'label',
+                size: 'size',
+                percentage: d => d.count / 100
+            });
+
+            // Event handlers
+            chart
+                .on('mouseenter', d => {
+                    // Handle mouseenter event
+                })
+                .on('mouseover', d => {
+                    // Handle mouseover event
+                })
+                .on('mouseout', d => {
+                    // Handle mouseout event
+                })
+                .on('click', d => {
+                    const dataCopy = { ...d };
+                    delete dataCopy.parent;
+                    alert(JSON.stringify(dataCopy, null, 2));
+                });
+
+            // Render the chart
+            chart.data(window.data);
+            chart.render();
+        });
+    </script>
+</head>
+
+<body>
+    <h1>BubbleChart – Event Handling (Modern)</h1>
+    <div id="test" style="width: 800px; height: 600px;"></div>
+</body>

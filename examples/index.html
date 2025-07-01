@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bubble Chart Library - Examples</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f8f9fa;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      padding: 40px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #2c3e50;
+      text-align: center;
+      margin-bottom: 10px;
+      font-size: 2.5em;
+    }
+    .subtitle {
+      text-align: center;
+      color: #7f8c8d;
+      margin-bottom: 40px;
+      font-size: 1.1em;
+    }
+    .section {
+      margin-bottom: 50px;
+    }
+    .section h2 {
+      color: #34495e;
+      border-bottom: 3px solid #3498db;
+      padding-bottom: 10px;
+      margin-bottom: 20px;
+    }
+    .section-description {
+      color: #555;
+      margin-bottom: 25px;
+      font-style: italic;
+    }
+    .examples-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 20px;
+    }
+    .example-card {
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 20px;
+      background: #fff;
+      transition: all 0.3s ease;
+      text-decoration: none;
+      color: inherit;
+    }
+    .example-card:hover {
+      border-color: #3498db;
+      box-shadow: 0 4px 15px rgba(52, 152, 219, 0.2);
+      transform: translateY(-2px);
+    }
+    .example-title {
+      font-weight: bold;
+      color: #2c3e50;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+    .example-description {
+      color: #666;
+      font-size: 0.9em;
+    }
+    .server-notice {
+      background: #e3f2fd;
+      border: 1px solid #bbdefb;
+      border-radius: 6px;
+      padding: 15px;
+      margin-bottom: 30px;
+      font-size: 0.95em;
+    }
+    .server-notice strong {
+      color: #1976d2;
+    }
+    footer {
+      text-align: center;
+      margin-top: 50px;
+      color: #7f8c8d;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🫧 Bubble Chart Library</h1>
+    <p class="subtitle">Interactive data visualisation examples</p>
+    
+    <div class="server-notice">
+      <strong>Development Server Required:</strong> These examples require the Vite dev server running on port 3333. 
+      Run <code>npm run dev</code> to start the server.
+    </div>
+
+    <div class="section">
+      <h2>📋 Simple Examples</h2>
+      <p class="section-description">Basic demonstrations of each visualisation type. Clean, minimal code showing core functionality.</p>
+      
+      <div class="examples-grid">
+        <a href="simple.html" class="example-card">
+          <div class="example-title">Simple Bubble Chart</div>
+          <div class="example-description">Basic bubble pack layout with size-based positioning</div>
+        </a>
+        
+        <a href="tree.html" class="example-card">
+          <div class="example-title">Tree Bubble Chart</div>
+          <div class="example-description">Hierarchical bubble layout for nested data structures</div>
+        </a>
+        
+        <a href="orbit.html" class="example-card">
+          <div class="example-title">Orbit Bubble Chart</div>
+          <div class="example-description">Orbital motion animation with circular paths</div>
+        </a>
+        
+        <a href="list.html" class="example-card">
+          <div class="example-title">List Bubble Chart</div>
+          <div class="example-description">Vertical list layout with ranking and text wrapping</div>
+        </a>
+        
+        <a href="wave.html" class="example-card">
+          <div class="example-title">Wave Bubble Chart</div>
+          <div class="example-description">Wave animation effects within bubbles</div>
+        </a>
+        
+        <a href="liquid.html" class="example-card">
+          <div class="example-title">Liquid Bubble Chart</div>
+          <div class="example-description">Liquid fill animation based on percentage values</div>
+        </a>
+        
+        <a href="motion.html" class="example-card">
+          <div class="example-title">Motion Bubble Chart</div>
+          <div class="example-description">Force simulation with collision detection and dynamics</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🚀 Advanced Examples</h2>
+      <p class="section-description">Complex implementations demonstrating advanced features and combinations.</p>
+      
+      <div class="examples-grid">
+        <a href="advanced/bubble-tree-timeline.html" class="example-card">
+          <div class="example-title">Tree Timeline</div>
+          <div class="example-description">Hierarchical data with interactive year filtering</div>
+        </a>
+        
+        <a href="advanced/orbit-tree-timeline.html" class="example-card">
+          <div class="example-title">Orbit Timeline</div>
+          <div class="example-description">Orbital motion combined with timeline navigation</div>
+        </a>
+        
+        <a href="advanced/typescript-usage.html" class="example-card">
+          <div class="example-title">TypeScript Example</div>
+          <div class="example-description">Type-safe implementation demonstrating TypeScript integration</div>
+        </a>
+        
+        <a href="advanced/event.html" class="example-card">
+          <div class="example-title">Event Handling</div>
+          <div class="example-description">Interactive events and user interaction examples</div>
+        </a>
+        
+        <a href="advanced/size-toggle.html" class="example-card">
+          <div class="example-title">Size Toggle</div>
+          <div class="example-description">Dynamic size adjustment and configuration updates</div>
+        </a>
+        
+        <a href="advanced/gauge.html" class="example-card">
+          <div class="example-title">Gauge Chart</div>
+          <div class="example-description">Gauge-style visualisation with percentage indicators</div>
+        </a>
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>🧪 Testing Suite</h2>
+      <p class="section-description">Comprehensive testing strategy with multiple levels of verification.</p>
+      
+      <div class="examples-grid">
+        <a href="tests/browser-test.html" class="example-card">
+          <div class="example-title">🎨 Browser Test Suite</div>
+          <div class="example-description">Interactive visual testing with event logging and performance metrics</div>
+        </a>
+        
+      </div>
+    </div>
+
+    <div class="section">
+      <h2>⚡ Quick Actions</h2>
+      <p class="section-description">Common development tasks and quick verifications.</p>
+      
+      <div class="examples-grid">
+        <a href="#" onclick="runTerminalCommand('npm run build')" class="example-card">
+          <div class="example-title">🏗️ Build Library</div>
+          <div class="example-description">Compile TypeScript and generate distribution files</div>
+        </a>
+        
+        <a href="#" onclick="runTerminalCommand('npm run type-check')" class="example-card">
+          <div class="example-title">📝 Type Check</div>
+          <div class="example-description">Verify TypeScript types without compilation</div>
+        </a>
+        
+        <a href="#" onclick="runTerminalCommand('npm run dev')" class="example-card">
+          <div class="example-title">🔧 Start Dev Server</div>
+          <div class="example-description">Launch development server for examples</div>
+        </a>
+      </div>
+    </div>
+
+    <script>
+      function runTerminalCommand(command) {
+        // Copy to clipboard
+        if (navigator.clipboard) {
+          navigator.clipboard.writeText(command).then(() => {
+            showNotification(`📋 Copied to clipboard: ${command}`, 'success');
+          }).catch(() => {
+            showNotification(`💡 Please run: ${command}`, 'info');
+          });
+        } else {
+          showNotification(`💡 Please run: ${command}`, 'info');
+        }
+      }
+
+      function showNotification(message, type = 'info') {
+        // Remove existing notifications
+        const existing = document.querySelector('.notification');
+        if (existing) existing.remove();
+
+        // Create notification
+        const notification = document.createElement('div');
+        notification.className = `notification ${type}`;
+        notification.innerHTML = `
+          <div style="
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: ${type === 'success' ? '#d4edda' : '#e3f2fd'};
+            color: ${type === 'success' ? '#155724' : '#1976d2'};
+            padding: 12px 20px;
+            border-radius: 6px;
+            border: 1px solid ${type === 'success' ? '#c3e6cb' : '#bbdefb'};
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            z-index: 1000;
+            font-family: inherit;
+            animation: slideIn 0.3s ease;
+          ">
+            ${message}
+            <button onclick="this.parentElement.parentElement.remove()" style="
+              background: none;
+              border: none;
+              float: right;
+              margin-left: 10px;
+              cursor: pointer;
+              font-size: 16px;
+              color: inherit;
+            ">×</button>
+          </div>
+          <style>
+            @keyframes slideIn {
+              from { transform: translateX(100%); opacity: 0; }
+              to { transform: translateX(0); opacity: 1; }
+            }
+          </style>
+        `;
+        
+        document.body.appendChild(notification);
+        
+        // Auto-remove after 4 seconds
+        setTimeout(() => {
+          if (notification.parentElement) {
+            notification.remove();
+          }
+        }, 4000);
+      }
+
+      // Add keyboard shortcut info
+      document.addEventListener('DOMContentLoaded', () => {
+        const shortcutInfo = document.createElement('div');
+        shortcutInfo.innerHTML = `
+          <div style="
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            background: #f8f9fa;
+            color: #6c757d;
+            padding: 10px 15px;
+            border-radius: 6px;
+            border: 1px solid #dee2e6;
+            font-size: 12px;
+            max-width: 200px;
+            z-index: 1000;
+            opacity: 0.8;
+          ">
+            💡 <strong>Quick Tip:</strong><br>
+            Click test buttons to copy commands to clipboard
+          </div>
+        `;
+        document.body.appendChild(shortcutInfo);
+        
+        // Hide tip after 5 seconds
+        setTimeout(() => {
+          if (shortcutInfo.parentElement) {
+            shortcutInfo.style.transition = 'opacity 0.5s';
+            shortcutInfo.style.opacity = '0';
+            setTimeout(() => shortcutInfo.remove(), 500);
+          }
+        }, 5000);
+      });
+    </script>
+
+    <footer>
+      <p>Bubble Chart Library • Modern TypeScript visualisation library built with D3.js</p>
+    </footer>
+  </div>
+</body>
+</html> 

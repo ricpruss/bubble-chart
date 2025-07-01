@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Bubble Chart – TypeScript demo</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../../dist/bubble-chart.min.js"></script>
+    <style>
+      body { font-family: system-ui, sans-serif; margin: 2rem; }
+    </style>
+  </head>
+  <body>
+    <h1>TypeScript usage (Simplified for file:// protocol)</h1>
+    <div id="bubble-chart" style="width: 600px; height: 600px;"></div>
+
+    <script>
+        // Simplified JavaScript version for file:// protocol compatibility
+        const data = [
+          { label: 'JavaScript', size: 2065724632, count: 50 },
+          { label: 'Python', size: 141765766652, count: 80 },
+          { label: 'Java', size: 48130171902, count: 65 },
+        ];
+
+        const chart = new BubbleChart({
+                      container: '#bubble-chart',
+          label: 'label',
+          size: 'size',
+          type: 'wave',
+          defaultColor: '#4CAF50',
+          percentage: (d) => d.count / 100,
+          format: {
+            text: (text) => text.toUpperCase(),
+            number: (num) => Intl.NumberFormat('en', { notation: 'compact' }).format(num),
+          },
+          tooltip: (d) => [
+            { value: d.label, name: 'Language:' },
+            { value: Intl.NumberFormat('en').format(d.size), name: 'Size:' },
+            { value: `${d.count}%`, name: 'Popularity:' },
+          ],
+        });
+
+        chart.data(data);
+        chart.render();
+    </script>
+  </body>
+</html> 

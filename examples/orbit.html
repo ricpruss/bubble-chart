@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Orbit Bubble Chart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chart-container {
+      width: 100%;
+      max-width: 800px;
+      height: 600px;
+      margin: auto;
+      border: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Orbit Bubble Chart</h1>
+  <div id="chart-container"></div>
+
+  <script>
+    const data = [
+      { "label": "Mercury", "size": 15 },
+      { "label": "Venus", "size": 18 },
+      { "label": "Earth", "size": 20 },
+      { "label": "Mars", "size": 16 },
+      { "label": "Jupiter", "size": 40 },
+      { "label": "Saturn", "size": 35 }
+    ];
+
+    const chart = new BubbleChart({
+      container: "#chart-container",
+      label: "label",
+      size: "size",
+      type: "orbit"
+    });
+
+    chart.data(data);
+    chart.render();
+  </script>
+</body>
+</html> 

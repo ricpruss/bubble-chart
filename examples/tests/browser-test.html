@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Bubble Chart - Browser Test Suite</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="/dist/bubble-chart.min.js"></script>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      margin: 0;
+      padding: 20px;
+      background: #f8f9fa;
+      line-height: 1.6;
+    }
+    .header {
+      text-align: center;
+      margin-bottom: 30px;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .test-section {
+      background: white;
+      margin: 20px 0;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .chart-container {
+      min-height: 400px;
+      border: 2px dashed #dee2e6;
+      border-radius: 8px;
+      margin: 15px 0;
+      position: relative;
+    }
+    .status {
+      padding: 12px 16px;
+      border-radius: 6px;
+      margin: 10px 0;
+      font-weight: 500;
+    }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+    .status.warning { background: #fff3cd; color: #856404; border: 1px solid #ffeaa7; }
+    
+    .controls {
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      margin: 15px 0;
+    }
+    button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 10px 16px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: background 0.2s;
+    }
+    button:hover { background: #0056b3; }
+    button:disabled { background: #6c757d; cursor: not-allowed; }
+    
+    .test-results {
+      margin-top: 20px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+      font-size: 13px;
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 6px;
+      border: 1px solid #dee2e6;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+    
+    .badge {
+      display: inline-block;
+      padding: 4px 8px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      margin-left: 8px;
+    }
+    .badge.pass { background: #d4edda; color: #155724; }
+    .badge.fail { background: #f8d7da; color: #721c24; }
+    
+    h2 { color: #495057; border-bottom: 2px solid #dee2e6; padding-bottom: 8px; }
+    h3 { color: #6c757d; margin-top: 25px; }
+  </style>
+</head>
+<body>
+
+  <div class="header">
+    <h1>🧪 Bubble Chart Browser Test Suite</h1>
+    <p>Visual verification and user interaction testing</p>
+    <div class="status info" id="global-status">
+      Ready to run tests. Click "Run All Tests" to begin.
+    </div>
+  </div>
+
+  <!-- Test 1: Basic Rendering -->
+  <div class="test-section">
+    <h2>1. Basic Rendering Test</h2>
+    <p>Verifies that bubble charts render correctly with default settings.</p>
+    
+    <div class="controls">
+      <button onclick="runBasicTest()">Run Basic Test</button>
+      <button onclick="clearChart('chart1')">Clear</button>
+    </div>
+    
+    <div class="chart-container" id="chart1"></div>
+    <div class="status info" id="status1">Click "Run Basic Test" to start</div>
+  </div>
+
+  <!-- Test 2: Data Updates -->
+  <div class="test-section">
+    <h2>2. Data Update Test</h2>
+    <p>Tests dynamic data updates and chart re-rendering.</p>
+    
+    <div class="controls">
+      <button onclick="runDataUpdateTest()">Run Update Test</button>
+      <button onclick="updateChartData()">Update Data</button>
+      <button onclick="clearChart('chart2')">Clear</button>
+    </div>
+    
+    <div class="chart-container" id="chart2"></div>
+    <div class="status info" id="status2">Click "Run Update Test" to start</div>
+  </div>
+
+  <!-- Test 3: Event Handling -->
+  <div class="test-section">
+    <h2>3. Event Handling Test</h2>
+    <p>Tests click, hover, and other user interactions.</p>
+    
+    <div class="controls">
+      <button onclick="runEventTest()">Run Event Test</button>
+      <button onclick="clearChart('chart3')">Clear</button>
+    </div>
+    
+    <div class="chart-container" id="chart3"></div>
+    <div class="status info" id="status3">Click "Run Event Test" to start</div>
+    <div class="test-results" id="events" style="display: none;">
+      <strong>Event Log:</strong><br>
+      <div id="event-log"></div>
+    </div>
+  </div>
+
+  <!-- Test 4: Performance Test -->
+  <div class="test-section">
+    <h2>4. Performance Test</h2>
+    <p>Tests rendering performance with larger datasets.</p>
+    
+    <div class="controls">
+      <button onclick="runPerformanceTest()">Run Performance Test</button>
+      <button onclick="clearChart('chart4')">Clear</button>
+    </div>
+    
+    <div class="chart-container" id="chart4"></div>
+    <div class="status info" id="status4">Click "Run Performance Test" to start</div>
+  </div>
+
+  <!-- Global Controls -->
+  <div class="test-section">
+    <h2>🚀 Test Suite Controls</h2>
+    <div class="controls">
+      <button onclick="runAllTests()">Run All Tests</button>
+      <button onclick="clearAllCharts()">Clear All</button>
+      <button onclick="toggleEventLog()">Toggle Event Log</button>
+    </div>
+  </div>
+
+  <script>
+    // Test data sets
+    const basicData = [
+      { name: 'JavaScript', value: 95, category: 'language' },
+      { name: 'Python', value: 88, category: 'language' },
+      { name: 'TypeScript', value: 82, category: 'language' },
+      { name: 'React', value: 90, category: 'framework' },
+      { name: 'Vue', value: 75, category: 'framework' }
+    ];
+
+    const updateData = [
+      { name: 'Node.js', value: 85, category: 'runtime' },
+      { name: 'Deno', value: 60, category: 'runtime' },
+      { name: 'Express', value: 80, category: 'framework' },
+      { name: 'Fastify', value: 65, category: 'framework' }
+    ];
+
+    const performanceData = Array.from({ length: 100 }, (_, i) => ({
+      name: `Item ${i + 1}`,
+      value: Math.random() * 100 + 10,
+      category: ['tech', 'business', 'science', 'art'][i % 4]
+    }));
+
+    // Chart instances
+    const charts = {};
+    let testResults = { passed: 0, total: 0 };
+
+    function updateStatus(id, message, type = 'info') {
+      const status = document.getElementById(id);
+      status.className = `status ${type}`;
+      status.innerHTML = message;
+    }
+
+    function updateGlobalStatus() {
+      const percent = testResults.total === 0 ? 0 : Math.round((testResults.passed / testResults.total) * 100);
+      const message = `Tests: ${testResults.passed}/${testResults.total} passed (${percent}%)`;
+      const type = testResults.passed === testResults.total ? 'success' : 'warning';
+      updateStatus('global-status', message, type);
+    }
+
+    function addTestResult(passed, testName) {
+      testResults.total++;
+      if (passed) testResults.passed++;
+      updateGlobalStatus();
+    }
+
+    function logEvent(message) {
+      const log = document.getElementById('event-log');
+      const time = new Date().toLocaleTimeString();
+      log.innerHTML += `[${time}] ${message}<br>`;
+      log.scrollTop = log.scrollHeight;
+    }
+
+    function toggleEventLog() {
+      const log = document.getElementById('events');
+      log.style.display = log.style.display === 'none' ? 'block' : 'none';
+    }
+
+    // Test 1: Basic Rendering
+    function runBasicTest() {
+      try {
+        updateStatus('status1', 'Creating basic bubble chart...', 'info');
+        
+        const chart = new BubbleChart({
+          container: '#chart1',
+          label: 'name',
+          size: 'value',
+          width: 600,
+          height: 400,
+          color: d3.scaleOrdinal(d3.schemeCategory10)
+        });
+
+        chart.data(basicData);
+        chart.render();
+        charts.chart1 = chart;
+
+        // Verify rendering
+        setTimeout(() => {
+          const svg = document.querySelector('#chart1 svg');
+          const circles = document.querySelectorAll('#chart1 circle');
+          
+          if (svg && circles.length === basicData.length) {
+            updateStatus('status1', `✅ Success! Rendered ${circles.length} bubbles`, 'success');
+            addTestResult(true, 'Basic Rendering');
+          } else {
+            updateStatus('status1', '❌ Failed to render bubbles correctly', 'error');
+            addTestResult(false, 'Basic Rendering');
+          }
+        }, 500);
+
+      } catch (error) {
+        updateStatus('status1', `❌ Error: ${error.message}`, 'error');
+        addTestResult(false, 'Basic Rendering');
+      }
+    }
+
+    // Test 2: Data Updates
+    function runDataUpdateTest() {
+      try {
+        updateStatus('status2', 'Creating chart for data updates...', 'info');
+        
+        const chart = new BubbleChart({
+          container: '#chart2',
+          label: 'name',
+          size: 'value',
+          width: 600,
+          height: 400,
+          color: d3.scaleOrdinal(d3.schemeSet2)
+        });
+
+        chart.data(basicData);
+        chart.render();
+        charts.chart2 = chart;
+
+        setTimeout(() => {
+          const circles = document.querySelectorAll('#chart2 circle');
+          if (circles.length === basicData.length) {
+            updateStatus('status2', '✅ Initial render successful. Click "Update Data" to test updates.', 'success');
+            addTestResult(true, 'Data Update - Initial');
+          } else {
+            updateStatus('status2', '❌ Initial render failed', 'error');
+            addTestResult(false, 'Data Update - Initial');
+          }
+        }, 500);
+
+      } catch (error) {
+        updateStatus('status2', `❌ Error: ${error.message}`, 'error');
+        addTestResult(false, 'Data Update - Initial');
+      }
+    }
+
+    function updateChartData() {
+      if (!charts.chart2) {
+        updateStatus('status2', 'Run the initial test first', 'warning');
+        return;
+      }
+
+      try {
+        updateStatus('status2', 'Updating chart data...', 'info');
+        charts.chart2.data(updateData);
+        charts.chart2.render();
+
+        setTimeout(() => {
+          const circles = document.querySelectorAll('#chart2 circle');
+          if (circles.length === updateData.length) {
+            updateStatus('status2', '✅ Data update successful!', 'success');
+            addTestResult(true, 'Data Update - Update');
+          } else {
+            updateStatus('status2', '❌ Data update failed', 'error');
+            addTestResult(false, 'Data Update - Update');
+          }
+        }, 500);
+
+      } catch (error) {
+        updateStatus('status2', `❌ Update error: ${error.message}`, 'error');
+        addTestResult(false, 'Data Update - Update');
+      }
+    }
+
+    // Test 3: Event Handling
+    function runEventTest() {
+      try {
+        updateStatus('status3', 'Creating chart with event handlers...', 'info');
+        document.getElementById('events').style.display = 'block';
+        document.getElementById('event-log').innerHTML = '';
+        
+        const chart = new BubbleChart({
+          container: '#chart3',
+          label: 'name',
+          size: 'value',
+          width: 600,
+          height: 400,
+          color: d3.scaleOrdinal(d3.schemeTableau10)
+        });
+
+        chart.data(basicData);
+
+        // Add event handlers
+        chart.on('click', (d) => {
+          logEvent(`🖱️ Clicked: ${d.name} (value: ${d.value})`);
+        });
+
+        chart.on('mouseover', (d) => {
+          logEvent(`👆 Hovered: ${d.name}`);
+        });
+
+        chart.on('mouseout', (d) => {
+          logEvent(`👋 Left: ${d.name}`);
+        });
+
+        chart.render();
+        charts.chart3 = chart;
+
+        setTimeout(() => {
+          const circles = document.querySelectorAll('#chart3 circle');
+          if (circles.length === basicData.length) {
+            updateStatus('status3', '✅ Event test ready! Click and hover bubbles to test.', 'success');
+            logEvent('🎯 Event handlers attached. Try interacting with bubbles!');
+            addTestResult(true, 'Event Handling');
+          } else {
+            updateStatus('status3', '❌ Event test setup failed', 'error');
+            addTestResult(false, 'Event Handling');
+          }
+        }, 500);
+
+      } catch (error) {
+        updateStatus('status3', `❌ Error: ${error.message}`, 'error');
+        addTestResult(false, 'Event Handling');
+      }
+    }
+
+    // Test 4: Performance
+    function runPerformanceTest() {
+      try {
+        updateStatus('status4', 'Starting performance test with 100 bubbles...', 'info');
+        
+        const startTime = performance.now();
+        
+        const chart = new BubbleChart({
+          container: '#chart4',
+          label: 'name',
+          size: 'value',
+          width: 800,
+          height: 600,
+          color: d3.scaleOrdinal(d3.schemeCategory10)
+        });
+
+        chart.data(performanceData);
+        chart.render();
+        charts.chart4 = chart;
+
+        setTimeout(() => {
+          const endTime = performance.now();
+          const renderTime = Math.round(endTime - startTime);
+          const circles = document.querySelectorAll('#chart4 circle');
+          
+          if (circles.length === performanceData.length) {
+            updateStatus('status4', `✅ Performance test passed! Rendered ${circles.length} bubbles in ${renderTime}ms`, 'success');
+            addTestResult(true, 'Performance');
+          } else {
+            updateStatus('status4', `❌ Performance test failed. Expected ${performanceData.length}, got ${circles.length}`, 'error');
+            addTestResult(false, 'Performance');
+          }
+        }, 1000);
+
+      } catch (error) {
+        updateStatus('status4', `❌ Error: ${error.message}`, 'error');
+        addTestResult(false, 'Performance');
+      }
+    }
+
+    // Utility functions
+    function clearChart(chartId) {
+      document.getElementById(chartId).innerHTML = '';
+      delete charts[chartId];
+      updateStatus(`status${chartId.slice(-1)}`, 'Chart cleared', 'info');
+    }
+
+    function clearAllCharts() {
+      ['chart1', 'chart2', 'chart3', 'chart4'].forEach(clearChart);
+      testResults = { passed: 0, total: 0 };
+      updateGlobalStatus();
+    }
+
+    function runAllTests() {
+      clearAllCharts();
+      updateStatus('global-status', 'Running all tests...', 'info');
+      
+      // Run tests with delays to avoid conflicts
+      setTimeout(() => runBasicTest(), 100);
+      setTimeout(() => runDataUpdateTest(), 1000);
+      setTimeout(() => runEventTest(), 2000);
+      setTimeout(() => runPerformanceTest(), 3000);
+    }
+
+    // Initialize
+    updateGlobalStatus();
+  </script>
+
+</body>
+</html> 

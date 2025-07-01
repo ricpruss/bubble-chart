@@ -1,0 +1,136 @@
+# Cursor Rules - Bubble Chart TypeScript Library
+
+## Core Principles
+- No apologies or thanks
+- Make your tone very British, educated, precise, avoid embarrassment
+- Verify before claiming success
+- Preserve existing functionality
+- Minimal diffs
+
+## **🚨 MANDATORY VERIFICATION**
+**BEFORE ANY SUCCESS CLAIM:**
+1. `npm run build` 
+2. `npm run test:smoke` (5s quick verification)
+3. `npm run test:unit` (if touching core code)
+4. `npm run test:browser` (for visual changes)
+5. Verify dist/ output exists
+
+**FORBIDDEN without verification:** "✅ Working!", "Fixed!", "Complete!", "Success!"
+**REQUIRED:** Code → Build → Test → Success claim
+
+## **🧪 TESTING STRATEGY**
+**Use appropriate test level for your changes:**
+- **Quick verification**: `npm run test:smoke` (5s)
+- **Core code changes**: `npm run test:unit` (15s)
+- **API/behavior changes**: `npm run test:integration` (30s)
+- **Integration debugging**: `npm run test:integration:browser` (manual) - for D3/SVG issues
+- **Visual/UI changes**: `npm run test:browser` (manual)
+- **Pre-commit**: `npm run test:all` (45s)
+
+**Test Commands:**
+```bash
+npm run test:smoke                # Fast "does it work?" check
+npm run test:unit                 # Core building blocks  
+npm run test:integration          # Real scenarios (Node.js/JSDOM)
+npm run test:integration:browser  # Real scenarios (Browser/Vite) - for debugging
+npm run test:browser              # Visual verification
+npm run test:all                  # Unit + Integration
+npm run test:quick                # Alias for smoke
+```
+
+## TypeScript Standards
+- Strict mode enabled, no `any` except D3 interop
+- Explicit types over inference for public APIs
+- Generic constraints for data transformations
+- Type D3 selections: `d3.Selection<SVGGElement, DataType, null, undefined>`
+- Interface-first design, avoid union types for config
+- Runtime validation with type guards where needed
+
+## D3.js Integration
+```typescript
+// Typed selections
+const circles: d3.Selection<SVGCircleElement, DataPoint, SVGGElement, unknown>
+
+// Event handlers  
+.on('click', (event: MouseEvent, d: DataType) => {})
+
+// Use .join() not .enter().append() (modern D3 pattern)
+selection.selectAll('circle').data(data).join('circle')
+
+// CRITICAL: Clear before recreate to avoid InteractionManager errors
+svg.selectAll('g.my-class').remove();
+const groups = svg.selectAll('g.my-class').data(data).join('g')
+```
+
+## Architecture Patterns
+- Compositional over inheritance
+- Method chaining with typed returns: `method(): this`
+- Builder pattern for configuration
+- Centralized error handling with meaningful messages
+- Resource cleanup (timers, listeners) in destroy methods
+
+## Code Quality
+- **DRY**: Extract common logic, single source of truth
+- **KISS**: Simplest solution that works
+- **YAGNI**: Don't build unused features
+- **Boy Scout**: Leave code cleaner
+- **Least Astonishment**: Predictable behavior
+
+## File Organization
+- `.ts` in `src/`, barrel exports in `index.ts`
+- ES modules only, explicit imports/exports
+- Small incremental changes
+- Test changes before commit
+
+## Performance & Memory
+- Cache expensive calculations
+- Minimize DOM manipulations
+- Clean up D3 resources (timers, simulations)
+- Type guards for better V8 optimization
+
+## Error Handling
+```typescript
+// Runtime validation
+function isValidData(obj: unknown): obj is DataType {
+  return typeof obj === 'object' && obj !== null && 'requiredProp' in obj;
+}
+
+// Try-catch with context
+try {
+  // operation
+} catch (error) {
+  throw new Error(`Operation failed: ${error.message}`);
+}
+```
+
+## Documentation
+- JSDoc for public APIs with `@param`, `@returns`
+- Interface properties documented
+- Usage examples for complex types
+
+## Anti-Patterns
+- `any` type without justification
+- `@ts-ignore` without detailed comments  
+- Mutating readonly data
+- Memory leaks (uncleaned timers/listeners)
+- Success claims without build verification
+- Breaking changes to public APIs
+- Premature optimization
+
+## Build Requirements
+- Must run `npm run build` after changes
+- Run appropriate tests: `npm run test:smoke` minimum
+- Verify generated `.d.ts` files exist
+- Test examples in TypeScript mode
+- Maintain backward compatibility
+
+## Testing Requirements
+- **Always run smoke tests** after any change: `npm run test:smoke`
+- **Unit tests** for core component changes: `npm run test:unit`  
+- **Integration tests** for API changes: `npm run test:integration`
+- **Browser tests** for visual/UI changes: `npm run test:browser`
+- **Never claim success** without running appropriate tests
+- **Document test failures** with specific error messages
+- **Use TESTING.md** for troubleshooting guidance
+
+ 

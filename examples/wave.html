@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bubble Chart - Wave Example</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    #chart-container {
+      width: 100%;
+      max-width: 800px;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Wave Bubble Chart</h1>
+  <div id="chart-container"></div>
+
+  <script>
+    const data = [
+      { "label": "Oxygen", "size": 80, "count": 80 },
+      { "label": "Nitrogen", "size": 50, "count": 50 },
+      { "label": "Carbon", "size": 95, "count": 95 },
+      { "label": "Hydrogen", "size": 30, "count": 30 },
+      { "label": "Helium", "size": 70, "count": 70 }
+    ];
+
+    const chart = new BubbleChart({
+      container: "#chart-container",
+      label: "label",
+      size: "size",
+      type: "wave",
+      percentage: (d) => d.count / 100
+    });
+
+    chart.data(data);
+    chart.render();
+  </script>
+
+</body>
+</html>

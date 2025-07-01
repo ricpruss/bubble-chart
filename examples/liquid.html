@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Liquid Bubble Chart</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <script src="js/companies.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    #liquid-container {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      margin: 2rem auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>Liquid Bubble Chart</h1>
+  <div id="liquid-container"></div>
+
+  <script>
+    // Use first three entries from the municipal sample for a tidy gauge demo
+    const sample = window.data.slice(0, 3);
+
+    const chart = new BubbleChart({
+      container: '#liquid-container',
+      label: 'label',
+      size: 'size',
+      type: 'liquid',
+      percentage: d => d.count / 100,
+      tooltip: d => [
+        { name: 'Value:', value: d3.format('.2s')(d.size) },
+        { name: 'Progress:', value: d.count + '%' }
+      ]
+    });
+
+    chart.data(sample);
+    chart.render();
+  </script>
+</body>
+</html>

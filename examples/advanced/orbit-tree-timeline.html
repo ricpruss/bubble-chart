@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Orbit Bubble Chart – Timeline</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <script src="../js/companies.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    #controls {
+      margin: 1rem auto;
+      max-width: 900px;
+      display: flex;
+      gap: 0.5rem;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .year-btn { border:1px solid #888; background:#f5f5f5; padding:0.25rem 0.75rem; border-radius:4px; cursor:pointer; user-select:none; }
+    .year-btn.active{background:#ff6384;color:#fff;border-color:#ff6384;}
+    .year-btn:hover{background:#eee;}
+    #orbit-container{width:100%;max-width:900px;height:600px;margin:auto;}
+  </style>
+</head>
+<body>
+  <h1>Orbit Bubble Chart – Timeline</h1>
+  <div id="controls"></div>
+  <div id="orbit-container"></div>
+
+  <script>
+    const allData = window.data; // flat municipal dataset
+    const years = Array.from(new Set(allData.map(d => d.year))).sort((a,b)=>a-b);
+    let currentYear = years[0];
+
+    const controls = d3.select('#controls');
+    controls.selectAll('button')
+      .data(years)
+      .enter()
+      .append('button')
+      .attr('class', d => 'year-btn' + (d===currentYear?' active':''))
+      .text(d=>d)
+      .on('click',(e,d)=>{ if(currentYear!==d){currentYear=d;controls.selectAll('button').classed('active',y=>y===currentYear);update();}});
+
+    const chart = new BubbleChart({
+      container:'#orbit-container',
+      label:'label',
+      size:'size',
+      type:'orbit'
+    });
+
+    function update(){
+      chart.data(allData.filter(d=>d.year===currentYear)).render();
+    }
+    update();
+  </script>
+</body>
+</html>

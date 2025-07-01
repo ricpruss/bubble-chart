@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bubble Chart - Gauge (Liquid) Example</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; }
+    #gauge-container {
+      width: 100%;
+      max-width: 600px;
+      height: 400px;
+      margin: auto;
+      border: 1px solid #eee;
+    }
+  </style>
+</head>
+<body>
+  <h1>Gauge / Liquid Bubble Chart</h1>
+  <div id="gauge-container"></div>
+
+  <script>
+    const data = [
+      { label: 'CPU', size: 100, count: 75 },
+      { label: 'Memory', size: 100, count: 55 },
+      { label: 'Disk', size: 100, count: 30 }
+    ];
+
+    const chart = new BubbleChart({
+      container: '#gauge-container',
+      label: 'label',
+      size: 'size',
+      type: 'liquid',
+      percentage: d => d.count / 100
+    });
+
+    chart.data(data);
+    chart.render();
+  </script>
+</body>
+</html>

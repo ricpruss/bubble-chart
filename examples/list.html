@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>List Bubble View</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <script src="js/economic-timeseries.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #list-container {
+      width: 100%;
+      max-width: 700px;
+      margin: 2rem auto;
+      border: 1px solid #eee;
+      background: #fafafa;
+      overflow-y: auto;
+      max-height: 80vh;
+    }
+    .status {
+      margin: 10px auto;
+      max-width: 700px;
+      padding: 10px;
+      border-radius: 4px;
+      background: #e7f3ff;
+      border: 1px solid #b3d9ff;
+    }
+  </style>
+</head>
+<body>
+  <h1>List Bubble View</h1>
+  <div class="status" id="status">Loading chart...</div>
+  <div id="list-container"></div>
+
+  <script>
+    try {
+      // Dataset provided as global `data` from JSON script
+      const chart = new BubbleChart({
+        container:'#list-container',
+        label:'name',
+        size:'value',
+        type:'list',
+        width: 700
+      });
+
+      chart.data(window.data);
+      chart.render();
+      
+      document.getElementById('status').innerHTML = '✅ Chart rendered successfully!';
+      document.getElementById('status').style.background = '#e7f6e7';
+      document.getElementById('status').style.borderColor = '#b3e5b3';
+
+    } catch (error) {
+      console.error('❌ Error creating list chart:', error);
+      document.getElementById('status').innerHTML = '❌ Error: ' + error.message;
+      document.getElementById('status').style.background = '#ffe6e6';
+      document.getElementById('status').style.borderColor = '#ffb3b3';
+    }
+  </script>
+</body>
+</html>
