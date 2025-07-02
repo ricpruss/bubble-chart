@@ -76,7 +76,8 @@ export class ReactiveBubbleBuilder<T extends BubbleChartData = BubbleChartData> 
       if (this.config.animation) {
         this.renderingPipeline.applyEntranceAnimation(bubbleElements, {
           duration: this.config.animation.speed || 800,
-          delay: 0
+          delay: 0,
+          staggerDelay: this.config.animation.staggerDelay || 0
         });
       }
     } catch (error) {

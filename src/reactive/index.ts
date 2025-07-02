@@ -53,4 +53,32 @@
 // New reactive API exports
 
 export { DataStore, type ChangeStats } from './store.js';
-export { createBubbleChart, type BubbleChart, type BubbleChartOptions } from './chart.js'; 
+export { 
+  createBubbleChart, 
+  BubbleChart,
+  BubbleChartBuilder,
+  type BubbleChart as IBubbleChart, 
+  type BubbleChartOptions 
+} from './chart.js';
+
+// Phase 2A: Core API Enhancement exports
+export { 
+  DataIntelligence, 
+  type DataIntelligenceInsights,
+  type DataFieldAnalysis,
+  type DataQualityIssue 
+} from './data-intelligence.js';
+
+export { 
+  AnimationPresets,
+  type AnimationConfig,
+  type AnimationPresetName 
+} from './animation-presets.js';
+
+export { 
+  SmartTooltips,
+  type TooltipConfig,
+  type TooltipMode,
+  type TooltipField,
+  type TooltipContent 
+} from './smart-tooltips.js'; 

@@ -41,9 +41,24 @@ export {
 export {
   DataStore,
   createBubbleChart,
-  type BubbleChart as ReactiveBubbleChart,
+  BubbleChart as ReactiveBubbleChart,
+  BubbleChartBuilder,
+  type IBubbleChart,
   type BubbleChartOptions as ReactiveBubbleChartOptions,
-  type ChangeStats
+  type ChangeStats,
+  // Phase 2A: Core API Enhancement exports
+  DataIntelligence,
+  type DataIntelligenceInsights,
+  type DataFieldAnalysis,
+  type DataQualityIssue,
+  AnimationPresets,
+  type AnimationConfig,
+  type AnimationPresetName,
+  SmartTooltips,
+  type TooltipConfig,
+  type TooltipMode,
+  type TooltipField,
+  type TooltipContent
 } from './reactive/index.js';
 
 

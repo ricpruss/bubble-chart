@@ -76,6 +76,8 @@ export interface AnimationConfig {
   speed: number;
   /** Animation method type */
   method: AnimationMethod;
+  /** Stagger delay between elements in milliseconds */
+  staggerDelay?: number;
 }
 
 /**

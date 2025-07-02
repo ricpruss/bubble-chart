@@ -84,6 +84,56 @@ export class DataStore<T extends BubbleChartData = BubbleChartData> {
     return stats;
   }
 
+  /** Remove multiple items by keys */
+  removeMany(keys: (string | number)[]): ChangeStats {
+    let exited = 0;
+    keys.forEach(key => {
+      if (this.items.has(key)) {
+        this.items.delete(key);
+        exited++;
+      }
+    });
+    const stats = this.stats({ exited });
+    if (exited) this.emit(stats);
+    return stats;
+  }
+
+  /** Replace all data with new dataset */
+  replaceWith(newData: T[]): ChangeStats {
+    const previousSize = this.items.size;
+    this.items.clear();
+    
+    let entered = 0;
+    newData.forEach((d, idx) => {
+      const key = this.keyFn(d, idx);
+      this.items.set(key, d);
+      entered++;
+    });
+
+    const stats = {
+      entered,
+      updated: 0,
+      exited: previousSize,
+      total: this.items.size
+    };
+    this.emit(stats);
+    return stats;
+  }
+
+  /** Update multiple items matching predicate */
+  updateWhere(predicate: (d: T) => boolean, patch: Partial<T>): ChangeStats {
+    let updated = 0;
+    [...this.items.entries()].forEach(([k, v]) => {
+      if (predicate(v)) {
+        this.items.set(k, { ...v, ...patch });
+        updated++;
+      }
+    });
+    const stats = this.stats({ updated });
+    if (updated) this.emit(stats);
+    return stats;
+  }
+
   /** Clear all */
   clear(): ChangeStats {
     const exited = this.items.size;
@@ -106,6 +156,29 @@ export class DataStore<T extends BubbleChartData = BubbleChartData> {
   /** Keys snapshot */
   keys(): readonly (string | number)[] {
     return [...this.items.keys()];
+  }
+
+  /** Query operations */
+  filter(predicate: (d: T) => boolean): readonly T[] {
+    return this.data().filter(predicate);
+  }
+
+  find(predicate: (d: T) => boolean): T | undefined {
+    return this.data().find(predicate);
+  }
+
+  where(predicate: (d: T) => boolean): readonly T[] {
+    return this.filter(predicate);
+  }
+
+  /** Check if item exists */
+  has(key: string | number): boolean {
+    return this.items.has(key);
+  }
+
+  /** Get item by key */
+  get(key: string | number): T | undefined {
+    return this.items.get(key);
   }
 
   /** Event management */

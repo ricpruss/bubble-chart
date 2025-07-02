@@ -1,0 +1,450 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phase 2A Demo - Intelligent Reactive Bubble Charts</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <script src="../dist/bubble-chart.min.js"></script>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #333;
+            min-height: 100vh;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+        }
+        
+        h1 {
+            text-align: center;
+            color: #4a5568;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #718096;
+            margin-bottom: 30px;
+            font-size: 1.2em;
+        }
+        
+        .demo-section {
+            margin: 40px 0;
+            padding: 20px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            background: #f8fafc;
+        }
+        
+        .demo-title {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 15px;
+            border-bottom: 2px solid #4299e1;
+            padding-bottom: 5px;
+        }
+        
+        .chart-container {
+            height: 500px;
+            border: 1px solid #cbd5e0;
+            border-radius: 6px;
+            margin: 20px 0;
+            background: white;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: #4299e1;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        
+        button:hover {
+            background: #3182ce;
+        }
+        
+        button:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+        }
+        
+        .info-panel {
+            background: #edf2f7;
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 200px;
+            overflow-y: auto;
+        }
+        
+        .feature-highlight {
+            background: #bee3f8;
+            padding: 10px;
+            border-left: 4px solid #3182ce;
+            margin: 10px 0;
+        }
+        
+        .code-example {
+            background: #1a202c;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Phase 2A: Intelligent Reactive API</h1>
+        <p class="subtitle">Demonstrating intelligent defaults, data analysis, smart tooltips, and animation presets</p>
+        
+        <!-- Demo 1: Intelligent API -->
+        <div class="demo-section">
+            <h2 class="demo-title">1. Intelligent API with Auto-Detection</h2>
+            
+            <div class="feature-highlight">
+                <strong>✨ Intelligence Features:</strong>
+                <ul>
+                    <li>Automatic field detection for size, label, and color</li>
+                    <li>Data quality analysis with recommendations</li>
+                    <li>Smart animation presets based on data size</li>
+                    <li>Intelligent tooltip generation</li>
+                </ul>
+            </div>
+
+            <div class="code-example">
+// Simple intelligent usage - everything auto-detected!
+const chart = BubbleChart.create('#intelligent-chart')
+  .withData(companies)  // Auto-detects best fields
+  .setAnimations('gentle')  // Predefined animation preset
+  .render();
+
+// Data intelligence insights
+const insights = chart.inspectData();
+console.log('Suggested size field:', insights.suggested.size);
+console.log('Data quality score:', insights.quality.score);
+            </div>
+            
+            <div id="intelligent-chart" class="chart-container"></div>
+            
+            <div class="controls">
+                <button onclick="analyzeData()">🔍 Analyze Data</button>
+                <button onclick="clearAndAnimate('gentle')">🕊️ Clear + Gentle Animation</button>
+                <button onclick="clearAndAnimate('energetic')">⚡ Clear + Energetic Animation</button>
+                <button onclick="clearAndAnimate('minimal')">📏 Clear + Minimal Animation</button>
+                <button onclick="clearChart()">🗑️ Clear All</button>
+                <button onclick="switchSizeMetric('Revenue')">💰 Size by Revenue</button>
+                <button onclick="switchSizeMetric('MarketCap')">📈 Size by Market Cap</button>
+                <button onclick="switchSizeMetric('Employees')">👥 Size by Employees</button>
+            </div>
+            
+            <div id="analysis-results" class="info-panel" style="display: none;"></div>
+        </div>
+
+        <!-- Demo 2: Enhanced Store Operations -->
+        <div class="demo-section">
+            <h2 class="demo-title">2. Enhanced Store Operations</h2>
+            
+            <div class="feature-highlight">
+                <strong>🛠️ Store Features:</strong>
+                <ul>
+                    <li>Bulk operations: addMany, removeMany, replaceWith, updateWhere</li>
+                    <li>Query operations: filter, find, where</li>
+                    <li>Reactive updates with automatic re-rendering</li>
+                </ul>
+            </div>
+
+            <div class="code-example">
+// Enhanced store operations
+chart.store.addMany(newCompanies);
+chart.store.removeMany(['comp1', 'comp2']);
+chart.store.updateWhere(d => d.sector === 'Tech', { highlighted: true });
+
+// Query operations
+const techCompanies = chart.store.filter(d => d.sector === 'Technology');
+const topCompany = chart.store.find(d => d.rank === 1);
+            </div>
+            
+            <div id="store-demo-chart" class="chart-container"></div>
+            
+            <div class="controls">
+                <button onclick="addRandomCompanies()">➕ Add Random Companies</button>
+                <button onclick="removeSmallCompanies()">➖ Remove Small Companies</button>
+                <button onclick="highlightTechSector()">🔍 Enlarge Tech Sector</button>
+                <button onclick="resetStore()">🔄 Reset Data</button>
+                <button onclick="showStoreStats()">📊 Store Statistics</button>
+            </div>
+            
+            <div id="store-info" class="info-panel"></div>
+        </div>
+
+
+    </div>
+
+    <script>
+        // Extended company data for enhanced store operations demo
+        const sampleCompanies = [
+            // Technology Sector (10 companies)
+            { Company: 'Apple', Sector: 'Technology', Revenue: 365817, MarketCap: 2800000, Employees: 154000, CEO: 'Tim Cook' },
+            { Company: 'Microsoft', Sector: 'Technology', Revenue: 168088, MarketCap: 2400000, Employees: 181000, CEO: 'Satya Nadella' },
+            { Company: 'Google', Sector: 'Technology', Revenue: 256739, MarketCap: 1600000, Employees: 139995, CEO: 'Sundar Pichai' },
+            { Company: 'Meta', Sector: 'Technology', Revenue: 116609, MarketCap: 700000, Employees: 66185, CEO: 'Mark Zuckerberg' },
+            { Company: 'Nvidia', Sector: 'Technology', Revenue: 60922, MarketCap: 1000000, Employees: 22473, CEO: 'Jensen Huang' },
+            { Company: 'Netflix', Sector: 'Technology', Revenue: 29698, MarketCap: 180000, Employees: 11300, CEO: 'Reed Hastings' },
+            { Company: 'Salesforce', Sector: 'Technology', Revenue: 26492, MarketCap: 160000, Employees: 73541, CEO: 'Marc Benioff' },
+            { Company: 'Oracle', Sector: 'Technology', Revenue: 42440, MarketCap: 200000, Employees: 143000, CEO: 'Safra Catz' },
+            { Company: 'Adobe', Sector: 'Technology', Revenue: 15785, MarketCap: 220000, Employees: 24788, CEO: 'Shantanu Narayen' },
+            { Company: 'Intel', Sector: 'Technology', Revenue: 79024, MarketCap: 150000, Employees: 121100, CEO: 'Pat Gelsinger' },
+            
+            // Finance Sector (8 companies)
+            { Company: 'JPMorgan', Sector: 'Finance', Revenue: 119543, MarketCap: 450000, Employees: 271025, CEO: 'Jamie Dimon' },
+            { Company: 'Visa', Sector: 'Finance', Revenue: 24105, MarketCap: 500000, Employees: 20500, CEO: 'Ryan McInerney' },
+            { Company: 'Bank of America', Sector: 'Finance', Revenue: 89113, MarketCap: 250000, Employees: 216823, CEO: 'Brian Moynihan' },
+            { Company: 'Wells Fargo', Sector: 'Finance', Revenue: 73784, MarketCap: 180000, Employees: 238698, CEO: 'Charlie Scharf' },
+            { Company: 'Goldman Sachs', Sector: 'Finance', Revenue: 44565, MarketCap: 110000, Employees: 45000, CEO: 'David Solomon' },
+            { Company: 'Morgan Stanley', Sector: 'Finance', Revenue: 48828, MarketCap: 140000, Employees: 60000, CEO: 'James Gorman' },
+            { Company: 'American Express', Sector: 'Finance', Revenue: 43665, MarketCap: 120000, Employees: 64000, CEO: 'Stephen Squeri' },
+            { Company: 'Mastercard', Sector: 'Finance', Revenue: 18884, MarketCap: 350000, Employees: 24000, CEO: 'Michael Miebach' },
+            
+            // Retail/E-commerce Sector (7 companies)
+            { Company: 'Amazon', Sector: 'E-commerce', Revenue: 469822, MarketCap: 1200000, Employees: 1468000, CEO: 'Andy Jassy' },
+            { Company: 'Walmart', Sector: 'Retail', Revenue: 559151, MarketCap: 400000, Employees: 2300000, CEO: 'Doug McMillon' },
+            { Company: 'Costco', Sector: 'Retail', Revenue: 192052, MarketCap: 220000, Employees: 288000, CEO: 'Craig Jelinek' },
+            { Company: 'Home Depot', Sector: 'Retail', Revenue: 132110, MarketCap: 320000, Employees: 490600, CEO: 'Ted Decker' },
+            { Company: 'Target', Sector: 'Retail', Revenue: 93561, MarketCap: 65000, Employees: 440000, CEO: 'Brian Cornell' },
+            { Company: 'Nike', Sector: 'Retail', Revenue: 44538, MarketCap: 180000, Employees: 75400, CEO: 'John Donahoe' },
+            { Company: 'Starbucks', Sector: 'Retail', Revenue: 29061, MarketCap: 100000, Employees: 383000, CEO: 'Laxman Narasimhan' },
+            
+            // Automotive/Energy Sector (3 companies)
+            { Company: 'Tesla', Sector: 'Automotive', Revenue: 81462, MarketCap: 800000, Employees: 99290, CEO: 'Elon Musk' },
+            { Company: 'ExxonMobil', Sector: 'Energy', Revenue: 413680, MarketCap: 460000, Employees: 62000, CEO: 'Darren Woods' },
+            { Company: 'Chevron', Sector: 'Energy', Revenue: 200494, MarketCap: 280000, Employees: 47600, CEO: 'Mike Wirth' },
+            
+            // Healthcare Sector (2 companies) 
+            { Company: 'Johnson & Johnson', Sector: 'Healthcare', Revenue: 94943, MarketCap: 420000, Employees: 144500, CEO: 'Joaquin Duato' },
+            { Company: 'Pfizer', Sector: 'Healthcare', Revenue: 100330, MarketCap: 200000, Employees: 83000, CEO: 'Albert Bourla' }
+        ];
+
+        let intelligentChart, storeChart;
+
+        // Initialize all demos
+        window.addEventListener('load', function() {
+            initIntelligentDemo();
+            initStoreDemo();
+        });
+
+        // Demo 1: Intelligent API
+        function initIntelligentDemo() {
+            intelligentChart = window.BubbleChart.create('#intelligent-chart')
+                .withData(sampleCompanies)
+                .render();
+        }
+
+        function analyzeData() {
+            const insights = intelligentChart.inspectData();
+            const results = document.getElementById('analysis-results');
+            results.style.display = 'block';
+            results.innerHTML = `
+                <h4>🔍 Data Intelligence Analysis</h4>
+                <strong>Suggested Configuration:</strong><br>
+                • Size Field: ${insights.suggested.size || 'None detected'}<br>
+                • Label Field: ${insights.suggested.label || 'None detected'}<br>
+                • Color Field: ${insights.suggested.color || 'None detected'}<br><br>
+                
+                <strong>Data Quality Score:</strong> ${insights.quality.score}/100<br><br>
+                
+                <strong>Field Types:</strong><br>
+                • Numeric: ${insights.fields.numeric.join(', ')}<br>
+                • Categorical: ${insights.fields.categorical.join(', ')}<br>
+                • Text: ${insights.fields.text.join(', ')}<br><br>
+                
+                <strong>Quality Issues:</strong><br>
+                ${insights.quality.issues.map(issue => `• ${issue.message}`).join('<br>')}
+            `;
+        }
+
+        function switchAnimation(preset) {
+            intelligentChart.setAnimations(preset);
+            // Trigger a small data update to see the animation
+            setTimeout(() => {
+                const data = intelligentChart.store.data();
+                intelligentChart.store.updateWhere(d => d.Company === 'Apple', { 
+                    Revenue: data.find(d => d.Company === 'Apple').Revenue + Math.random() * 1000 
+                });
+            }, 100);
+        }
+
+        function switchSizeMetric(field) {
+            intelligentChart.setSizeMetric(field);
+        }
+
+        function clearChart() {
+            // Clear all data from the intelligent chart
+            intelligentChart.store.replaceWith([]);
+        }
+
+        function clearAndAnimate(preset) {
+            // Set the animation preset first
+            intelligentChart.setAnimations(preset);
+            
+            // Clear the chart
+            clearChart();
+            
+            // Wait a moment for the clear to complete, then add data back
+            setTimeout(() => {
+                intelligentChart.store.addMany(sampleCompanies);
+            }, 200);
+        }
+
+        // Demo 2: Store Operations
+        function initStoreDemo() {
+            storeChart = window.BubbleChart.create('#store-demo-chart')
+                .withData(sampleCompanies) // Use all 30 companies
+                .setAnimations('smooth')
+                .render();
+            updateStoreInfo();
+        }
+
+        function addRandomCompanies() {
+            const sectors = ['Technology', 'Finance', 'Retail', 'Healthcare', 'Energy'];
+            const newCompanies = [];
+            
+            // Add 3-5 random companies
+            const count = Math.floor(Math.random() * 3) + 3;
+            for (let i = 0; i < count; i++) {
+                const timestamp = Date.now() + i;
+                newCompanies.push({
+                    Company: `Startup-${timestamp}`,
+                    Sector: sectors[Math.floor(Math.random() * sectors.length)],
+                    Revenue: Math.random() * 25000 + 5000, // $5B - $30B revenue
+                    MarketCap: Math.random() * 50000 + 10000, // $10B - $60B market cap
+                    Employees: Math.floor(Math.random() * 5000) + 1000, // 1K - 6K employees
+                    CEO: `CEO ${i + 1}`
+                });
+            }
+            
+            storeChart.store.addMany(newCompanies);
+            updateStoreInfo();
+            
+            // Show feedback
+            setTimeout(() => {
+                const info = document.getElementById('store-info');
+                info.innerHTML += `<br><strong style="color: #38a169;">➕ Added ${count} new companies</strong>`;
+            }, 100);
+        }
+
+        function removeSmallCompanies() {
+            // Remove companies with revenue less than $50B (will remove about 10-15 companies)
+            const toRemove = storeChart.store.filter(d => d.Revenue < 50000);
+            const keys = toRemove.map((d, i) => storeChart.store.keys()[storeChart.store.data().indexOf(d)]);
+            storeChart.store.removeMany(keys.filter(k => k !== undefined));
+            updateStoreInfo();
+            
+            // Show feedback
+            setTimeout(() => {
+                const info = document.getElementById('store-info');
+                info.innerHTML += `<br><strong style="color: #e53e3e;">🗑️ Removed ${toRemove.length} companies with revenue < $50B</strong>`;
+            }, 100);
+        }
+
+        function highlightTechSector() {
+            // First, remove any existing highlights
+            storeChart.store.updateWhere(() => true, { highlighted: false });
+            
+            // Then highlight tech companies by modifying their revenue to make them larger
+            const data = storeChart.store.data();
+            const techCompanies = data.filter(d => d.Sector === 'Technology');
+            
+            techCompanies.forEach(company => {
+                storeChart.store.updateWhere(
+                    d => d.Company === company.Company, 
+                    { 
+                        highlighted: true,
+                        Revenue: company.Revenue * 1.3  // Make tech companies 30% larger
+                    }
+                );
+            });
+            
+            updateStoreInfo();
+            
+            // Show feedback
+            setTimeout(() => {
+                const info = document.getElementById('store-info');
+                info.innerHTML += `<br><strong style="color: #4299e1;">🔍 Tech companies highlighted (enlarged by 30%)</strong>`;
+            }, 100);
+        }
+
+        function resetStore() {
+            storeChart.store.replaceWith(sampleCompanies); // Reset to all 30 companies
+            updateStoreInfo();
+            
+            // Clear any highlight feedback messages
+            setTimeout(() => {
+                const info = document.getElementById('store-info');
+                const data = storeChart.store.data();
+                info.innerHTML = `
+                    <strong>Store Contents:</strong> ${data.length} companies<br>
+                    <strong>Sectors:</strong> ${[...new Set(data.map(d => d.Sector))].join(', ')}<br>
+                    <strong>Sample Companies:</strong> ${data.slice(0, 8).map(d => d.Company).join(', ')}${data.length > 8 ? '...' : ''}
+                `;
+            }, 100);
+        }
+
+        function showStoreStats() {
+            const data = storeChart.store.data();
+            const techCompanies = storeChart.store.filter(d => d.Sector === 'Technology');
+            const topCompany = storeChart.store.find(d => d.Revenue === Math.max(...data.map(d => d.Revenue)));
+            
+            alert(`Store Statistics:
+Total Companies: ${data.length}
+Tech Companies: ${techCompanies.length}
+Highest Revenue: ${topCompany ? topCompany.Company : 'None'}`);
+        }
+
+        function updateStoreInfo() {
+            const info = document.getElementById('store-info');
+            const data = storeChart.store.data();
+            const sectors = [...new Set(data.map(d => d.Sector))];
+            const sectorCounts = sectors.map(sector => 
+                `${sector}: ${data.filter(d => d.Sector === sector).length}`
+            );
+            
+            info.innerHTML = `
+                <strong>Store Contents:</strong> ${data.length} companies<br>
+                <strong>Sector Breakdown:</strong> ${sectorCounts.join(', ')}<br>
+                <strong>Sample Companies:</strong> ${data.slice(0, 8).map(d => d.Company).join(', ')}${data.length > 8 ? '...' : ''}
+            `;
+        }
+
+
+    </script>
+</body>
+</html> 

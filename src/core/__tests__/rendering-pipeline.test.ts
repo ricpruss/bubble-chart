@@ -63,10 +63,12 @@ const testData: TestData[] = [
   { name: 'Google', value: 85, sector: 'Technology', category: 'Tech', label: 'Google', size: 85 }
 ];
 
-const createProcessedDataPoint = (data: TestData): ProcessedDataPoint<TestData> => ({
+const createProcessedDataPoint = (data: TestData, config?: { colorField?: string }): ProcessedDataPoint<TestData> => ({
   data,
   label: data.name,
-  size: data.value
+  size: data.value,
+  // Simulate what DataProcessor would do - extract color based on config
+  color: config?.colorField ? (data as any)[config.colorField] : data.sector
 });
 
 const createLayoutNode = (data: TestData, index: number): LayoutNode => ({
@@ -179,8 +181,16 @@ describe('RenderingPipeline', () => {
          (mockScale as any).domain = jest.fn().mockReturnThis();
          (mockScale as any).range = jest.fn().mockReturnThis();
          mockContext.config.color = mockScale as any;
+         mockContext.config.colour = 'sector'; // Set the color field so DataProcessor knows what to extract
 
-         const layoutNode = createLayoutNode(testData[0]!, 0);
+         // Create layout node with processed data that includes color field
+         const processedData = createProcessedDataPoint(testData[0]!, { colorField: 'sector' });
+         const layoutNode: LayoutNode = {
+           x: 100,
+           y: 100,
+           r: 20,
+           data: processedData
+         };
          
          const result = (pipeline as any).getCircleColor(layoutNode, 0);
 
@@ -194,10 +204,17 @@ describe('RenderingPipeline', () => {
          (mockScale as any).domain = jest.fn().mockReturnThis();
          (mockScale as any).range = jest.fn().mockReturnThis();
          mockContext.config.color = mockScale as any;
+         mockContext.config.colour = 'category'; // Set color field to category
 
-         // Test data without sector
+         // Test data without sector but with category
          const dataWithoutSector = { name: 'Test', value: 50, category: 'TestCat' } as any;
-         const layoutNode = createLayoutNode(dataWithoutSector, 0);
+         const processedData = createProcessedDataPoint(dataWithoutSector, { colorField: 'category' });
+         const layoutNode: LayoutNode = {
+           x: 100,
+           y: 100,
+           r: 20,
+           data: processedData
+         };
          
          const result = (pipeline as any).getCircleColor(layoutNode, 0);
 

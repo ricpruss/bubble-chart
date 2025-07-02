@@ -189,16 +189,16 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
    */
   applyEntranceAnimation(
     elements: BubbleElements,
-    animationConfig: { duration?: number; delay?: number } = {}
+    animationConfig: { duration?: number; delay?: number; staggerDelay?: number } = {}
   ): void {
-    const { duration = 800, delay = 0 } = animationConfig;
+    const { duration = 800, delay = 0, staggerDelay = 0 } = animationConfig;
 
     // Animate circles
     elements.circles
       .attr('r', 0)
       .style('opacity', 0)
       .transition()
-      .delay((_d: any, i: number) => delay + i * 50)
+      .delay((_d: any, i: number) => delay + i * staggerDelay)
       .duration(duration)
       .attr('r', (d: LayoutNode) => d.r)
       .style('opacity', 0.8);
@@ -207,7 +207,7 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     elements.labels
       .style('opacity', 0)
       .transition()
-      .delay((_d: any, i: number) => delay + i * 50 + 200)
+      .delay((_d: any, i: number) => delay + i * staggerDelay + (staggerDelay > 0 ? 200 : 0))
       .duration(duration / 2)
       .style('opacity', 1);
   }
@@ -417,29 +417,28 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     const { config } = this.context;
 
     if (config.color) {
-      // Extract the original data object from the ProcessedDataPoint
-      // layoutNode.data is a ProcessedDataPoint, so layoutNode.data.data is the original data
-      const originalData = layoutNode.data?.data;
+      // Get the processed data point which contains the extracted color value
+      const processedData = layoutNode.data;
       
       // Check if this is a D3 scale (has domain/range methods)
       if (typeof config.color === 'function' && 
           ('domain' in config.color || 'range' in config.color)) {
-        // D3 scale - pass a string key (fallback to index if no suitable property)
-        const colorKey = originalData?.sector || originalData?.category || index.toString();
+        // D3 scale - use the processed color value or fallback to index
+        const colorKey = processedData?.color || index.toString();
         return (config.color as any)(colorKey);
       } else if (typeof config.color === 'function') {
         // Custom color function
         const colorFunction = config.color as any;
         if (colorFunction.length > 1) {
-          // Multi-parameter function - pass (originalData, index)
-          return colorFunction(originalData, index);
+          // Multi-parameter function - pass (processedData, index)
+          return colorFunction(processedData?.data, index);
         } else {
-          // Single-parameter function - pass the full original data object
-          return colorFunction(originalData);
+          // Single-parameter function - pass the original data object
+          return colorFunction(processedData?.data);
         }
       } else {
         // Fallback - treat as scale
-        const colorKey = originalData?.sector || originalData?.category || index.toString();
+        const colorKey = processedData?.color || index.toString();
         return (config.color as any)(colorKey);
       }
     }
