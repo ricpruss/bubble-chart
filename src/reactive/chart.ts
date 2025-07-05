@@ -170,6 +170,12 @@ class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> implements 
           
           // Perform streaming update with animation presets (no builder render)
           renderingPipeline.streamingUpdate(processedData, streamingOptions);
+          
+          // Re-attach events to all bubbles (including newly added ones)
+          // Use a small delay to ensure DOM has been updated
+          setTimeout(() => {
+            this.reattachEventsToExistingBubbles();
+          }, 10);
         } catch (error) {
           // Fallback: Use builder render with rich animation config
           console.warn('Streaming update failed, falling back to builder render:', error);

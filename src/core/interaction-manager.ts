@@ -86,12 +86,13 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
    */
   private createEventHandler(
     eventType: keyof BubbleEventHandlers<T>,
-    data: ProcessedDataPoint<T>[]
-  ): (event: MouseEvent, d: any, i: number) => void {
+    _data: ProcessedDataPoint<T>[]
+  ): (event: MouseEvent, d: any, _i: number) => void {
     const handler = this.eventHandlers[eventType] as DataEventHandler<T>;
     
-    return (event: MouseEvent, d: any, i: number) => {
+    return (event: MouseEvent, d: any, _i: number) => {
       // Extract original data item from LayoutNode -> ProcessedDataPoint -> original data
+      // ALWAYS use the D3-bound data (d parameter) since it's correctly sorted by layout
       let dataItem: T;
       
       if (d && d.data && d.data.data) {
@@ -100,12 +101,10 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
       } else if (d && d.data) {
         // d.data might be the original data directly
         dataItem = d.data;
-      } else if (data[i] && data[i].data) {
-        // Use processed data array as fallback
-        dataItem = data[i].data;
       } else {
-        // Last resort: assume d is the original data
-        dataItem = d;
+        // Should not happen in normal operation - something is wrong with data binding
+        console.warn('No valid data found in event handler, skipping event');
+        return; // Skip event handling rather than using wrong data
       }
       
       const target = event.target as SVGElement;

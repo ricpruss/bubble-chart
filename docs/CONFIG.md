@@ -1,6 +1,6 @@
 # Bubble Chart Configuration
 
-Modern fluent API with intelligent defaults.
+Modern fluent API with intelligent defaults and reactive data handling.
 
 ## Quick Start
 
@@ -12,12 +12,15 @@ const chart = BubbleChart.create('#chart')
   .withData(companies)
   .render();
 
-// Enhanced: Override specific fields  
+// Enhanced: Override specific fields and add interactions
 const chart = BubbleChart.create('#chart')
   .withData(companies)
   .withSize('revenue')
+  .withColor('sector')
   .withAnimations('gentle')
-  .render();
+  .withDimensions(800, 600)
+  .render()
+  .onBubble('click', (data) => console.log(`Clicked: ${data.name}`));
 ```
 
 ## Fluent API Reference
@@ -95,20 +98,30 @@ const chart = BubbleChart.create('#chart')
   .render();
 ```
 
-### Streaming Data
+### Reactive Data Updates
 ```typescript
+// Enable streaming with custom key function
 const chart = BubbleChart.create('#chart')
   .withData(initialData)
   .withStreaming({
-    enterAnimation: { duration: 1000, stagger: 100 },
-    keyFunction: d => d.id
-  })
-  .fromWebSocket({
-    url: 'ws://api.company.com/live-data',
-    reconnect: true,
-    transform: response => response.companies
+    keyFunction: d => d.id,  // Custom identity function
+    enterAnimation: { duration: 1000, stagger: 100, easing: 'ease-out' },
+    updateAnimation: { duration: 800, easing: 'ease-in-out' },
+    exitAnimation: { duration: 600, easing: 'ease-in' }
   })
   .render();
+
+// Dynamic data manipulation via reactive store
+chart.store.add(newCompany);              // Add single item
+chart.store.addMany([company1, company2]); // Add multiple items
+chart.store.update('AAPL', { revenue: 400000 }); // Update by key
+chart.store.remove('MSFT');               // Remove by key
+chart.store.clear();                      // Clear all data
+
+// Listen to data changes
+chart.on('change', (stats) => {
+  console.log(`Added: ${stats.entered}, Updated: ${stats.updated}, Removed: ${stats.exited}`);
+});
 ```
 
 ### Time-Series Animation
@@ -143,19 +156,24 @@ const liquidChart = BubbleChart.create('#liquid-chart')
 After creating a chart, use these methods for dynamic updates:
 
 ```typescript
-// Data manipulation
-chart.store.add(newCompany);
-chart.store.remove(d => d.id === 'AAPL');
-chart.store.updateWhere(d => d.sector === 'Tech', { color: 'blue' });
+// Reactive Store Operations (Recommended)
+chart.store.add(newCompany);                    // Add single item with animation
+chart.store.addMany([company1, company2]);      // Batch add multiple items
+chart.store.update('AAPL', { revenue: 400000 }); // Update by key
+chart.store.remove('MSFT');                     // Remove by key
+chart.store.clear();                            // Clear all data
+chart.store.data();                             // Get current data array
+chart.store.keys();                             // Get all keys
 
-// Configuration changes
-chart.setSize('employees');                // Switch size metric
-chart.setAnimations('energetic');          // Change animation style
-chart.setTooltips(['name', 'revenue']);    // Update tooltips
+// Chart Configuration Updates
+chart.setSizeMetric('employees');               // Switch size field
+chart.setAnimations('energetic');               // Change animation preset
+chart.setTooltip(['name', 'revenue']);          // Update tooltip fields
+chart.updateOptions({ width: 1200 });           // Direct config update
+chart.redraw();                                  // Force re-render
 
-// Advanced
-chart.updateOptions({ width: 1200 });     // Direct config update
-chart.redraw();                            // Force re-render
+// Chart Lifecycle
+chart.destroy();                                 // Clean up and remove chart
 ```
 
 ## Data Intelligence
@@ -385,6 +403,114 @@ document.getElementById('add-company').onclick = () => {
 };
 ```
 
+## Testing and Debugging
+
+The library includes comprehensive automated tests that demonstrate proper usage:
+
+### Automated Test Examples
+
+```typescript
+// Basic rendering test
+const chart = BubbleChart.create('#chart')
+  .withLabel('name')
+  .withSize('value')
+  .withDimensions(600, 400)
+  .withColor(d3.scaleOrdinal(d3.schemeCategory10))
+  .withData(testData)
+  .render();
+
+// Verify rendering
+setTimeout(() => {
+  const circles = document.querySelectorAll('#chart circle');
+  console.log(`Rendered ${circles.length} bubbles`);
+  
+  circles.forEach((circle, i) => {
+    const r = circle.getAttribute('r');
+    const opacity = getComputedStyle(circle).opacity;
+    console.log(`Bubble ${i}: radius=${r}, opacity=${opacity}`);
+  });
+}, 1000);
+```
+
+### Data Update Testing
+
+```typescript
+// Test reactive store updates
+const chart = BubbleChart.create('#chart')
+  .withData(initialData)
+  .withStreaming({
+    keyFunction: d => d.id,
+    enterAnimation: { duration: 800, stagger: 50 }
+  })
+  .render();
+
+// Test data manipulation
+chart.store.clear();
+chart.store.addMany(newData);
+
+// Verify update
+setTimeout(() => {
+  const circles = document.querySelectorAll('#chart circle');
+  console.log(`After update: ${circles.length} circles`);
+}, 1200);
+```
+
+### Event Testing
+
+```typescript
+// Test event handling
+const chart = BubbleChart.create('#chart')
+  .withData(testData)
+  .render()
+  .onBubble('click', (data, event, element) => {
+    console.log(`Clicked: ${data.name} at (${event.clientX}, ${event.clientY})`);
+    console.log(`Element radius: ${element.getAttribute('r')}`);
+  })
+  .onBubble('mouseover', (data, event, element) => {
+    element.style.opacity = '0.7';
+    console.log(`Hovering: ${data.name}`);
+  })
+  .onBubble('mouseout', (data, event, element) => {
+    element.style.opacity = '1.0';
+    console.log(`Left: ${data.name}`);
+  });
+
+// Programmatically trigger events for testing
+const firstBubble = document.querySelector('#chart circle');
+const clickEvent = new MouseEvent('click', {
+  bubbles: true,
+  clientX: 100,
+  clientY: 100
+});
+firstBubble.dispatchEvent(clickEvent);
+```
+
+### Animation Testing
+
+```typescript
+// Monitor D3 transitions for debugging
+let transitionCount = 0;
+const originalTransition = d3.selection.prototype.transition;
+d3.selection.prototype.transition = function() {
+  transitionCount++;
+  console.log(`D3 Transition #${transitionCount} with ${this.size()} elements`);
+  return originalTransition.apply(this, arguments);
+};
+
+// Create chart with animation monitoring
+const chart = BubbleChart.create('#chart')
+  .withData(testData)
+  .withAnimations({
+    enter: { duration: 800, stagger: 50, easing: 'ease-out' },
+    update: { duration: 600, easing: 'ease-in-out' },
+    exit: { duration: 400, easing: 'ease-in' }
+  })
+  .render();
+
+console.log(`Chart configuration:`, chart.options());
+console.log(`Total transitions called: ${transitionCount}`);
+```
+
 ---
 
-*The fluent API prioritizes intelligent defaults while maintaining full flexibility for advanced use cases.* 
+*The fluent API prioritizes intelligent defaults while maintaining full flexibility for advanced use cases.*

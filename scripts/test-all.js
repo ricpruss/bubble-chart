@@ -22,10 +22,9 @@ function extractCounts(output) {
   }
 
   // Integration script summary lines
-  const integPassed = output.match(/Passed:\s+(\d+)/);
-  const integTotal = output.match(/Total Tests:\s+(\d+)/);
-  if (integPassed && integTotal) {
-    return { passed: Number(integPassed[1]), total: Number(integTotal[1]) };
+  const integMatch = output.match(/Results:\s+(\d+)\/(\d+) passed/);
+  if (integMatch) {
+    return { passed: Number(integMatch[1]), total: Number(integMatch[2]) };
   }
 
   return null;

@@ -53,8 +53,8 @@ function test(name, testFn) {
 }
 
 async function runSmokeTests() {
-  console.log('🚀 Bubble Chart Smoke Test');
-  console.log('====================================\n');
+  console.log('Bubble Chart - Smoke Tests');
+  console.log('=============================');
 
   try {
     // Import from built bundle
@@ -69,7 +69,7 @@ async function runSmokeTests() {
     container.id = 'chart';
     document.body.appendChild(container);
 
-    // Test BubbleBuilder
+    // Test BubbleBuilder (low-level API)
     test('BubbleBuilder instantiation', () => {
       const builder = new BubbleBuilder(config);
       if (!builder) throw new Error('BubbleBuilder not created');
@@ -111,11 +111,14 @@ async function runSmokeTests() {
       // If we get here without error, cleanup worked
     });
 
-    // Test main BubbleChart API
-    test('BubbleChart compatibility', () => {
-      const chart = new BubbleChart({ ...config, container: '#chart' });
-      const result = chart.data(testData).render();
-      if (result !== chart) throw new Error('BubbleChart chaining failed');
+    // Test modern fluent API (main user-facing API)
+    test('BubbleChart fluent API', () => {
+      const chart = BubbleChart.create('#chart')
+        .withData(testData)
+        .withLabel('name')
+        .withSize('value')
+        .render();
+      if (!chart) throw new Error('BubbleChart fluent API failed');
     });
 
   } catch (error) {
@@ -124,18 +127,14 @@ async function runSmokeTests() {
   }
 
   // Results
-  console.log('\n====================================');
-  console.log(`📊 Results: ${passedTests}/${testCount} tests passed`);
+  console.log('=============================');
+  console.log(`Results: ${passedTests}/${testCount} tests passed`);
   
   if (passedTests === testCount) {
-    console.log('🎉 All smoke tests passed! Library is working correctly.\n');
-    console.log('Next steps:');
-    console.log('  • Run integration tests: npm run test:integration');
-    console.log('  • Run browser tests: npm run dev → navigate to tests/browser-test.html');
-    console.log('  • Run all tests: npm run test:all');
+    console.log('All smoke tests passed.');
     return true;
   } else {
-    console.log(`❌ ${testCount - passedTests} tests failed`);
+    console.log(`${testCount - passedTests} tests failed`);
     return false;
   }
 }

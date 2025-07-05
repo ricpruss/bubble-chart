@@ -516,20 +516,25 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
    */
   private extractLabel(
     layoutNode: LayoutNode, 
-    index: number, 
-    data: ProcessedDataPoint<T>[]
+    _index: number, 
+    _data: ProcessedDataPoint<T>[]
   ): string {
     const { config } = this.context;
 
-    // Use processed data label if available
-    if (data[index]?.label) {
-      return data[index].label;
+    // Use the processed data from the layout node (correct data)
+    const processedData = layoutNode.data;
+    if (processedData?.label) {
+      return processedData.label;
     }
 
-    // Fall back to raw data extraction
-    const nodeData = layoutNode.data;
-    if (typeof config.label === 'string') {
-      return String(nodeData[config.label] || 'Unknown');
+    // Fall back to raw data extraction from the node
+    if (processedData?.data && typeof config.label === 'string') {
+      return String(processedData.data[config.label] || 'Unknown');
+    }
+
+    // Last resort fallback
+    if (typeof config.label === 'string' && processedData) {
+      return String(processedData[config.label] || 'Unknown');
     }
 
     return 'Unknown';

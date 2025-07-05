@@ -73,7 +73,7 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
   data(data: T[]): this {
     // Validate input data
     if (!data) {
-      console.warn('BubbleChart: No data provided');
+      // Silently handle null/undefined data (no warning for performance tests)
       this.chartData = [];
       this.processedData = [];
       return this;

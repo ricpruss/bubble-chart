@@ -92,48 +92,36 @@ class TestRunner {
   }
 
   log(message, type = 'info') {
-    const timestamp = new Date().toISOString();
-    const prefix = type === 'error' ? '❌' : type === 'success' ? '✅' : 'ℹ️';
-    console.log(`[${timestamp}] ${prefix} ${message}`);
+    const prefix = type === 'error' ? 'FAIL' : type === 'success' ? 'PASS' : 'INFO';
+    console.log(`${prefix}: ${message}`);
   }
 
   addTest(name, passed, details = '') {
     this.totalTests++;
     if (passed) {
       this.passedTests++;
-      this.log(`PASS: ${name} - ${details}`, 'info');
+      console.log(`PASS: ${name} - ${details}`);
     } else {
       this.failedTests.push({ name, details });
-      this.log(`FAIL: ${name} - ${details}`, 'error');
+      console.log(`FAIL: ${name} - ${details}`);
     }
   }
 
   async runAllTests() {
-    this.log('Starting BubbleBuilder integration tests...', 'info');
+    console.log('Integration Tests');
+    console.log('=================');
     
     try {
       // Import BubbleBuilder from built bundle
       const { BubbleBuilder } = await import('../dist/bubble-chart.esm.js');
       
-      // Test 1: Constructor and instantiation
+      // Run all test suites
       await this.testConstructors(BubbleBuilder);
-      
-      // Test 2: Configuration handling
       await this.testConfigurations(BubbleBuilder);
-      
-      // Test 3: Data processing
       await this.testDataProcessing(BubbleBuilder);
-      
-      // Test 4: Rendering pipeline
       await this.testRendering(BubbleBuilder);
-      
-      // Test 5: API methods and chaining
       await this.testAPIMethods(BubbleBuilder);
-      
-      // Test 6: Event handling
       await this.testEventHandling(BubbleBuilder);
-      
-      // Test 7: Error handling
       await this.testErrorHandling(BubbleBuilder);
       
     } catch (error) {
@@ -145,8 +133,6 @@ class TestRunner {
   }
 
   async testConstructors(BubbleBuilder) {
-    this.log('Testing constructors...', 'info');
-    
     try {
       configs.forEach((testCase, index) => {
         try {
@@ -164,7 +150,6 @@ class TestRunner {
   }
 
   async testConfigurations(BubbleBuilder) {
-    this.log('Testing configurations...', 'info');
     
     try {
       const testConfig = configs[0].config;
@@ -199,7 +184,6 @@ class TestRunner {
   }
 
   async testDataProcessing(BubbleBuilder) {
-    this.log('Testing data processing...', 'info');
     
     try {
       const testConfig = configs[0].config;
@@ -249,7 +233,6 @@ class TestRunner {
   }
 
   async testRendering(BubbleBuilder) {
-    this.log('Testing rendering...', 'info');
     
     try {
       // Create container for builder
@@ -302,7 +285,6 @@ class TestRunner {
   }
 
   async testAPIMethods(BubbleBuilder) {
-    this.log('Testing API methods...', 'info');
     
     try {
       const testConfig = configs[0].config;
@@ -348,7 +330,6 @@ class TestRunner {
   }
 
   async testEventHandling(BubbleBuilder) {
-    this.log('Testing event handling...', 'info');
     
     try {
       const testConfig = configs[0].config;
@@ -378,7 +359,6 @@ class TestRunner {
   }
 
   async testErrorHandling(BubbleBuilder) {
-    this.log('Testing error handling...', 'info');
     
     try {
       // Test invalid container - should throw error when render() is called
@@ -428,34 +408,25 @@ class TestRunner {
   }
 
   printSummary() {
-    console.log('\n==================================================');
-    console.log('TEST SUMMARY');
-    console.log('==================================================');
-    console.log(`Total Tests: ${this.totalTests}`);
-    console.log(`Passed: ${this.passedTests}`);
-    console.log(`Failed: ${this.failedTests.length}`);
-    console.log(`Pass Rate: ${((this.passedTests / this.totalTests) * 100).toFixed(1)}%`);
+    console.log('=================');
+    console.log(`Results: ${this.passedTests}/${this.totalTests} passed`);
     
     if (this.failedTests.length > 0) {
-      console.log('\n❌ FAILED TESTS:');
+      console.log('Failed tests:');
       this.failedTests.forEach(test => {
-        console.log(`   • ${test.name}: ${test.details}`);
+        console.log(`  - ${test.name}: ${test.details}`);
       });
-    }
-    
-    if (this.passedTests === this.totalTests) {
-      this.log('✅ ALL TESTS PASSED - BubbleBuilder is working correctly!', 'success');
     } else {
-      this.log(`❌ ${this.failedTests.length} tests failed`, 'error');
+      console.log('All integration tests passed.');
     }
-    console.log('==================================================\n');
   }
 }
 
 // Performance test
 async function runPerformanceTest() {
   try {
-    console.log('🚀 Running performance test...');
+    console.log('\nPerformance Test');
+    console.log('================');
     
     // Generate larger dataset for performance testing
     const performanceData = Array.from({ length: 100 }, (_, i) => ({
@@ -481,15 +452,14 @@ async function runPerformanceTest() {
     const end = performance.now();
     
     const time = end - start;
-    console.log(`📊 Performance Results (${performanceData.length} data points):`);
-    console.log(`   Execution Time: ${time.toFixed(2)}ms`);
+    console.log(`Execution time: ${time.toFixed(2)}ms (${performanceData.length} data points)`);
     
     if (time < 100) {
-      console.log('   🎯 Performance: Excellent');
+      console.log('Performance: Excellent');
     } else if (time < 200) {
-      console.log('   ✅ Performance: Good');
+      console.log('Performance: Good');
     } else {
-      console.log('   ⚠️  Performance: Needs optimization');
+      console.log('Performance: Needs optimization');
     }
     
   } catch (error) {

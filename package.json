@@ -1,7 +1,7 @@
 {
     "name": "bubble-chart",
     "version": "2.0.0",
-    "description": "Modern bubble chart library using D3.js",
+    "description": "Modern bubble chart library with intelligent defaults and fluent API using D3.js",
     "type": "module",
     "main": "dist/bubble-chart.js",
     "module": "dist/bubble-chart.esm.js",

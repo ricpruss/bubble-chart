@@ -11,7 +11,7 @@ npm install bubble-chart
 ## Quick Start
 
 ```typescript
-import { BubbleChart } from 'bubble-chart';
+import BubbleChart from 'bubble-chart';
 
 const companies = [
   { name: "Apple", revenue: 383285, sector: "Technology" },
@@ -195,7 +195,7 @@ interface Company {
   founded: number;
 }
 
-const chart = BubbleChart.create<Company>('#chart')
+const chart = BubbleChart.create('#chart')
   .withData(companies)
   .withSize('revenue')                    // Type-safe field access
   .withLabel(d => `${d.name} (${d.founded})`) // Type-safe functions
