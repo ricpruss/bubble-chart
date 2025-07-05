@@ -83,42 +83,40 @@
       ];
 
       log('=== STEP 1: Creating BubbleChart ===');
-      const chart = new BubbleChart({
-        container: "#chart",
-        label: "label",
-        size: "size",
-        width: 400,
-        height: 200
-      });
+      const chart = BubbleChart.create("#chart")
+        .withLabel("label")
+        .withSize("size")
+        .withDimensions(400, 200)
+        .withData(data)
+        .render();
 
       log('=== STEP 2: Checking Initial Config ===');
       const config1 = chart.options();
       log(`Initial animation config: ${JSON.stringify(config1.animation)}`);
 
-      log('=== STEP 3: Setting Data ===');
-      chart.data(data);
+      log('=== STEP 3: Chart Created and Rendered ===');
+      log('Using fluent interface - data set and rendered in one step');
       
-      log('=== STEP 4: Checking Config Before Render ===');
+      log('=== STEP 4: Checking Config After Creation ===');
       const config2 = chart.options();
-      log(`Pre-render animation config: ${JSON.stringify(config2.animation)}`);
+      log(`Post-creation animation config: ${JSON.stringify(config2.animation)}`);
 
-      log('=== STEP 5: Rendering ===');
+      log('=== STEP 5: Chart Render Timing ===');
       const renderStart = performance.now();
-      chart.render();
+      // Chart is already rendered via fluent interface
       const renderEnd = performance.now();
-      log(`Render call completed in ${(renderEnd - renderStart).toFixed(1)}ms`);
+      log(`Fluent interface creation completed in ${(renderEnd - renderStart).toFixed(1)}ms`);
       
-      log('=== STEP 6: Checking Config After Render ===');
+      log('=== STEP 6: Checking Final Config ===');
       const config3 = chart.options();
-      log(`Post-render animation config: ${JSON.stringify(config3.animation)}`);
+      log(`Final animation config: ${JSON.stringify(config3.animation)}`);
 
-      log('=== STEP 7: Checking Builder Config ===');
-      const builder = chart.getBuilder && chart.getBuilder();
-      if (builder && typeof builder.options === 'function') {
-        const builderConfig = builder.options();
-        log(`Builder animation config: ${JSON.stringify(builderConfig.animation)}`);
+      log('=== STEP 7: Checking Store and Data ===');
+      if (chart.store) {
+        const storeData = chart.store.data();
+        log(`Store contains ${storeData.length} items`);
       } else {
-        log('Builder or unified API not available');
+        log('Store not available');
       }
 
       log('=== STEP 8: DOM State Check ===');

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Data Update Test</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .trace { background: #fff2e7; }
+    .critical { background: #ffe7e7; border: 2px solid red; }
+    .timing { background: #e7f5ff; }
+    #chart { width: 600px; height: 400px; border: 1px solid #ddd; margin: 10px 0; }
+    .timestamp { color: #666; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+
+  <h1>🔄 Data Update Test</h1>
+  <div class="debug trace">
+    <h3>Console Output:</h3>
+    <div id="trace"></div>
+  </div>
+  <div id="chart"></div>
+
+  <script>
+    const logs = [];
+    const startTime = performance.now();
+    
+    function getTimestamp() {
+      return `[${(performance.now() - startTime).toFixed(1)}ms]`;
+    }
+    
+    function log(message) {
+      const timestampedMessage = `${getTimestamp()} ${message}`;
+      logs.push(timestampedMessage);
+      console.log(timestampedMessage);
+    }
+
+    // Auto-run test
+    (async function runDataUpdateTest() {
+      try {
+        const initialData = [
+          { name: 'JavaScript', value: 95, category: 'language' },
+          { name: 'Python', value: 88, category: 'language' },
+          { name: 'TypeScript', value: 82, category: 'language' },
+          { name: 'React', value: 90, category: 'framework' },
+          { name: 'Vue', value: 75, category: 'framework' }
+        ];
+
+        const updateData = [
+          { name: 'Node.js', value: 85, category: 'runtime' },
+          { name: 'Deno', value: 60, category: 'runtime' },
+          { name: 'Express', value: 80, category: 'framework' },
+          { name: 'Fastify', value: 65, category: 'framework' }
+        ];
+
+        log('=== DATA UPDATE TEST START ===');
+        log(`Initial data: ${initialData.length} items`);
+        log(`Update data: ${updateData.length} items`);
+
+        log('Step 1: Creating chart with initial data');
+        const chart = BubbleChart.create('#chart')
+          .withLabel('name')
+          .withSize('value')
+          .withDimensions(600, 400)
+          .withColor((d) => {
+            const scale = d3.scaleOrdinal(d3.schemeSet2);
+            const allCategories = [...new Set([...initialData, ...updateData].map(item => item.category))];
+            scale.domain(allCategories);
+            return scale(d.category);
+          })
+          .withData(initialData)
+          .render();
+
+        log('Step 2: Verifying initial render');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+        
+        let circles = document.querySelectorAll('#chart circle');
+        log(`Initial render: ${circles.length} circles (expected: ${initialData.length})`);
+        
+        if (circles.length !== initialData.length) {
+          throw new Error(`Initial render failed: expected ${initialData.length}, got ${circles.length}`);
+        }
+
+        circles.forEach((circle, i) => {
+          const r = circle.getAttribute('r');
+          log(`Initial bubble ${i}: ${initialData[i].name}, radius=${r}`);
+        });
+
+        log('Step 3: Updating data via reactive store');
+        chart.store.clear();
+        chart.store.addMany(updateData);
+
+        log('Step 4: Waiting for update to complete');
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        log('Step 5: Verifying updated render');
+        circles = document.querySelectorAll('#chart circle');
+        log(`Updated render: ${circles.length} circles (expected: ${updateData.length})`);
+        
+        if (circles.length !== updateData.length) {
+          throw new Error(`Update failed: expected ${updateData.length}, got ${circles.length}`);
+        }
+
+        circles.forEach((circle, i) => {
+          const r = circle.getAttribute('r');
+          log(`Updated bubble ${i}: ${updateData[i].name}, radius=${r}`);
+        });
+
+        log('Step 6: Testing second update (back to original)');
+        chart.store.clear();
+        chart.store.addMany(initialData);
+
+        await new Promise(resolve => setTimeout(resolve, 1200));
+
+        circles = document.querySelectorAll('#chart circle');
+        log(`Second update: ${circles.length} circles (expected: ${initialData.length})`);
+        
+        if (circles.length !== initialData.length) {
+          throw new Error(`Second update failed: expected ${initialData.length}, got ${circles.length}`);
+        }
+
+        log('=== TEST RESULT: ✅ PASS ===');
+        log('Data updates working correctly with reactive store');
+        log(`Total execution time: ${(performance.now() - startTime).toFixed(1)}ms`);
+
+      } catch (error) {
+        log('=== TEST RESULT: ❌ FAIL ===');
+        log(`Error: ${error.message}`);
+        log(`Stack: ${error.stack}`);
+      } finally {
+        // Display logs in HTML
+        const formattedLogs = logs.map(logLine => {
+          if (logLine.includes('ms]')) {
+            const parts = logLine.split('] ');
+            return `<span class="timestamp">${parts[0]}]</span> ${parts[1]}`;
+          }
+          return logLine;
+        });
+        
+        document.getElementById('trace').innerHTML = '<pre>' + formattedLogs.join('\n') + '</pre>';
+      }
+    })();
+  </script>
+
+</body>
+</html>

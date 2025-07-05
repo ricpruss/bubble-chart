@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Key Function Test</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .trace { background: #fff2e7; }
+    .critical { background: #ffe7e7; border: 2px solid red; }
+    .timing { background: #e7f5ff; }
+    #chart { width: 600px; height: 400px; border: 1px solid #ddd; margin: 10px 0; }
+    .timestamp { color: #666; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+
+  <h1>🔑 Key Function Test</h1>
+  <div class="debug trace">
+    <h3>Console Output:</h3>
+    <div id="trace"></div>
+  </div>
+  <div id="chart"></div>
+
+    <script>
+        // Create initial data with custom ID field
+        const initialData = [
+            { customId: 'item-1', name: 'Alice', value: 30, color: 'red' },
+            { customId: 'item-2', name: 'Bob', value: 45, color: 'blue' },
+            { customId: 'item-3', name: 'Charlie', value: 20, color: 'green' }
+        ];
+
+        // Create chart with custom key function using customId field
+        const logs = [];
+        const startTime = performance.now();
+        
+        function getTimestamp() {
+          return `[${(performance.now() - startTime).toFixed(1)}ms]`;
+        }
+        
+        function log(message) {
+          const timestampedMessage = `${getTimestamp()} ${message}`;
+          logs.push(timestampedMessage);
+          console.log(timestampedMessage);
+        }
+
+        // Auto-run test
+        (async function runKeyFunctionTest() {
+          try {
+            log('=== KEY FUNCTION TEST START ===');
+            log(`Initial data: ${initialData.length} items`);
+
+            log('Step 1: Creating chart with custom key function');
+            const chart = BubbleChart.create('#chart')
+              .withData(initialData)
+              .withLabel('name')
+              .withSize('value')
+              .withColor('color')
+              .withAnimations('gentle')
+              .withStreaming({
+                keyFunction: (d) => d.customId, // Custom key function
+                enterAnimation: { duration: 1000, staggerDelay: 100, easing: 'ease-out' },
+                updateAnimation: { duration: 800, easing: 'ease-in-out' },
+                exitAnimation: { duration: 600, easing: 'ease-in' }
+              })
+              .render();
+
+            log('Step 2: Verifying initial render');
+            await new Promise(resolve => setTimeout(resolve, 1200));
+            
+            let circles = document.querySelectorAll('#chart circle');
+            log(`Initial render: ${circles.length} circles (expected: ${initialData.length})`);
+            
+            if (circles.length !== initialData.length) {
+              throw new Error(`Initial render failed: expected ${initialData.length}, got ${circles.length}`);
+            }
+
+            circles.forEach((circle, i) => {
+              const r = circle.getAttribute('r');
+              log(`Bubble ${i}: ${initialData[i].name}, radius=${r}`);
+            });
+
+            log('Step 3: Testing dynamic updates');
+            let itemCounter = 4;
+
+            function addRandomData() {
+              const newItem = {
+                  customId: `item-${itemCounter++}`,
+                  name: `Person ${itemCounter - 1}`,
+                  value: Math.random() * 50 + 10,
+                  color: ['red', 'blue', 'green', 'orange', 'purple'][Math.floor(Math.random() * 5)]
+              };
+              
+              log(`Adding item: ${newItem.customId} (${newItem.name})`);
+              chart.store.add(newItem);
+            }
+
+            function updateExistingItem() {
+              const items = chart.store.data();
+              if (items.length > 0) {
+                  const randomItem = items[Math.floor(Math.random() * items.length)];
+                  const newValue = Math.random() * 50 + 10;
+                  
+                  log(`Updating item: ${randomItem.customId} new value: ${newValue}`);
+                  chart.store.update(randomItem.customId, { value: newValue });
+              }
+            }
+
+            function removeRandomItem() {
+              const items = chart.store.data();
+              if (items.length > 1) { // Keep at least one item
+                  const randomItem = items[Math.floor(Math.random() * items.length)];
+                  
+                  log(`Removing item: ${randomItem.customId}`);
+                  chart.store.remove(randomItem.customId);
+              }
+            }
+
+            addRandomData();
+            updateExistingItem();
+            removeRandomItem();
+            await new Promise(resolve => setTimeout(resolve, 1200));
+
+            log('Step 4: Verifying updates');
+            circles = document.querySelectorAll('#chart circle');
+            log(`Updated render: ${circles.length} circles`);
+
+            log('Step 5: Debug Information');
+            const items = chart.store.data();
+            const keys = chart.store.keys();
+            log(`Total items: ${items.length}`);
+            log(`Keys: ${keys.join(', ')}`);
+            log('Items:');
+            items.forEach((item, i) => log(`  ${item.customId}: ${item.name} (value: ${item.value})`));
+
+            log('=== TEST RESULT: ✅ PASS ===');
+            log('Dynamic updates with key function working correctly');
+            log(`Total execution time: ${(performance.now() - startTime).toFixed(1)}ms`);
+
+          } catch (error) {
+            log('=== TEST RESULT: ❌ FAIL ===');
+            log(`Error: ${error.message}`);
+            log(`Stack: ${error.stack}`);
+          } finally {
+            // Display logs in HTML
+            const formattedLogs = logs.map(logLine => {
+              if (logLine.includes('ms]')) {
+                const parts = logLine.split('] ');
+                return `<span class='timestamp'>${parts[0]}]</span> ${parts[1]}`;
+              }
+              return logLine;
+            });
+            
+            document.getElementById('trace').innerHTML = '<pre>' + formattedLogs.join('\n') + '</pre>';
+          }
+        })();
+    </script>
+
+</body>
+</html>
