@@ -192,7 +192,9 @@
         
         <div class="control-group">
           <h4>Update Animation</h4>
-          <label>Duration (ms): <input type="range" id="updateDuration" min="100" max="2000" value="600" onchange="updateAnimations()"></label>
+          <div style="padding: 10px; background: #e7f3ff; border-radius: 4px; margin: 8px 0; font-size: 12px; color: #004085;">
+            ⚡ <strong>Auto-calculated</strong> based on enter timing to prevent overlaps
+          </div>
           <label>Easing: <select id="updateEasing" onchange="updateAnimations()">
             <option value="ease-in-out">Ease In-Out</option>
             <option value="ease-out">Ease Out</option>
@@ -223,7 +225,7 @@
         <br>• <strong>Stagger Delay</strong> - Time between each bubble's animation start (creates wave effect)
         <br>• <strong>Easing</strong> - Animation curve (how speed changes over time)
         <br>• <strong>Enter</strong> - New bubbles appearing
-        <br>• <strong>Update</strong> - Existing bubbles changing size/position
+        <br>• <strong>Update</strong> - Existing bubbles changing size/position (duration auto-calculated)
         <br>• <strong>Exit</strong> - Bubbles disappearing
       </div>
     </div>
@@ -304,6 +306,15 @@
     function initializeChart() {
       try {
         // Create chart using the new fluent API
+        // Calculate initial auto update duration
+        const initialEnterDuration = 800;
+        const initialStagger = 50;
+        const estimatedBubbleCount = 15;
+        const initialAutoUpdateDuration = Math.max(
+          (initialEnterDuration + (estimatedBubbleCount * initialStagger)) * 0.8,
+          initialEnterDuration
+        );
+        
         chart = BubbleChart.create('#chart-container')
           .withData(currentDataset)
           .withSize('size')
@@ -311,8 +322,8 @@
           .withColor(d => getSectorColor(d.sector))
           .withDimensions(1100, 600)
           .withAnimations({
-            enter: { duration: 800, stagger: 50, easing: 'ease-out' },
-            update: { duration: 600, easing: 'ease-in-out' },
+            enter: { duration: initialEnterDuration, stagger: initialStagger, easing: 'ease-out' },
+            update: { duration: Math.round(initialAutoUpdateDuration), easing: 'ease-in-out' },
             exit: { duration: 400, easing: 'ease-in' }
           })
           .render();
@@ -382,7 +393,6 @@
         document.getElementById('enterDuration').value = preset.enter.duration;
         document.getElementById('enterStagger').value = preset.enter.stagger;
         document.getElementById('enterEasing').value = preset.enter.easing;
-        document.getElementById('updateDuration').value = preset.update.duration;
         document.getElementById('updateEasing').value = preset.update.easing;
         document.getElementById('exitDuration').value = preset.exit.duration;
         document.getElementById('exitEasing').value = preset.exit.easing;
@@ -392,14 +402,23 @@
     }
     
     function updateAnimations() {
+      const enterDuration = parseInt(document.getElementById('enterDuration').value);
+      const staggerDelay = parseInt(document.getElementById('enterStagger').value);
+      
+      // Auto-calculate update duration based on enter animation timing
+      // Assume ~15 bubbles for calculation (typical for this demo)
+      const estimatedBubbleCount = 15;
+      const totalEnterTime = enterDuration + (estimatedBubbleCount * staggerDelay);
+      const autoUpdateDuration = Math.max(totalEnterTime * 0.8, enterDuration);
+      
       const config = {
         enter: {
-          duration: parseInt(document.getElementById('enterDuration').value),
-          stagger: parseInt(document.getElementById('enterStagger').value),
+          duration: enterDuration,
+          stagger: staggerDelay,
           easing: document.getElementById('enterEasing').value
         },
         update: {
-          duration: parseInt(document.getElementById('updateDuration').value),
+          duration: Math.round(autoUpdateDuration),
           easing: document.getElementById('updateEasing').value
         },
         exit: {
@@ -419,14 +438,22 @@
     }
     
     function updateCurrentValues() {
+      const enterDuration = parseInt(document.getElementById('enterDuration').value);
+      const staggerDelay = parseInt(document.getElementById('enterStagger').value);
+      
+      // Calculate auto update duration for display
+      const estimatedBubbleCount = 15;
+      const totalEnterTime = enterDuration + (estimatedBubbleCount * staggerDelay);
+      const autoUpdateDuration = Math.max(totalEnterTime * 0.8, enterDuration);
+      
       const values = {
         enter: {
-          duration: document.getElementById('enterDuration').value,
-          stagger: document.getElementById('enterStagger').value,
+          duration: enterDuration,
+          stagger: staggerDelay,
           easing: document.getElementById('enterEasing').value
         },
         update: {
-          duration: document.getElementById('updateDuration').value,
+          duration: Math.round(autoUpdateDuration),
           easing: document.getElementById('updateEasing').value
         },
         exit: {
@@ -439,7 +466,7 @@
         `Current Animation Configuration:
 {
   enter: { duration: ${values.enter.duration}ms, stagger: ${values.enter.stagger}ms, easing: "${values.enter.easing}" },
-  update: { duration: ${values.update.duration}ms, easing: "${values.update.easing}" },
+  update: { duration: ${values.update.duration}ms (auto-calculated), easing: "${values.update.easing}" },
   exit: { duration: ${values.exit.duration}ms, easing: "${values.exit.easing}" }
 }`;
     }

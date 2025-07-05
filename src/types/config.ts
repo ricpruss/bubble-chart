@@ -422,7 +422,7 @@ export function createDefaultConfig(): BubbleChartOptions {
     
     animation: {
       enter: { duration: 800, stagger: 50, easing: 'ease-out', delay: 0 },
-      update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+      update: { duration: 1000, easing: 'ease-in-out', delay: 0 },  // Increased to prevent timing conflicts
       exit: { duration: 400, easing: 'ease-in', delay: 0 }
     },
     
@@ -502,8 +502,8 @@ export const defaultStreamingOptions: StreamingOptions = {
     easing: 'ease-in'
   },
   updateAnimation: {
-    duration: 600,
+    duration: 1000,  // Increased to prevent timing conflicts with staggered entries
     easing: 'ease-in-out'
   },
   keyFunction: (d: any) => d.id || d.name
-}; 
+};

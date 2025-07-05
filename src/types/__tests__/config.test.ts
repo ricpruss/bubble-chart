@@ -159,7 +159,7 @@ describe('Default Configuration', () => {
     
     expect(defaultConfig.animation?.enter?.duration).toBe(800);
     expect(defaultConfig.animation?.enter?.stagger).toBe(50);
-    expect(defaultConfig.animation?.update?.duration).toBe(600);
+    expect(defaultConfig.animation?.update?.duration).toBe(1000);
     expect(defaultConfig.animation?.exit?.duration).toBe(400);
     
     expect(defaultConfig.bubble?.minRadius).toBe(10);

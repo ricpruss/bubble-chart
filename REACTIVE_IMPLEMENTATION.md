@@ -102,6 +102,25 @@ chart.setSizeMetric('revenue');                  // Dynamic metric switching
   chart.bindTo(asyncDataFunction);
   ```
 
+- [ ] **Motion/Orbit Chart Streaming Support** ⚠️ **TODO**
+  ```typescript
+  // Current issue: Motion/Orbit charts use specialized animation systems
+  // (d3-force simulation, physics) that don't work with streaming updates
+  
+  // Need to implement:
+  // 1. Streaming-aware force simulation updates
+  // 2. Physics-based enter/update/exit for orbit charts  
+  // 3. Unified animation interface for all chart types
+  
+  // Example target API:
+  const motionChart = BubbleChart.create('#chart')
+    .withType('motion')
+    .enableStreaming()  // Should work with motion charts
+    .render();
+  
+  motionChart.store.add(newBubble); // Should smoothly add to simulation
+  ```
+
 - [ ] **Data Source Factory**
   ```typescript
   chart.streamFrom({

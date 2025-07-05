@@ -14,37 +14,37 @@ export class AnimationPresets {
   private static presets: Record<AnimationPresetName, AnimationConfig> = {
     gentle: {
       enter: { duration: 1200, stagger: 80, easing: 'ease-out', delay: 0 },
-      update: { duration: 800, easing: 'ease-in-out', delay: 0 },
+      update: { duration: 1600, easing: 'ease-in-out', delay: 0 },  // Increased to handle stagger timing
       exit: { duration: 600, easing: 'ease-in', delay: 0 }
     },
     
     energetic: {
       enter: { duration: 400, stagger: 30, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)', delay: 0 },
-      update: { duration: 300, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', delay: 0 },
+      update: { duration: 600, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)', delay: 0 },  // Increased for timing safety
       exit: { duration: 250, easing: 'ease-out', delay: 0 }
     },
     
     minimal: {
       enter: { duration: 5, stagger: 0, easing: 'linear', delay: 0 },
-      update: { duration: 1, easing: 'linear', delay: 0 },
+      update: { duration: 5, easing: 'linear', delay: 0 },  // Matched to enter duration
       exit: { duration: 1, easing: 'linear', delay: 0 }
     },
     
     smooth: {
       enter: { duration: 800, stagger: 50, easing: 'ease-out', delay: 0 },
-      update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+      update: { duration: 1000, easing: 'ease-in-out', delay: 0 },  // Increased to prevent timing conflicts
       exit: { duration: 400, easing: 'ease-in', delay: 0 }
     },
     
     bouncy: {
       enter: { duration: 1000, stagger: 60, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)', delay: 0 },
-      update: { duration: 700, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)', delay: 0 },
+      update: { duration: 1200, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)', delay: 0 },  // Increased for timing safety
       exit: { duration: 500, easing: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)', delay: 0 }
     },
     
     fade: {
       enter: { duration: 600, stagger: 40, easing: 'ease-out', delay: 0 },
-      update: { duration: 400, easing: 'ease-in-out', delay: 0 },
+      update: { duration: 800, easing: 'ease-in-out', delay: 0 },  // Increased to handle stagger timing
       exit: { duration: 300, easing: 'ease-in', delay: 0 }
     },
     

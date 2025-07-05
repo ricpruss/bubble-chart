@@ -117,17 +117,34 @@ class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> implements 
       // Use streaming-aware redraw for smooth incremental updates
       const currentData = [...this.store.data()] as T[];
       
+      // Special handling for motion/orbit bubbles - they use physics simulations, not streaming updates
+      // TODO: Implement streaming-aware physics simulations for motion/orbit charts (see REACTIVE_IMPLEMENTATION.md)
+      if (this.builder instanceof MotionBubble) {
+        // Motion bubbles have their own continuous d3-force animation system
+        // Currently falls back to full re-render instead of streaming updates
+        this.builder.data(currentData).render();
+      }
+      else if (this.builder instanceof OrbitBuilder) {
+        // Orbit bubbles have their own continuous d3-timer animation system  
+        // Currently falls back to full re-render instead of streaming updates
+        this.builder.data(currentData).render();
+      }
       // If we have animation presets, use streaming update for proper stagger control
-      if (this.animations) {
+      else if (this.animations) {
         // Convert animation presets to streaming options
+        // Note: Don't provide update duration - let rendering pipeline calculate optimal timing
+        const enterDuration = this.animations.enter?.duration || 800;
+        const staggerDelay = this.animations.enter?.stagger || 0;
+        
         const streamingOptions: StreamingOptions = {
           enterAnimation: {
-            duration: this.animations.enter?.duration || 800,
-            staggerDelay: this.animations.enter?.stagger || 0,
+            duration: enterDuration,
+            staggerDelay: staggerDelay,
             easing: this.animations.enter?.easing || 'ease-out'
           },
           updateAnimation: {
-            duration: this.animations.update?.duration || 600,
+            // Let rendering pipeline calculate optimal duration based on enter timing
+            duration: this.animations.update?.duration || 0, // 0 will trigger auto-calculation
             easing: this.animations.update?.easing || 'ease-in-out'
           },
           exitAnimation: {

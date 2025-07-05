@@ -253,6 +253,40 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   }
 
   /**
+   * Calculate optimal update duration to prevent timing conflicts
+   * @param enterDuration - Enter animation duration
+   * @param staggerDelay - Stagger delay between bubbles
+   * @param bubbleCount - Number of bubbles in enter animation
+   * @param updateDuration - Configured update duration
+   * @returns Adjusted update duration
+   */
+  private calculateOptimalUpdateDuration(
+    enterDuration: number,
+    staggerDelay: number,
+    bubbleCount: number,
+    updateDuration: number
+  ): number {
+    // Calculate total enter animation time (last bubble start + duration)
+    const totalEnterTime = enterDuration + (bubbleCount * staggerDelay);
+    
+    // Update animations should last at least as long as enter animations
+    // to prevent layout conflicts during staggered entrance
+    const minUpdateDuration = Math.max(totalEnterTime * 0.8, updateDuration);
+    
+    const adjustedDuration = Math.round(minUpdateDuration);
+    
+    // Debug logging for timing coordination
+    if (adjustedDuration > updateDuration) {
+      console.log(`🎬 Animation Timing Coordination:`);
+      console.log(`  Enter: ${enterDuration}ms + (${bubbleCount} × ${staggerDelay}ms) = ${totalEnterTime}ms total`);
+      console.log(`  Update: ${updateDuration}ms → ${adjustedDuration}ms (adjusted for timing)`);
+      console.log(`  Reason: Preventing overlap during staggered entrance`);
+    }
+    
+    return adjustedDuration;
+  }
+
+  /**
    * Perform streaming update using D3 enter/update/exit pattern
    * @param data - New data for streaming update
    * @param options - Streaming animation options
@@ -330,8 +364,26 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     const updatedCount = bubbleSelection.size();
     
     if (updatedCount > 0) {
+      // Calculate optimal update duration to prevent timing conflicts with enter animations
+      // If updateAnimation.duration is 0, it means auto-calculate (no user override)
+      const useAutoCalculation = options.updateAnimation.duration === 0;
+      const configuredDuration = useAutoCalculation ? 600 : options.updateAnimation.duration; // fallback to 600 if auto-calc
+      
+      const optimalUpdateDuration = this.calculateOptimalUpdateDuration(
+        options.enterAnimation.duration,
+        options.enterAnimation.staggerDelay,
+        enteredCount,
+        configuredDuration
+      );
+      
+      // Create adjusted update animation options
+      const adjustedUpdateAnimation = {
+        ...options.updateAnimation,
+        duration: optimalUpdateDuration
+      };
+      
       // Update positions for all existing bubbles (layout may have shifted)
-      this.animateUpdate(bubbleSelection, layoutNodes, data, options.updateAnimation);
+      this.animateUpdate(bubbleSelection, layoutNodes, data, adjustedUpdateAnimation);
     }
 
     return {
