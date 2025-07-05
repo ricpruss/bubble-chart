@@ -28,9 +28,11 @@ export default {
     'html'
   ],
   moduleNameMapper: {
-    '^(\\.{1,2}/.*)\\.js$': '$1'
+    '^(\\.{1,2}/.*)\\.js$': '$1',
+    '^d3$': '<rootDir>/__mocks__/d3.ts'
   },
   transformIgnorePatterns: [
     'node_modules/(?!(d3|d3-array|d3-scale|d3-selection|d3-transition|d3-ease|d3-format|d3-time-format|d3-hierarchy|d3-force|d3-zoom|d3-drag|d3-shape|d3-path|d3-color|d3-interpolate|d3-timer|internmap)/)'
-  ]
+  ],
+  setupFiles: ['<rootDir>/test/jest-setup.ts']
 }; 

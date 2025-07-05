@@ -6,7 +6,7 @@
 
 import * as d3 from 'd3';
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig, StreamingOptions, StreamingUpdateResult, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions } from '../types/config.js';
+import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions } from '../types/config.js';
 import type { ProcessedDataPoint } from './data-processor.js';
 // import type { SVGElements } from './svg-manager.js';
 
@@ -14,7 +14,7 @@ export interface RenderingContext {
   svg: any;
   width: number;
   height: number;
-  config: BubbleChartConfig;
+  config: BubbleChartOptions;
 }
 
 export interface BubbleElements {
@@ -269,18 +269,25 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
 
     // Create data binding with key function
     const keyFn = options.keyFunction || ((d: any) => {
-      // processed leaf -> original item nested in d.data.data
+      // For layout nodes, extract the original data and apply key function
       const original = d.data?.data ?? d.data;
-      return original.id ?? original.name;
+      return original.id ?? original.name ?? JSON.stringify(original);
     });
 
+    // Apply key function to layout nodes for D3 data binding
     const bubbleSelection = svg.selectAll('g.bubble')
-      .data(layoutNodes, keyFn as any);
+      .data(layoutNodes, (d: any) => {
+        // Extract original data from layout node structure:
+        // layoutNode.data (processed) -> data.data (original)
+        const processedData = d.data;
+        const originalData = processedData?.data ?? processedData;
+        return keyFn(originalData);
+      });
 
     // EXIT: Remove elements that no longer exist
     const exitSelection = bubbleSelection.exit();
-    this.animateExit(exitSelection, options.exitAnimation);
     const exitedCount = exitSelection.size();
+    this.animateExit(exitSelection, options.exitAnimation);
 
     // ENTER: Add new elements
     const enterSelection = bubbleSelection.enter();
@@ -319,9 +326,11 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
       this.animateEnter(enterGroups, options.enterAnimation);
     }
 
-    // UPDATE: Update existing elements
+    // UPDATE: Update existing elements (positions may have changed due to layout)
     const updatedCount = bubbleSelection.size();
+    
     if (updatedCount > 0) {
+      // Update positions for all existing bubbles (layout may have shifted)
       this.animateUpdate(bubbleSelection, layoutNodes, data, options.updateAnimation);
     }
 
@@ -553,4 +562,4 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
 
     window.addEventListener('resize', handleResize);
   }
-} 
+}

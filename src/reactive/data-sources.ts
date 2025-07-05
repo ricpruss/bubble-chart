@@ -1,10 +1,54 @@
 /**
  * Data Source Abstractions
- * Unified interface for different data input methods
+ * Unified interface for different data input methods with enhanced error handling
  */
 
 import type { BubbleChartData } from '../types/data.js';
 import { SimpleObservable, type Observable } from './observable.js';
+
+/**
+ * Error types for data sources
+ */
+export type DataSourceErrorType = 
+  | 'connection_failed'
+  | 'data_parse_error'
+  | 'network_error'
+  | 'timeout_error'
+  | 'authentication_error'
+  | 'rate_limit_error'
+  | 'unknown_error';
+
+/**
+ * Data source error with context
+ */
+export interface DataSourceError {
+  type: DataSourceErrorType;
+  message: string;
+  originalError?: any;
+  timestamp: Date;
+  source: string;
+  retryable: boolean;
+}
+
+/**
+ * Error recovery configuration
+ */
+export interface ErrorRecoveryConfig {
+  maxRetries: number;
+  retryDelay: number;
+  backoffFactor: number;
+  retryableErrors: DataSourceErrorType[];
+}
+
+/**
+ * Default error recovery configuration
+ */
+export const defaultErrorRecovery: ErrorRecoveryConfig = {
+  maxRetries: 3,
+  retryDelay: 1000,
+  backoffFactor: 2,
+  retryableErrors: ['connection_failed', 'network_error', 'timeout_error']
+};
 
 /**
  * Configuration for different data source types
@@ -23,6 +67,9 @@ export interface DataSourceConfig<T = BubbleChartData> {
     transform?: (message: any) => T[];
     reconnect?: boolean;
     reconnectDelay?: number;
+    maxReconnectAttempts?: number;
+    heartbeatInterval?: number;
+    errorRecovery?: Partial<ErrorRecoveryConfig>;
   };
   
   // Polling data
@@ -32,6 +79,8 @@ export interface DataSourceConfig<T = BubbleChartData> {
     transform?: (response: any) => T[];
     headers?: Record<string, string>;
     method?: 'GET' | 'POST';
+    timeout?: number;
+    errorRecovery?: Partial<ErrorRecoveryConfig>;
   };
   
   // Event-driven data
@@ -39,6 +88,7 @@ export interface DataSourceConfig<T = BubbleChartData> {
     target: EventTarget;
     eventType: string;
     transform?: (event: Event) => T[];
+    errorRecovery?: Partial<ErrorRecoveryConfig>;
   };
   
   // External observable
@@ -46,11 +96,17 @@ export interface DataSourceConfig<T = BubbleChartData> {
 }
 
 /**
- * Base interface for all data sources
+ * Base interface for all data sources with enhanced error handling
  */
 export interface DataSource<T = BubbleChartData> {
   /** Observable stream of data */
   readonly stream: Observable<T[]>;
+  
+  /** Observable stream of errors */
+  readonly errorStream: Observable<DataSourceError>;
+  
+  /** Observable stream of connection state changes */
+  readonly statusStream: Observable<DataSourceStatus>;
   
   /** Start the data source */
   start(): void;
@@ -61,18 +117,136 @@ export interface DataSource<T = BubbleChartData> {
   /** Check if source is currently active */
   readonly isActive: boolean;
   
+  /** Get current connection status */
+  readonly status: DataSourceStatus;
+  
   /** Clean up resources */
   dispose(): void;
+  
+  /** Manually trigger retry */
+  retry(): void;
+}
+
+/**
+ * Data source connection status
+ */
+export type DataSourceStatus = 
+  | 'idle' 
+  | 'connecting' 
+  | 'connected' 
+  | 'error' 
+  | 'reconnecting' 
+  | 'disconnected';
+
+/**
+ * Abstract base class for data sources with error handling
+ */
+export abstract class BaseDataSource<T = BubbleChartData> implements DataSource<T> {
+  protected _status: DataSourceStatus = 'idle';
+  protected _isActive = false;
+  protected statusObservable = new SimpleObservable<DataSourceStatus>('idle');
+  protected errorObservable = new SimpleObservable<DataSourceError>();
+  protected retryCount = 0;
+  protected retryTimeoutId: number | null = null;
+  protected errorRecovery: ErrorRecoveryConfig;
+
+  constructor(errorRecovery?: Partial<ErrorRecoveryConfig>) {
+    this.errorRecovery = { ...defaultErrorRecovery, ...errorRecovery };
+  }
+
+  abstract readonly stream: Observable<T[]>;
+
+  get errorStream(): Observable<DataSourceError> {
+    return this.errorObservable;
+  }
+
+  get statusStream(): Observable<DataSourceStatus> {
+    return this.statusObservable;
+  }
+
+  get isActive(): boolean {
+    return this._isActive;
+  }
+
+  get status(): DataSourceStatus {
+    return this._status;
+  }
+
+  abstract start(): void;
+  abstract stop(): void;
+  abstract dispose(): void;
+  abstract retry(): void;
+
+  protected setStatus(status: DataSourceStatus): void {
+    if (this._status !== status) {
+      this._status = status;
+      this.statusObservable.next(status);
+    }
+  }
+
+  protected emitError(
+    type: DataSourceErrorType,
+    message: string,
+    originalError?: any,
+    source = 'unknown'
+  ): void {
+    const error: DataSourceError = {
+      type,
+      message,
+      originalError,
+      timestamp: new Date(),
+      source,
+      retryable: this.errorRecovery.retryableErrors.includes(type)
+    };
+
+    this.errorObservable.next(error);
+
+    // Auto-retry if error is retryable and we haven't exceeded max retries
+    if (error.retryable && this.retryCount < this.errorRecovery.maxRetries) {
+      this.scheduleRetry();
+    } else if (this.retryCount >= this.errorRecovery.maxRetries) {
+      console.error(`Max retries (${this.errorRecovery.maxRetries}) exceeded for ${source}`);
+      this.setStatus('error');
+    }
+  }
+
+  protected scheduleRetry(): void {
+    if (this.retryTimeoutId) {
+      clearTimeout(this.retryTimeoutId);
+    }
+
+    const delay = this.errorRecovery.retryDelay * 
+      Math.pow(this.errorRecovery.backoffFactor, this.retryCount);
+
+    this.retryCount++;
+    this.setStatus('reconnecting');
+
+    this.retryTimeoutId = window.setTimeout(() => {
+      this.retry();
+    }, delay);
+  }
+
+  protected clearRetryTimeout(): void {
+    if (this.retryTimeoutId) {
+      clearTimeout(this.retryTimeoutId);
+      this.retryTimeoutId = null;
+    }
+  }
+
+  protected resetRetryCount(): void {
+    this.retryCount = 0;
+    this.clearRetryTimeout();
+  }
 }
 
 /**
  * Static data source for arrays and manual updates
  */
-export class StaticDataSource<T = BubbleChartData> implements DataSource<T> {
+export class StaticDataSource<T = BubbleChartData> extends BaseDataSource<T> {
   private observable: SimpleObservable<T[]>;
-  private _isActive = false;
   
   constructor(private config: NonNullable<DataSourceConfig<T>['static']>) {
+    super();
     this.observable = new SimpleObservable<T[]>(config.data);
   }
   
@@ -80,18 +254,16 @@ export class StaticDataSource<T = BubbleChartData> implements DataSource<T> {
     return this.observable;
   }
   
-  get isActive(): boolean {
-    return this._isActive;
-  }
-  
   start(): void {
     this._isActive = true;
+    this.setStatus('connected');
     // Emit initial data
     this.observable.next(this.config.data);
   }
   
   stop(): void {
     this._isActive = false;
+    this.setStatus('disconnected');
   }
   
   /**
@@ -99,7 +271,7 @@ export class StaticDataSource<T = BubbleChartData> implements DataSource<T> {
    */
   updateData(newData: T[]): void {
     if (!this.config.allowUpdates) {
-      console.warn('StaticDataSource: Updates not allowed');
+      this.emitError('data_parse_error', 'StaticDataSource: Updates not allowed', undefined, 'static');
       return;
     }
     
@@ -113,18 +285,24 @@ export class StaticDataSource<T = BubbleChartData> implements DataSource<T> {
     this.stop();
     this.observable.dispose();
   }
+  
+  retry(): void {
+    if (!this._isActive) {
+      this.start();
+    }
+  }
 }
 
 /**
  * WebSocket data source for real-time streaming
  */
-export class WebSocketDataSource<T = BubbleChartData> implements DataSource<T> {
+export class WebSocketDataSource<T = BubbleChartData> extends BaseDataSource<T> {
   private observable: SimpleObservable<T[]>;
   private websocket: WebSocket | null = null;
-  private _isActive = false;
   private reconnectTimeoutId: number | null = null;
   
   constructor(private config: NonNullable<DataSourceConfig<T>['websocket']>) {
+    super(config.errorRecovery);
     this.observable = new SimpleObservable<T[]>();
   }
   
@@ -132,7 +310,7 @@ export class WebSocketDataSource<T = BubbleChartData> implements DataSource<T> {
     return this.observable;
   }
   
-  get isActive(): boolean {
+  override get isActive(): boolean {
     return this._isActive && this.websocket?.readyState === WebSocket.OPEN;
   }
   
@@ -140,11 +318,13 @@ export class WebSocketDataSource<T = BubbleChartData> implements DataSource<T> {
     if (this._isActive) return;
     
     this._isActive = true;
+    this.setStatus('connecting');
     this.connect();
   }
   
   stop(): void {
     this._isActive = false;
+    this.setStatus('disconnected');
     this.disconnect();
   }
   
@@ -213,17 +393,21 @@ export class WebSocketDataSource<T = BubbleChartData> implements DataSource<T> {
     this.stop();
     this.observable.dispose();
   }
+  
+  retry(): void {
+    // Implementation needed
+  }
 }
 
 /**
  * Polling data source for HTTP endpoints
  */
-export class PollingDataSource<T = BubbleChartData> implements DataSource<T> {
+export class PollingDataSource<T = BubbleChartData> extends BaseDataSource<T> {
   private observable: SimpleObservable<T[]>;
   private intervalId: number | null = null;
-  private _isActive = false;
   
   constructor(private config: NonNullable<DataSourceConfig<T>['polling']>) {
+    super(config.errorRecovery);
     this.observable = new SimpleObservable<T[]>();
   }
   
@@ -231,19 +415,21 @@ export class PollingDataSource<T = BubbleChartData> implements DataSource<T> {
     return this.observable;
   }
   
-  get isActive(): boolean {
+    override get isActive(): boolean {
     return this._isActive;
   }
-  
-  start(): void {
+
+  override start(): void {
     if (this._isActive) return;
     
     this._isActive = true;
+    this.setStatus('connecting');
     this.startPolling();
   }
-  
-  stop(): void {
+
+  override stop(): void {
     this._isActive = false;
+    this.setStatus('disconnected');
     this.stopPolling();
   }
   
@@ -291,21 +477,27 @@ export class PollingDataSource<T = BubbleChartData> implements DataSource<T> {
     }
   }
   
-  dispose(): void {
+  override dispose(): void {
     this.stop();
     this.observable.dispose();
+  }
+  
+  override retry(): void {
+    if (this._isActive) {
+      this.fetchData();
+    }
   }
 }
 
 /**
  * Event-driven data source for DOM events
  */
-export class EventDataSource<T = BubbleChartData> implements DataSource<T> {
+export class EventDataSource<T = BubbleChartData> extends BaseDataSource<T> {
   private observable: SimpleObservable<T[]>;
-  private _isActive = false;
   private eventHandler: ((event: Event) => void) | null = null;
   
   constructor(private config: NonNullable<DataSourceConfig<T>['events']>) {
+    super(config.errorRecovery);
     this.observable = new SimpleObservable<T[]>();
   }
   
@@ -313,19 +505,17 @@ export class EventDataSource<T = BubbleChartData> implements DataSource<T> {
     return this.observable;
   }
   
-  get isActive(): boolean {
-    return this._isActive;
-  }
-  
-  start(): void {
+  override start(): void {
     if (this._isActive) return;
     
     this._isActive = true;
+    this.setStatus('connecting');
     this.addEventListener();
   }
   
-  stop(): void {
+  override stop(): void {
     this._isActive = false;
+    this.setStatus('disconnected');
     this.removeEventListener();
   }
   
@@ -354,45 +544,52 @@ export class EventDataSource<T = BubbleChartData> implements DataSource<T> {
     }
   }
   
-  dispose(): void {
+  override dispose(): void {
     this.stop();
     this.observable.dispose();
+  }
+  
+  override retry(): void {
+    // Event sources don't need retry logic
   }
 }
 
 /**
  * Observable wrapper data source for external observables
  */
-export class ObservableDataSource<T = BubbleChartData> implements DataSource<T> {
-  private _isActive = false;
+export class ObservableDataSource<T = BubbleChartData> extends BaseDataSource<T> {
   private unsubscribe: (() => void) | null = null;
   
-  constructor(private observable: Observable<T[]>) {}
+  constructor(private observable: Observable<T[]>) {
+    super();
+  }
   
   get stream(): Observable<T[]> {
     return this.observable;
   }
   
-  get isActive(): boolean {
-    return this._isActive;
-  }
-  
-  start(): void {
+  override start(): void {
     if (this._isActive) return;
     
     this._isActive = true;
+    this.setStatus('connected');
     // Observable data sources are always "active" when subscribed to
   }
   
-  stop(): void {
+  override stop(): void {
     this._isActive = false;
+    this.setStatus('disconnected');
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
     }
   }
   
-  dispose(): void {
+  override dispose(): void {
     this.stop();
+  }
+  
+  override retry(): void {
+    // Implementation needed
   }
 } 

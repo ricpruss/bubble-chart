@@ -12,7 +12,7 @@ function convertSP500ToFlat(csvText) {
             label: values[1] || `Company ${i}`, // Security name
             size: Math.floor(Math.random() * 5000000000) + 100000000, // Random market cap
             count: Math.floor(Math.random() * 100) + 10, // Random employee count (thousands)
-            tipo: "Companies",
+            type: "Companies",
             year: 2020 + (i % 5) // Years 2020-2024
         };
         data.push(company);

@@ -23,15 +23,19 @@
   <div id="chart-container"></div>
 
   <script>
-    const chart = new BubbleChart({
-      container: "#chart-container",
-      label: "label",
-      size: "size",
-      type: "motion"
-    });
+    // Map companies data to expected format
+    const data = window.data.slice(0, 50).map(d => ({
+      ...d,
+      label: d.name,
+      size: d.profits
+    }));
 
-    chart.data(window.data);
-    chart.render();
+    const chart = BubbleChart.create("#chart-container")
+      .withData(data)
+      .withLabel("label")
+      .withSize("size")
+      .withType("motion")
+      .render();
   </script>
 </body>
 </html>

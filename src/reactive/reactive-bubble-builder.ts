@@ -4,9 +4,9 @@
  */
 
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig } from '../types/config.js';
+import type { BubbleChartOptions } from '../types/config.js';
 import { ReactiveChartBuilder } from './reactive-chart-builder.js';
-import { DataProcessor } from '../core/index.js';
+
 import type { Observable } from './observable.js';
 
 /**
@@ -18,7 +18,7 @@ export class ReactiveBubbleBuilder<T extends BubbleChartData = BubbleChartData> 
    * Creates a new ReactiveBubbleBuilder instance
    * @param config - Configuration object for the chart
    */
-  constructor(config: BubbleChartConfig) {
+  constructor(config: BubbleChartOptions) {
     super(config);
   }
 
@@ -74,10 +74,14 @@ export class ReactiveBubbleBuilder<T extends BubbleChartData = BubbleChartData> 
 
       // Apply entrance animations
       if (this.config.animation) {
+        const animValues = {
+      duration: this.config.animation?.enter?.duration || 800,
+      staggerDelay: this.config.animation?.enter?.stagger || 0
+    };
         this.renderingPipeline.applyEntranceAnimation(bubbleElements, {
-          duration: this.config.animation.speed || 800,
+          duration: animValues.duration,
           delay: 0,
-          staggerDelay: this.config.animation.staggerDelay || 0
+          staggerDelay: animValues.staggerDelay
         });
       }
     } catch (error) {
@@ -85,31 +89,5 @@ export class ReactiveBubbleBuilder<T extends BubbleChartData = BubbleChartData> 
     }
   }
 
-  /**
-   * Get current configuration
-   * @returns Current configuration
-   */
-  override getConfig(): BubbleChartConfig {
-    return this.config;
-  }
 
-  /**
-   * Update configuration with reactive propagation
-   * @param newConfig - Partial configuration to merge
-   * @returns this for method chaining
-   */
-  override setConfig(newConfig: Partial<BubbleChartConfig>): this {
-    // Call reactive parent to handle config updates
-    super.setConfig(newConfig);
-    
-    // Update building blocks with new config
-    if (this.dataProcessor) {
-      this.dataProcessor = new DataProcessor<T>(this.config);
-      if (this.chartData.length) {
-        this.processedData = this.dataProcessor.process(this.chartData);
-      }
-    }
-    
-    return this;
-  }
 } 

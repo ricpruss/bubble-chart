@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Initialization Test</title>
+    <script src="dist/bubble-chart.min.js"></script>
+    <link rel="stylesheet" href="dist/css/bubble-chart.css">
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 20px;
+        }
+        #chart {
+            width: 800px;
+            height: 600px;
+            border: 1px solid #ccc;
+            margin: 20px 0;
+        }
+        .controls {
+            margin: 20px 0;
+        }
+        button {
+            margin: 0 5px;
+            padding: 8px 16px;
+        }
+        .status {
+            margin: 10px 0;
+            padding: 10px;
+            background: #f0f0f0;
+            border-radius: 4px;
+        }
+        .error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .success {
+            background: #e8f5e8;
+            color: #2e7d32;
+        }
+    </style>
+</head>
+<body>
+    <h1>Initialization Race Condition Test</h1>
+    <p>This test verifies that the builder initialization race condition has been fixed.</p>
+    
+    <div class="controls">
+        <button onclick="testSequentialInit()">Test Sequential Init</button>
+        <button onclick="testRapidDataAddition()">Test Rapid Data Addition</button>
+        <button onclick="testAnimationShowcase()">Test Animation Showcase Pattern</button>
+        <button onclick="clearChart()">Clear Chart</button>
+    </div>
+    
+    <div id="status" class="status">Ready to test...</div>
+    <div id="chart"></div>
+
+    <script>
+        let chart = null;
+        const statusEl = document.getElementById('status');
+
+        function updateStatus(message, isError = false) {
+            statusEl.textContent = message;
+            statusEl.className = `status ${isError ? 'error' : 'success'}`;
+            console.log(message);
+        }
+
+        function generateTestData(count) {
+            return Array.from({ length: count }, (_, i) => ({
+                id: `item-${i}`,
+                name: `Item ${i + 1}`,
+                value: Math.random() * 100 + 10,
+                category: ['A', 'B', 'C', 'D'][i % 4]
+            }));
+        }
+
+        function testSequentialInit() {
+            try {
+                updateStatus('Testing sequential initialization...');
+                clearChart();
+                
+                const data = generateTestData(10);
+                chart = BubbleChart.create('#chart')
+                    .withData(data)
+                    .withAnimations('smooth')
+                    .withColor('category')
+                    .render();
+                
+                updateStatus('✅ Sequential initialization test passed - no errors');
+            } catch (error) {
+                updateStatus(`❌ Sequential initialization test failed: ${error.message}`, true);
+            }
+        }
+
+        function testRapidDataAddition() {
+            try {
+                updateStatus('Testing rapid data addition...');
+                clearChart();
+                
+                // Create chart with initial data
+                const initialData = generateTestData(5);
+                chart = BubbleChart.create('#chart')
+                    .withData(initialData)
+                    .withAnimations('smooth')
+                    .withColor('category')
+                    .render();
+                
+                // Rapidly add more data (this should not cause race conditions)
+                setTimeout(() => {
+                    const newData = generateTestData(5).map(d => ({ ...d, id: `new-${d.id}` }));
+                    chart.store.addMany(newData);
+                }, 10);
+                
+                setTimeout(() => {
+                    const moreData = generateTestData(3).map(d => ({ ...d, id: `more-${d.id}` }));
+                    chart.store.addMany(moreData);
+                }, 20);
+                
+                setTimeout(() => {
+                    updateStatus('✅ Rapid data addition test passed - no race condition errors');
+                }, 100);
+                
+            } catch (error) {
+                updateStatus(`❌ Rapid data addition test failed: ${error.message}`, true);
+            }
+        }
+
+        function testAnimationShowcase() {
+            try {
+                updateStatus('Testing animation showcase pattern...');
+                clearChart();
+                
+                // Simulate the exact pattern from animation showcase
+                const data = generateTestData(15);
+                
+                chart = BubbleChart.create('#chart')
+                    .withData(data)
+                    .withAnimations('bounce')
+                    .withColor('category')
+                    .withStreaming()
+                    .render();
+                
+                // Apply preset after initialization (like in animation showcase)
+                setTimeout(() => {
+                    chart.setAnimations('elegant');
+                    updateStatus('✅ Animation showcase pattern test passed - no initialization errors');
+                }, 50);
+                
+            } catch (error) {
+                updateStatus(`❌ Animation showcase pattern test failed: ${error.message}`, true);
+            }
+        }
+
+        function clearChart() {
+            if (chart) {
+                try {
+                    chart.destroy();
+                } catch (e) {
+                    // Ignore destroy errors
+                }
+                chart = null;
+            }
+            document.getElementById('chart').innerHTML = '';
+            updateStatus('Chart cleared');
+        }
+
+        // Monitor console for any streaming update errors
+        const originalConsoleWarn = console.warn;
+        console.warn = function(...args) {
+            if (args[0] && args[0].includes('Streaming update failed')) {
+                updateStatus(`❌ Race condition detected: ${args.join(' ')}`, true);
+            }
+            originalConsoleWarn.apply(console, args);
+        };
+
+        updateStatus('Initialization test page loaded - click buttons to test');
+    </script>
+</body>
+</html>

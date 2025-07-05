@@ -5,7 +5,7 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartConfig } from '../types/config.js';
+import type { BubbleChartOptions } from '../types/config.js';
 
 export interface SVGDimensions {
   width: number;
@@ -30,7 +30,7 @@ export class SVGManager {
    * @param config - Chart configuration
    * @returns SVG elements and dimensions
    */
-  initialize(config: BubbleChartConfig): SVGElements {
+  initialize(config: BubbleChartOptions): SVGElements {
     // Select and validate container
     const container = d3.select(config.container);
     if (container.empty()) {
@@ -75,7 +75,7 @@ export class SVGManager {
    */
   private calculateDimensions(
     container: any,
-    config: BubbleChartConfig
+    config: BubbleChartOptions
   ): SVGDimensions {
     const containerNode = container.node() as HTMLElement;
     

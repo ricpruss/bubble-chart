@@ -16,33 +16,45 @@
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            const chart = new BubbleChart({
-                container: '#test',
-                label: 'label',
-                size: 'size',
-                percentage: d => d.count / 100
-            });
+            // Map companies data to expected format
+            const data = window.data.slice(0, 20).map(d => ({
+                ...d,
+                label: d.name,
+                size: d.profits,
+                count: Math.round((d.profits / Math.max(...window.data.map(x => x.profits))) * 100),
+                category: d.sector  // Add sector for color categorization
+            }));
 
-            // Event handlers
+            const chart = BubbleChart.create('#test')
+                .withData(data)
+                .withLabel('label')
+                .withSize('size')
+                .withColor('category')  // Color by sector
+                .withAnimations('gentle')
+                .render();
+
+            // DOM event handlers using onBubble method
             chart
-                .on('mouseenter', d => {
-                    // Handle mouseenter event
+                .onBubble('mouseenter', d => {
+                    console.log('Mouse entered:', d.label);
                 })
-                .on('mouseover', d => {
-                    // Handle mouseover event
+                .onBubble('mouseover', d => {
+                    console.log('Mouse over:', d.label);
                 })
-                .on('mouseout', d => {
-                    // Handle mouseout event
+                .onBubble('mouseout', d => {
+                    console.log('Mouse out:', d.label);
                 })
-                .on('click', d => {
+                .onBubble('click', d => {
+                    console.log('Bubble clicked:', d.label);
                     const dataCopy = { ...d };
                     delete dataCopy.parent;
-                    alert(JSON.stringify(dataCopy, null, 2));
+                    alert(`Clicked: ${d.label}\n\nData: ${JSON.stringify(dataCopy, null, 2)}`);
                 });
 
-            // Render the chart
-            chart.data(window.data);
-            chart.render();
+            // Lifecycle events using regular on method
+            chart.on('change', (stats) => {
+                console.log('Data changed:', stats);
+            });
         });
     </script>
 </head>

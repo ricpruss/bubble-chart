@@ -1,16 +1,18 @@
 /**
  * Reactive Chart Builder
- * Extends BaseChartBuilder with reactive data capabilities
+ * Extends BaseChartBuilder with reactive data capabilities and error handling
  */
 
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig, StreamingOptions, StreamingUpdateResult } from '../types/config.js';
+import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult } from '../types/config.js';
 import { defaultStreamingOptions } from '../types/config.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { SimpleObservable, type Observable, type UnsubscribeFunction } from './observable.js';
 import { 
   type DataSource, 
   type DataSourceConfig,
+  type DataSourceError,
+  type DataSourceStatus,
   StaticDataSource,
   WebSocketDataSource,
   PollingDataSource,
@@ -19,35 +21,328 @@ import {
 } from './data-sources.js';
 
 /**
- * Enhanced chart builder with reactive data capabilities
+ * Error event types for reactive charts
+ */
+export type ReactiveChartEventType = 
+  | 'stream:error'
+  | 'stream:reconnected' 
+  | 'stream:status-change'
+  | 'data:quality-warning'
+  | 'data:update'
+  | 'config:change';
+
+/**
+ * Event payload types
+ */
+export interface StreamErrorPayload {
+  error: DataSourceError;
+  source: string;
+  retryCount: number;
+}
+
+export interface StreamStatusPayload {
+  status: DataSourceStatus;
+  previousStatus: DataSourceStatus;
+  source: string;
+}
+
+export interface DataQualityPayload {
+  issues: string[];
+  severity: 'warning' | 'error';
+  data: any[];
+}
+
+export type ReactiveChartEventPayload = 
+  | StreamErrorPayload
+  | StreamStatusPayload 
+  | DataQualityPayload
+  | any[];
+
+/**
+ * Event handler function type
+ */
+export type ReactiveChartEventHandler = (payload: ReactiveChartEventPayload) => void;
+
+/**
+ * Enhanced chart builder with reactive data capabilities and error handling
  */
 export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
   private dataSource: DataSource<T> | null = null;
-  private configObservable: SimpleObservable<BubbleChartConfig>;
+  private configObservable: SimpleObservable<BubbleChartOptions>;
   private disposers: UnsubscribeFunction[] = [];
   private isReactiveMode = false;
+  private eventHandlers = new Map<ReactiveChartEventType, Set<ReactiveChartEventHandler>>();
   
   // Streaming properties
   protected streamingEnabled = false;
   protected streamingOptions: StreamingOptions = defaultStreamingOptions;
   protected currentStreamData: T[] = [];
   
-  constructor(config: BubbleChartConfig) {
+  constructor(config: BubbleChartOptions) {
     super(config);
-    this.configObservable = new SimpleObservable<BubbleChartConfig>(config);
+    this.configObservable = new SimpleObservable<BubbleChartOptions>(config);
     this.setupConfigReactivity();
   }
 
   /**
-   * Bind chart to a data observable for automatic updates
-   * @param source - Observable data source
+   * Add event listener for reactive chart events
+   * @param eventType - Type of event to listen for
+   * @param handler - Event handler function
    * @returns this for method chaining
    */
-  bindTo(source: Observable<T[]>): this {
+  onStream(eventType: ReactiveChartEventType, handler: ReactiveChartEventHandler): this {
+    if (!this.eventHandlers.has(eventType)) {
+      this.eventHandlers.set(eventType, new Set());
+    }
+    this.eventHandlers.get(eventType)!.add(handler);
+    return this;
+  }
+
+  /**
+   * Remove event listener for reactive chart events
+   * @param eventType - Type of event
+   * @param handler - Event handler to remove
+   * @returns this for method chaining
+   */
+  offStream(eventType: ReactiveChartEventType, handler: ReactiveChartEventHandler): this {
+    const handlers = this.eventHandlers.get(eventType);
+    if (handlers) {
+      handlers.delete(handler);
+    }
+    return this;
+  }
+
+  /**
+   * Emit event to all registered handlers
+   * @param eventType - Type of event to emit
+   * @param payload - Event payload
+   */
+  protected emit(eventType: ReactiveChartEventType, payload: ReactiveChartEventPayload): void {
+    const handlers = this.eventHandlers.get(eventType);
+    if (handlers) {
+      handlers.forEach(handler => {
+        try {
+          handler(payload);
+        } catch (error) {
+          console.error(`Error in reactive chart event handler for ${eventType}:`, error);
+        }
+      });
+    }
+  }
+
+  /**
+   * Enhanced bind method that accepts various data sources
+   * @param source - Observable, Promise, async function, or other data source
+   * @returns this for method chaining
+   */
+  bindTo(source: Observable<T[]> | Promise<T[]> | (() => Promise<T[]>) | (() => T[]) | T[]): this {
     this.enableReactiveMode();
     
-    // Create data source from observable
-    this.dataSource = new ObservableDataSource<T>(source);
+    // Handle different source types
+    if (Array.isArray(source)) {
+      // Static array data
+      this.dataSource = new StaticDataSource<T>({ data: source, allowUpdates: true });
+    } else if (typeof source === 'function') {
+      // Function (sync or async)
+      try {
+        const result = source();
+        if (result && typeof (result as any).then === 'function') {
+          // Async function returning promise
+          this.dataSource = this.createDataSourceFromPromise(result as Promise<T[]>);
+        } else {
+          // Sync function returning data
+          this.dataSource = new StaticDataSource<T>({ data: result as T[], allowUpdates: true });
+        }
+      } catch (error) {
+        console.error('Error executing function source:', error);
+        this.dataSource = new StaticDataSource<T>({ data: [], allowUpdates: true });
+      }
+    } else if (source && typeof (source as any).then === 'function') {
+      // Promise
+      this.dataSource = this.createDataSourceFromPromise(source as Promise<T[]>);
+    } else if (source && typeof (source as any).subscribe === 'function') {
+      // Observable
+      this.dataSource = new ObservableDataSource<T>(source as Observable<T[]>);
+    } else {
+      throw new Error('Unsupported data source type for bindTo()');
+    }
+    
+    this.setupDataReactivity();
+    return this;
+  }
+
+  /**
+   * Create a data source from a promise
+   * @param promise - Promise that resolves to data array
+   * @returns Static data source that will be populated when promise resolves
+   */
+  private createDataSourceFromPromise(promise: Promise<T[]>): StaticDataSource<T> {
+    // Create empty static source first
+    const dataSource = new StaticDataSource<T>({ data: [], allowUpdates: true });
+    
+    // Update with promise result when it resolves
+    promise
+      .then(data => {
+        if (Array.isArray(data)) {
+          dataSource.updateData(data);
+        } else {
+          console.error('Promise resolved to non-array data:', data);
+          this.emit('stream:error', {
+            error: {
+              type: 'data_parse_error',
+              message: 'Promise resolved to non-array data',
+              originalError: new Error('Expected array, got: ' + typeof data),
+              timestamp: new Date(),
+              source: 'promise',
+              retryable: false
+            },
+            source: 'promise',
+            retryCount: 0
+          });
+        }
+      })
+      .catch(error => {
+        console.error('Promise rejected:', error);
+        this.emit('stream:error', {
+          error: {
+            type: 'network_error',
+            message: 'Promise rejected',
+            originalError: error,
+            timestamp: new Date(),
+            source: 'promise',
+            retryable: true
+          },
+          source: 'promise',
+          retryCount: 0
+        });
+      });
+    
+    return dataSource;
+  }
+
+  /**
+   * Enhanced bindTo with automatic retry for failed promises
+   * @param promiseFactory - Function that creates a promise
+   * @param options - Retry options
+   * @returns this for method chaining
+   */
+  bindToWithRetry(
+    promiseFactory: () => Promise<T[]>,
+    options: { maxRetries?: number; retryDelay?: number } = {}
+  ): this {
+    const { maxRetries = 3, retryDelay = 1000 } = options;
+    
+    this.enableReactiveMode();
+    
+    const dataSource = new StaticDataSource<T>({ data: [], allowUpdates: true });
+    let retryCount = 0;
+    
+    const attemptLoad = (): void => {
+      promiseFactory()
+        .then(data => {
+          if (Array.isArray(data)) {
+            dataSource.updateData(data);
+            retryCount = 0; // Reset on success
+          } else {
+            throw new Error('Expected array data, got: ' + typeof data);
+          }
+        })
+        .catch(error => {
+          console.error(`Promise attempt ${retryCount + 1} failed:`, error);
+          
+          this.emit('stream:error', {
+            error: {
+              type: 'network_error',
+              message: `Promise attempt ${retryCount + 1} failed`,
+              originalError: error,
+              timestamp: new Date(),
+              source: 'promise-retry',
+              retryable: retryCount < maxRetries
+            },
+            source: 'promise-retry',
+            retryCount
+          });
+          
+          if (retryCount < maxRetries) {
+            retryCount++;
+            setTimeout(attemptLoad, retryDelay * Math.pow(2, retryCount - 1)); // Exponential backoff
+          }
+        });
+    };
+    
+    attemptLoad();
+    this.dataSource = dataSource;
+    this.setupDataReactivity();
+    
+    return this;
+  }
+
+  /**
+   * Bind to a fetch request with automatic retry
+   * @param url - URL to fetch from
+   * @param options - Fetch options and retry configuration
+   * @returns this for method chaining
+   */
+  bindToFetch(
+    url: string, 
+    options: RequestInit & { maxRetries?: number; retryDelay?: number } = {}
+  ): this {
+    const { maxRetries = 3, retryDelay = 1000, ...fetchOptions } = options;
+    
+    return this.bindToWithRetry(
+      () => fetch(url, fetchOptions).then(response => {
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+        return response.json();
+      }),
+      { maxRetries, retryDelay }
+    );
+  }
+
+  /**
+   * Bind to multiple data sources with fallback
+   * @param sources - Array of data source factories to try in order
+   * @returns this for method chaining
+   */
+  bindToWithFallback(sources: (() => Promise<T[]>)[]): this {
+    this.enableReactiveMode();
+    
+    const dataSource = new StaticDataSource<T>({ data: [], allowUpdates: true });
+    
+    const trySource = (index: number): void => {
+      if (index >= sources.length) {
+        this.emit('stream:error', {
+          error: {
+            type: 'connection_failed',
+            message: 'All data sources failed',
+            originalError: new Error('No more sources to try'),
+            timestamp: new Date(),
+            source: 'fallback',
+            retryable: false
+          },
+          source: 'fallback',
+          retryCount: index
+        });
+        return;
+      }
+      
+      sources[index]!()
+        .then(data => {
+          if (Array.isArray(data)) {
+            dataSource.updateData(data);
+          } else {
+            throw new Error('Expected array data');
+          }
+        })
+        .catch(error => {
+          console.warn(`Data source ${index} failed, trying next...`, error);
+          trySource(index + 1);
+        });
+    };
+    
+    trySource(0);
+    this.dataSource = dataSource;
     this.setupDataReactivity();
     
     return this;
@@ -95,16 +390,19 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
   }
 
   /**
-   * Update reactive configuration
+   * Update reactive configuration (unified API)
    * @param newConfig - Partial configuration to merge
    * @returns this for method chaining
    */
-  override setConfig(newConfig: Partial<BubbleChartConfig>): this {
+  override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
     // Update internal config
-    this.config = { ...this.config, ...newConfig };
+    this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
     // Emit config change for reactive subscribers
     this.configObservable.next(this.config);
+    
+    // Emit config change event
+    this.emit('config:change', this.config as any);
     
     return this;
   }
@@ -130,6 +428,23 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
   }
 
   /**
+   * Manually retry failed data source
+   */
+  retry(): this {
+    if (this.dataSource) {
+      this.dataSource.retry();
+    }
+    return this;
+  }
+
+  /**
+   * Get current data source status
+   */
+  get dataSourceStatus(): DataSourceStatus | null {
+    return this.dataSource?.status || null;
+  }
+
+  /**
    * Check if chart is in reactive mode
    */
   get isReactive(): boolean {
@@ -137,15 +452,8 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
   }
 
   /**
-   * Get current data source status
-   */
-  get dataSourceActive(): boolean {
-    return this.dataSource?.isActive || false;
-  }
-
-  /**
-   * Enable streaming mode with animation options
-   * @param options - Streaming animation configuration
+   * Enable streaming mode with configuration
+   * @param options - Streaming options
    * @returns this for method chaining
    */
   enableStreaming(options: Partial<StreamingOptions> = {}): this {
@@ -178,6 +486,10 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
     }
 
     this.performStreamingUpdate();
+    
+    // Emit data update event
+    this.emit('data:update', this.currentStreamData);
+    
     return this;
   }
 
@@ -304,22 +616,59 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
   }
 
   /**
-   * Set up reactive data flow
+   * Set up reactive data flow with error handling
    */
   private setupDataReactivity(): void {
     if (!this.dataSource) return;
     
     // Subscribe to data changes
     const dataUnsubscribe = this.dataSource.stream.subscribe((newData: T[]) => {
+      // Validate data quality
+      this.validateDataQuality(newData);
+      
       // Update internal data without triggering manual update
       this.chartData = newData;
       this.processedData = this.dataProcessor.process(newData);
       
       // Trigger reactive render
       this.triggerReactiveRender();
+      
+      // Emit data update event
+      this.emit('data:update', newData);
     });
     
-    this.disposers.push(dataUnsubscribe);
+    // Subscribe to error events
+    const errorUnsubscribe = this.dataSource.errorStream.subscribe((error: DataSourceError) => {
+      this.emit('stream:error', {
+        error,
+        source: error.source,
+        retryCount: 0 // TODO: Get actual retry count from data source
+      });
+    });
+    
+    // Subscribe to status changes
+    let previousStatus: DataSourceStatus = 'idle';
+    const statusUnsubscribe = this.dataSource.statusStream.subscribe((status: DataSourceStatus) => {
+      // Emit status change event
+      this.emit('stream:status-change', {
+        status,
+        previousStatus,
+        source: 'data-source'
+      });
+      
+      // Emit reconnected event when transitioning from error/reconnecting to connected
+      if ((previousStatus === 'error' || previousStatus === 'reconnecting') && status === 'connected') {
+        this.emit('stream:reconnected', {
+          status,
+          previousStatus,
+          source: 'data-source'
+        });
+      }
+      
+      previousStatus = status;
+    });
+    
+    this.disposers.push(dataUnsubscribe, errorUnsubscribe, statusUnsubscribe);
     
     // Start the data source
     this.dataSource.start();
@@ -329,7 +678,7 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
    * Set up reactive configuration changes
    */
   private setupConfigReactivity(): void {
-    const configUnsubscribe = this.configObservable.subscribe((newConfig: BubbleChartConfig) => {
+    const configUnsubscribe = this.configObservable.subscribe((newConfig: BubbleChartOptions) => {
       // Update data processor with new config
       this.dataProcessor = new (this.dataProcessor.constructor as any)(newConfig);
       
@@ -369,20 +718,51 @@ export abstract class ReactiveChartBuilder<T extends BubbleChartData = BubbleCha
       this.dataSource = null;
     }
   }
+
+  /**
+   * Enhanced data quality validation
+   * @param data - Data to validate
+   */
+  protected validateDataQuality(data: T[]): void {
+    const issues: string[] = [];
+    
+    if (!Array.isArray(data)) {
+      issues.push('Data is not an array');
+    } else if (data.length === 0) {
+      issues.push('Data array is empty');
+    } else {
+      // Check for missing required fields
+      const firstItem = data[0];
+      if (!firstItem) {
+        issues.push('First data item is null or undefined');
+      } else {
+        // Check for common required fields based on config
+        if (typeof this.config.label === 'string' && !(this.config.label in firstItem)) {
+          issues.push(`Label field "${this.config.label}" not found in data`);
+        }
+        if (typeof this.config.size === 'string' && !(this.config.size in firstItem)) {
+          issues.push(`Size field "${this.config.size}" not found in data`);
+        }
+      }
+      
+      // Check for data inconsistencies
+      const nullItems = data.filter(item => item == null).length;
+      if (nullItems > 0) {
+        issues.push(`${nullItems} null or undefined items found`);
+      }
+    }
+    
+    if (issues.length > 0) {
+      this.emit('data:quality-warning', {
+        issues,
+        severity: 'warning' as const,
+        data
+      });
+    }
+  }
 }
 
-/**
- * Utility function to create reactive chart from data source
- */
-export function createReactiveChart<T extends BubbleChartData>(
-  ChartClass: new (config: BubbleChartConfig) => ReactiveChartBuilder<T>,
-  config: BubbleChartConfig,
-  dataSourceConfig: DataSourceConfig<T>
-): ReactiveChartBuilder<T> {
-  const chart = new ChartClass(config);
-  chart.streamFrom(dataSourceConfig);
-  return chart;
-}
+
 
 /**
  * Type guard to check if a chart builder is reactive

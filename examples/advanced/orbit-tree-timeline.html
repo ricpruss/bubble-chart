@@ -29,28 +29,45 @@
   <div id="orbit-container"></div>
 
   <script>
-    const allData = window.data; // flat municipal dataset
-    const years = Array.from(new Set(allData.map(d => d.year))).sort((a,b)=>a-b);
-    let currentYear = years[0];
+    // Create timeline based on sectors instead of years since companies data is static
+    const allData = window.data.map(d => ({
+      ...d,
+      label: d.name,
+      size: d.profits
+    }));
+    
+    const sectors = Array.from(new Set(allData.map(d => d.sector))).sort();
+    let currentSector = sectors[0];
 
     const controls = d3.select('#controls');
     controls.selectAll('button')
-      .data(years)
+      .data(sectors)
       .enter()
       .append('button')
-      .attr('class', d => 'year-btn' + (d===currentYear?' active':''))
+      .attr('class', d => 'year-btn' + (d===currentSector?' active':''))
       .text(d=>d)
-      .on('click',(e,d)=>{ if(currentYear!==d){currentYear=d;controls.selectAll('button').classed('active',y=>y===currentYear);update();}});
+      .on('click',(e,d)=>{ if(currentSector!==d){currentSector=d;controls.selectAll('button').classed('active',s=>s===currentSector);update();}});
 
-    const chart = new BubbleChart({
-      container:'#orbit-container',
-      label:'label',
-      size:'size',
-      type:'orbit'
-    });
+    let chart = null;
 
     function update(){
-      chart.data(allData.filter(d=>d.year===currentYear)).render();
+      const sectorData = allData.filter(d=>d.sector===currentSector).slice(0, 15); // Limit to 15 for readability
+      
+      // Create or update chart with fluent API
+      if (!chart) {
+        chart = BubbleChart.create('#orbit-container')
+          .withData(sectorData)
+          .withLabel('label')
+          .withSize('size')
+          .withColor('sector')  // Color by sector
+          .withType('orbit')
+          .withAnimations('gentle')
+          .render();
+      } else {
+        // Update existing chart with new data
+        chart.store.clear();
+        chart.store.addMany(sectorData);
+      }
     }
     update();
   </script>

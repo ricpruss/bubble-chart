@@ -187,7 +187,136 @@ export class ObservableAdapter<T> implements Observable<T> {
 }
 
 /**
- * Factory function to create observables from various sources
+ * Create observable from a Promise
+ * @param promise - Promise that resolves to a value
+ * @returns Observable that emits the resolved value
+ */
+export function fromPromise<T>(promise: Promise<T>): SimpleObservable<T> {
+  const observable = new SimpleObservable<T>();
+  
+  promise
+    .then(value => observable.next(value))
+    .catch(error => {
+      console.error('Promise observable error:', error);
+      // Could emit error event here if we had error handling
+    });
+  
+  return observable;
+}
+
+/**
+ * Create observable from an async function
+ * @param asyncFn - Async function that returns a value
+ * @returns Observable that emits the resolved value
+ */
+export function fromAsyncFunction<T>(asyncFn: () => Promise<T>): SimpleObservable<T> {
+  const observable = new SimpleObservable<T>();
+  
+  asyncFn()
+    .then(value => observable.next(value))
+    .catch(error => {
+      console.error('Async function observable error:', error);
+      // Could emit error event here if we had error handling
+    });
+  
+  return observable;
+}
+
+/**
+ * Create observable from fetch request
+ * @param input - Fetch input (URL or Request object)
+ * @param init - Fetch options
+ * @returns Observable that emits the parsed JSON response
+ */
+export function fromFetch<T = any>(
+  input: RequestInfo | URL,
+  init?: RequestInit
+): SimpleObservable<T> {
+  const observable = new SimpleObservable<T>();
+  
+  fetch(input, init)
+    .then(response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+      }
+      return response.json();
+    })
+    .then(data => observable.next(data))
+    .catch(error => {
+      console.error('Fetch observable error:', error);
+      // Could emit error event here if we had error handling
+    });
+  
+  return observable;
+}
+
+/**
+ * Create observable that retries failed promises
+ * @param promiseFactory - Function that creates a promise
+ * @param maxRetries - Maximum number of retry attempts
+ * @param retryDelay - Delay between retries in milliseconds
+ * @returns Observable with retry logic
+ */
+export function fromPromiseWithRetry<T>(
+  promiseFactory: () => Promise<T>,
+  maxRetries = 3,
+  retryDelay = 1000
+): SimpleObservable<T> {
+  const observable = new SimpleObservable<T>();
+  
+  const attempt = (retryCount = 0): void => {
+    promiseFactory()
+      .then(value => observable.next(value))
+      .catch(error => {
+        if (retryCount < maxRetries) {
+          console.warn(`Promise failed, retrying (${retryCount + 1}/${maxRetries})...`, error);
+          setTimeout(() => attempt(retryCount + 1), retryDelay);
+        } else {
+          console.error(`Promise failed after ${maxRetries} retries:`, error);
+          // Could emit error event here
+        }
+      });
+  };
+  
+  attempt();
+  return observable;
+}
+
+/**
+ * Create observable from multiple async data sources with fallback
+ * @param sources - Array of promise factories to try in order
+ * @returns Observable that emits from the first successful source
+ */
+export function fromMultipleSources<T>(
+  sources: (() => Promise<T>)[]
+): SimpleObservable<T> {
+  const observable = new SimpleObservable<T>();
+  
+  const trySource = (index: number): void => {
+    if (index >= sources.length) {
+      console.error('All data sources failed');
+      return;
+    }
+    
+    const sourceFactory = sources[index];
+    if (sourceFactory) {
+      sourceFactory()
+        .then(value => observable.next(value))
+        .catch(error => {
+          console.warn(`Data source ${index} failed, trying next...`, error);
+          trySource(index + 1);
+        });
+    } else {
+      trySource(index + 1);
+    }
+  };
+  
+  trySource(0);
+  return observable;
+}
+
+/**
+ * Enhanced factory function that handles various async patterns
  */
 export function createObservable<T>(source: any): Observable<T> {
   // Already an observable
@@ -199,14 +328,52 @@ export function createObservable<T>(source: any): Observable<T> {
     // Wrap external observables
     return new ObservableAdapter<T>(source);
   }
-  
-  // Create from static value
-  if (source !== undefined) {
+
+  // Promise
+  if (source && typeof source.then === 'function') {
+    return fromPromise<T>(source);
+  }
+
+  // Function (sync or async)
+  if (typeof source === 'function') {
+    try {
+      const result = (source as () => any)();
+      if (result && typeof result.then === 'function') {
+        return fromPromise<T>(result);
+      }
+      // Synchronous function result
+      return new SimpleObservable<T>(result);
+    } catch (error) {
+      console.error('Function observable error:', error);
+      return new SimpleObservable<T>();
+    }
+  }
+
+  // Array or static value
+  if (Array.isArray(source) || source !== null && source !== undefined) {
     return new SimpleObservable<T>(source);
   }
-  
-  // Create empty observable
-  return new SimpleObservable<T>();
+
+  // Handle null/undefined by creating empty observable
+  if (source === null || source === undefined) {
+    return new SimpleObservable<T>();
+  }
+
+  throw new Error('Unable to create observable from source');
+}
+
+/**
+ * Utility to check if a value is promise-like
+ */
+export function isPromiseLike(obj: any): obj is Promise<any> {
+  return obj && typeof obj.then === 'function';
+}
+
+/**
+ * Utility to check if a value is an async function
+ */
+export function isAsyncFunction(fn: any): boolean {
+  return typeof fn === 'function' && fn.constructor && fn.constructor.name === 'AsyncFunction';
 }
 
 /**

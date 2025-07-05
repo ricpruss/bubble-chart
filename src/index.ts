@@ -1,5 +1,4 @@
 import * as d3 from 'd3';
-import { ConfigBuilder } from './config-builder.js';
 import { BubbleBuilder } from './bubble-builder.js';
 import { TreeBuilder } from './tree-builder.js';
 import { OrbitBuilder } from './orbit-builder.js';
@@ -11,8 +10,8 @@ import { LiquidBubble } from './liquid-bubble.js';
 // Import our comprehensive type system
 import type { 
   BubbleChartData, 
-  BubbleChartConfig, 
   BubbleChartOptions,
+  ChartHandle,
   ChartType 
 } from './types/index.js';
 
@@ -20,6 +19,8 @@ import type {
   BubbleEventType,
   BubbleEventHandlers
 } from './types/events.js';
+
+import { createDefaultConfig } from './types/config.js';
 
 // Export common building blocks for advanced usage
 export {
@@ -40,9 +41,10 @@ export {
 // Export reactive functionality
 export {
   DataStore,
-  createBubbleChart,
+
   BubbleChart as ReactiveBubbleChart,
   BubbleChartBuilder,
+  ReactiveBubbleBuilder,
   type IBubbleChart,
   type BubbleChartOptions as ReactiveBubbleChartOptions,
   type ChangeStats,
@@ -55,9 +57,6 @@ export {
   type AnimationConfig,
   type AnimationPresetName,
   SmartTooltips,
-  type TooltipConfig,
-  type TooltipMode,
-  type TooltipField,
   type TooltipContent
 } from './reactive/index.js';
 
@@ -84,11 +83,11 @@ export {
  * 
  * @template T - The data type, must extend BubbleChartData
  */
-export class BubbleChart<T extends BubbleChartData = BubbleChartData> {
+export class BubbleChart<T extends BubbleChartData = BubbleChartData> implements ChartHandle<T> {
   /**
-   * Configuration builder instance
+   * Configuration instance
    */
-  private config: ConfigBuilder;
+  private config: BubbleChartOptions<T>;
 
   /**
    * Current chart builder instance
@@ -101,76 +100,40 @@ export class BubbleChart<T extends BubbleChartData = BubbleChartData> {
    * @param options - Configuration options for the chart
    */
   constructor(options: Partial<BubbleChartOptions<T>> = {}) {
-    this.config = new ConfigBuilder();
-    
-    // Merge user options with default configuration
-    this.mergeOptions(options);
+    // Start with default configuration and merge user options
+    this.config = { ...createDefaultConfig(), ...options } as BubbleChartOptions<T>;
 
     // Initialize the appropriate builder based on chart type
     this.initializeBuilder();
   }
 
-  /**
-   * Merge user options with the default configuration
-   * @param options - User-provided options to merge
-   */
-  private mergeOptions(options: Partial<BubbleChartOptions<T>>): void {
-    // Guard against undefined or null options
-    if (!options || typeof options !== 'object') {
-      return;
-    }
 
-    const configObject = this.config.getConfig();
-    
-    for (const [key, value] of Object.entries(options)) {
-      if (key === 'format' && typeof value === 'object' && value !== null) {
-        // Merge format functions
-        configObject.format = { ...configObject.format, ...value };
-      } else if (typeof (configObject as any)[key] === 'object' && 
-                 (configObject as any)[key] !== null &&
-                 typeof value === 'object' && value !== null) {
-        // Deep merge object properties
-        (configObject as any)[key] = { 
-          ...(configObject as any)[key], 
-          ...value 
-        };
-      } else {
-        // Direct assignment for primitive values
-        (configObject as any)[key] = value;
-      }
-    }
-
-    // Update the config builder with merged options
-    this.config.setOptions(configObject);
-  }
 
   /**
    * Initialize the appropriate chart builder based on configuration type
    */
   private initializeBuilder(): void {
-    const configObject = this.config.getConfig();
-    
-    switch (configObject.type) {
+    switch (this.config.type) {
       case 'tree':
-        this.builder = new TreeBuilder<T>(configObject);
+        this.builder = new TreeBuilder<T>(this.config as any);
         break;
       case 'wave':
-        this.builder = new WaveBubble<T>(configObject);
+        this.builder = new WaveBubble<T>(this.config as any);
         break;
       case 'orbit':
-        this.builder = new OrbitBuilder<T>(configObject);
+        this.builder = new OrbitBuilder<T>(this.config as any);
         break;
       case 'list':
-        this.builder = new ListBuilder<T>(configObject);
+        this.builder = new ListBuilder<T>(this.config as any);
         break;
       case 'motion':
-        this.builder = new MotionBubble<T>(configObject);
+        this.builder = new MotionBubble<T>(this.config as any);
         break;
       case 'liquid':
-        this.builder = new LiquidBubble<T>(configObject);
+        this.builder = new LiquidBubble<T>(this.config as any);
         break;
       default:
-        this.builder = new BubbleBuilder<T>(configObject);
+        this.builder = new BubbleBuilder<T>(this.config as any);
     }
   }
 
@@ -238,36 +201,39 @@ export class BubbleChart<T extends BubbleChartData = BubbleChartData> {
   }
 
   /**
-   * Get the current chart configuration
-   * @returns Current chart configuration
+   * Get readonly merged options (unified API)
+   * @returns Readonly configuration options
    */
-  getConfig(): BubbleChartConfig {
-    return this.config.getConfig();
+  options(): Readonly<BubbleChartOptions<T>> {
+    return Object.freeze({ ...this.config });
   }
 
   /**
-   * Update chart configuration
-   * @param options - Partial configuration options to merge
-   * @returns This instance for method chaining
+   * Merge-update options (unified API)
+   * @param options - Partial configuration to merge
+   * @returns this for method chaining
    */
-  configure(options: Partial<BubbleChartOptions<T>>): this {
-    this.mergeOptions(options);
+  updateOptions(options: Partial<BubbleChartOptions<T>>): this {
+    const oldType = this.config.type;
+    this.config = { ...this.config, ...options };
     
     // Re-initialize builder if chart type changed
     const newType = options.type;
-    if (newType && newType !== this.getConfig().type) {
+    if (newType && newType !== oldType) {
       this.initializeBuilder();
     }
     
     return this;
   }
 
+
+
   /**
    * Get the chart type
    * @returns Current chart type
    */
   getType(): ChartType {
-    return this.getConfig().type || 'none';
+    return this.config.type || 'none';
   }
 
   /**
@@ -353,7 +319,6 @@ export { BubbleChart as default };
 // Re-export key types for external usage
 export type {
   BubbleChartData,
-  BubbleChartConfig,
   BubbleChartOptions,
   ChartType,
   BubbleEventType,
@@ -362,7 +327,6 @@ export type {
 
 // Re-export individual builders for advanced usage
 export {
-  ConfigBuilder,
   BubbleBuilder,
   TreeBuilder,
   MotionBubble,

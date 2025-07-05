@@ -24,7 +24,7 @@ describe('Data Type Guards', () => {
         label: 'Test Company',
         size: 1000,
         count: 50,
-        tipo: 'Technology',
+        type: 'Technology',
         year: 2023
       };
       
@@ -191,7 +191,7 @@ describe('Real-world Data Compatibility', () => {
       label: '3M',
       size: 2293236972,
       count: 57,
-      tipo: 'Companies',
+      type: 'Companies',
       year: 2021
     };
     

@@ -10,7 +10,8 @@
         "dist/"
     ],
     "scripts": {
-        "build": "npm run type-check && rollup -c",
+        "build": "npm run type-check && rollup -c && npm run copy-css",
+        "copy-css": "mkdir -p dist/css && cp src/css/bubble-chart.css dist/css/bubble-chart.css",
         "dev": "concurrently \"rollup -c -w\" \"vite --open examples/\" --names \"📦,🌐\" --prefix-colors \"blue,green\"",
         "prepublishOnly": "npm run build",
         "test:integration": "node scripts/test-integration.js",

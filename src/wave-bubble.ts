@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import type { BubbleChartData } from './types/data.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import { resolveColor } from './types/d3-helpers.js';
 
@@ -36,16 +36,17 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     /** Wave frequency divider */
     frequency: 0.4,
     /** Wave amplitude as fraction of radius */
-    amplitude: 0.2,
+    amplitude: 0.05,
     /** Animation speed increment */
     speed: 0.05,
     /** Wave path resolution (distance between points) */
     resolution: 5
   };
 
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'wave';
+  constructor(config: BubbleChartOptions) {
+    // Ensure we can modify the config by creating a mutable copy
+    const mutableConfig = { ...config, type: 'wave' as const };
+    super(mutableConfig);
   }
 
   /**
@@ -87,9 +88,11 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
       .append('circle')
               .attr('r', (_d: any, i: number) => layoutNodes[i].r);
 
-    bubbleGroups.append('g')
-      .attr('clip-path', (_d: any, i: number) => `url(#wave-clip-${i})`)
-      .append('path')
+    const waveGroups = bubbleGroups.append('g')
+      .attr('clip-path', (_d: any, i: number) => `url(#wave-clip-${i})`);
+
+    // Add the animated wave path
+    waveGroups.append('path')
       .attr('class', 'wave')
       .attr('fill', (_d: any, i: number) => resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#2196F3'))
       .style('opacity', 0.6)
@@ -103,12 +106,34 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     this.stopWaveAnimation();
     this.animationTime = 0;
 
+    // Capture class instance for reuse inside callbacks
+    const self = this;
+
+    // Initial draw so tests (and first frame) have wave paths before animation starts
+    const initialLayoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
+    bubbleGroups.each(function (this: SVGGElement, _d: any, bubbleIndex: number) {
+      const group = d3.select<SVGGElement, any>(this);
+      const path = group.select<SVGPathElement>('.wave');
+      if (!path.empty()) {
+        const waveData = self.generateWaveData(initialLayoutNodes[bubbleIndex], bubbleIndex);
+        path.attr('d', waveData ? d3.line()(waveData.points) : null);
+      }
+    });
+
+    // Start animated updates
     this.waveTimer = d3.timer(() => {
       this.animationTime += this.waveConfig.speed;
       
-      bubbleGroups.selectAll('.wave').attr('d', (d: any, i: number) => {
-        const waveData = this.generateWaveData(d, i);
-        return waveData ? d3.line()(waveData.points) : null;
+      // Get the layout nodes for proper data access
+      const layoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
+      
+      bubbleGroups.each(function (this: SVGGElement, _d: any, bubbleIndex: number) {
+        const bubbleGroup = d3.select<SVGGElement, any>(this);
+        const waveElement = bubbleGroup.select<SVGPathElement>('.wave');
+        if (!waveElement.empty()) {
+          const waveData = self.generateWaveData(layoutNodes[bubbleIndex], bubbleIndex);
+          waveElement.attr('d', waveData ? d3.line()(waveData.points) : null);
+        }
       });
     });
   }
@@ -138,6 +163,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     if (this.config.percentage && typeof this.config.percentage === 'function') {
       return Math.max(0, Math.min(1, this.config.percentage(data)));
     }
+    
     return 0.7; // Default to 70%
   }
 

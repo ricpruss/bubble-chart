@@ -1,5 +1,5 @@
 import type { BubbleChartData } from './types/data.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import type { ProcessedDataPoint } from './core/data-processor.js';
 import * as d3 from 'd3';
@@ -23,18 +23,20 @@ interface OrbitNode {
  * 
  * Migrated to use core building blocks - 87% code reduction achieved!
  * Compare to original: 119 lines -> ~45 lines
+ * Implements ChartHandle interface for unified API
  * 
  * @template T - The data type, must extend BubbleChartData
  */
-export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
+export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> implements ChartHandle<T> {
   private orbitTimer?: d3.Timer;
   private orbitNodes: OrbitNode[] = [];
   private center = { x: 0, y: 0 };
   private speedMultiplier = 0.3; // Default to 30% speed (very relaxing)
 
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'orbit';
+  constructor(config: BubbleChartOptions) {
+    // Ensure we can modify the config by creating a mutable copy
+    const mutableConfig = { ...config, type: 'orbit' as const };
+    super(mutableConfig);
   }
 
   /**
@@ -123,6 +125,30 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       this.orbitTimer.stop();
       this.orbitTimer = undefined as any;
     }
+  }
+
+  /**
+   * Get readonly merged options (unified API)
+   * @returns Readonly configuration options
+   */
+  override options(): Readonly<BubbleChartOptions<T>> {
+    return Object.freeze(this.config as unknown as BubbleChartOptions<T>);
+  }
+
+  /**
+   * Merge-update options (unified API)
+   * @param newConfig - Partial configuration to merge
+   * @returns this for method chaining
+   */
+  override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
+    this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
+    
+    // Update building blocks with new config if needed
+    if (this.dataProcessor && this.chartData.length) {
+      this.processedData = this.dataProcessor.process(this.chartData);
+    }
+    
+    return this;
   }
 
   /**

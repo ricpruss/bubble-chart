@@ -1,0 +1,533 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Animation Configuration Showcase</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <style>
+    body { 
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; 
+      margin: 20px; 
+      background: #f8f9fa;
+    }
+    .container { max-width: 1200px; margin: 0 auto; }
+    .header { text-align: center; margin-bottom: 40px; }
+    .section { 
+      background: white; 
+      border-radius: 8px; 
+      padding: 20px; 
+      margin: 20px 0; 
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .controls { 
+      display: grid; 
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); 
+      gap: 20px; 
+      margin-bottom: 20px;
+    }
+    .control-group { 
+      background: #f8f9fa; 
+      padding: 15px; 
+      border-radius: 6px; 
+      border: 1px solid #e9ecef;
+    }
+    .control-group h4 { 
+      margin: 0 0 10px 0; 
+      color: #495057; 
+      font-size: 14px;
+      font-weight: 600;
+    }
+    .control-group label { 
+      display: block; 
+      margin: 8px 0; 
+      font-size: 13px; 
+      color: #6c757d;
+    }
+    .control-group input { 
+      width: 100%; 
+      padding: 6px; 
+      border: 1px solid #ced4da; 
+      border-radius: 4px; 
+      font-size: 13px;
+    }
+    .control-group select { 
+      width: 100%; 
+      padding: 6px; 
+      border: 1px solid #ced4da; 
+      border-radius: 4px; 
+      font-size: 13px;
+    }
+    .actions { 
+      display: flex; 
+      gap: 10px; 
+      flex-wrap: wrap; 
+      margin-bottom: 20px;
+    }
+    .actions button { 
+      padding: 8px 16px; 
+      border: none; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 14px; 
+      transition: background 0.2s;
+    }
+    .btn-primary { background: #007bff; color: white; }
+    .btn-secondary { background: #6c757d; color: white; }
+    .btn-success { background: #28a745; color: white; }
+    .btn-danger { background: #dc3545; color: white; }
+    .btn-primary:hover { background: #0056b3; }
+    .btn-secondary:hover { background: #5a6268; }
+    .btn-success:hover { background: #1e7e34; }
+    .btn-danger:hover { background: #c82333; }
+    
+    #chart-container { 
+      background: #fafafa; 
+      border: 2px solid #e9ecef; 
+      border-radius: 8px; 
+      min-height: 600px; 
+      position: relative;
+    }
+    
+    .status { 
+      padding: 10px; 
+      margin: 10px 0; 
+      border-radius: 4px; 
+      font-size: 14px;
+    }
+    .status.success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+    .status.error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+    .status.info { background: #cce7ff; color: #004085; border: 1px solid #b8daff; }
+    
+    .preset-buttons { 
+      display: flex; 
+      gap: 8px; 
+      margin: 10px 0; 
+      flex-wrap: wrap;
+    }
+    .preset-buttons button { 
+      padding: 6px 12px; 
+      border: 1px solid #dee2e6; 
+      background: white; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      font-size: 13px;
+    }
+    .preset-buttons button:hover { 
+      background: #e9ecef; 
+    }
+    .preset-buttons button.active { 
+      background: #007bff; 
+      color: white; 
+      border-color: #007bff;
+    }
+    
+    .explanation { 
+      background: #e7f3ff; 
+      padding: 15px; 
+      border-radius: 6px; 
+      border-left: 4px solid #007bff; 
+      margin: 20px 0; 
+      font-size: 14px; 
+      color: #004085;
+    }
+    
+    .current-values { 
+      background: #f8f9fa; 
+      padding: 15px; 
+      border-radius: 6px; 
+      border: 1px solid #e9ecef; 
+      margin: 15px 0; 
+      font-family: monospace; 
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Animation Configuration Showcase</h1>
+      <p>Explore how different animation parameters affect bubble chart transitions</p>
+    </div>
+    
+    <div class="section">
+      <h3>Animation Presets</h3>
+      <div class="preset-buttons">
+        <button onclick="applyPreset('gentle')">Gentle</button>
+        <button onclick="applyPreset('energetic')">Energetic</button>
+        <button onclick="applyPreset('smooth')">Smooth</button>
+        <button onclick="applyPreset('bouncy')">Bouncy</button>
+        <button onclick="applyPreset('fade')">Fade</button>
+        <button onclick="applyPreset('minimal')">Minimal</button>
+        <button onclick="applyPreset('none')">None</button>
+      </div>
+      
+      <div class="explanation">
+        <strong>Presets provide pre-configured animation settings:</strong>
+        <br>• <strong>Gentle</strong> - Slow, staggered entrance with long delays
+        <br>• <strong>Energetic</strong> - Fast, bouncy animations with short delays
+        <br>• <strong>Smooth</strong> - Balanced timing with moderate stagger
+        <br>• <strong>Bouncy</strong> - Elastic easing with playful movement
+        <br>• <strong>Fade</strong> - Opacity-focused transitions
+        <br>• <strong>Minimal</strong> - Very fast with no stagger
+        <br>• <strong>None</strong> - Instant with no animation
+      </div>
+    </div>
+    
+    <div class="section">
+      <h3>Custom Animation Parameters</h3>
+      <div class="controls">
+        <div class="control-group">
+          <h4>Enter Animation</h4>
+          <label>Duration (ms): <input type="range" id="enterDuration" min="100" max="3000" value="800" onchange="updateAnimations()"></label>
+          <label>Stagger Delay (ms): <input type="range" id="enterStagger" min="0" max="200" value="50" onchange="updateAnimations()"></label>
+          <label>Easing: <select id="enterEasing" onchange="updateAnimations()">
+            <option value="ease-out">Ease Out</option>
+            <option value="ease-in">Ease In</option>
+            <option value="ease-in-out">Ease In-Out</option>
+            <option value="linear">Linear</option>
+            <option value="cubic-bezier(0.68, -0.55, 0.265, 1.55)">Bounce</option>
+          </select></label>
+        </div>
+        
+        <div class="control-group">
+          <h4>Update Animation</h4>
+          <label>Duration (ms): <input type="range" id="updateDuration" min="100" max="2000" value="600" onchange="updateAnimations()"></label>
+          <label>Easing: <select id="updateEasing" onchange="updateAnimations()">
+            <option value="ease-in-out">Ease In-Out</option>
+            <option value="ease-out">Ease Out</option>
+            <option value="ease-in">Ease In</option>
+            <option value="linear">Linear</option>
+          </select></label>
+        </div>
+        
+        <div class="control-group">
+          <h4>Exit Animation</h4>
+          <label>Duration (ms): <input type="range" id="exitDuration" min="100" max="2000" value="400" onchange="updateAnimations()"></label>
+          <label>Easing: <select id="exitEasing" onchange="updateAnimations()">
+            <option value="ease-in">Ease In</option>
+            <option value="ease-out">Ease Out</option>
+            <option value="ease-in-out">Ease In-Out</option>
+            <option value="linear">Linear</option>
+          </select></label>
+        </div>
+      </div>
+      
+      <div class="current-values" id="currentValues">
+        Current Animation Configuration: Loading...
+      </div>
+      
+      <div class="explanation">
+        <strong>Parameter Effects:</strong>
+        <br>• <strong>Duration</strong> - How long each animation phase takes
+        <br>• <strong>Stagger Delay</strong> - Time between each bubble's animation start (creates wave effect)
+        <br>• <strong>Easing</strong> - Animation curve (how speed changes over time)
+        <br>• <strong>Enter</strong> - New bubbles appearing
+        <br>• <strong>Update</strong> - Existing bubbles changing size/position
+        <br>• <strong>Exit</strong> - Bubbles disappearing
+      </div>
+    </div>
+    
+    <div class="section">
+      <h3>Data Manipulation</h3>
+      <div class="actions">
+        <button class="btn-primary" onclick="addCompanies()">Add 5 Companies</button>
+        <button class="btn-secondary" onclick="removeCompanies()">Remove 5 Companies</button>
+        <button class="btn-success" onclick="shuffleCompanies()">Shuffle All</button>
+        <button class="btn-danger" onclick="clearData()">Clear All</button>
+        <button class="btn-secondary" onclick="resetData()">Reset to Sample</button>
+      </div>
+      
+      <div class="explanation">
+        <strong>Use these actions to see animations in action:</strong>
+        <br>• <strong>Add Companies</strong> - Watch enter animations with stagger effect
+        <br>• <strong>Remove Companies</strong> - Observe exit animations
+        <br>• <strong>Shuffle All</strong> - See update animations as positions change
+        <br>• <strong>Clear/Reset</strong> - Trigger both exit and enter animations
+      </div>
+    </div>
+    
+    <div class="section">
+      <div id="status" class="status info">Loading Fortune 1000 data...</div>
+      <div id="chart-container"></div>
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let chart = null;
+    let fullDataset = [];
+    let currentDataset = [];
+    let currentPreset = 'smooth';
+    
+    // Load Fortune 1000 data
+    fetch('../data/fortune1000.json')
+      .then(response => response.json())
+      .then(data => {
+        // Transform data for our chart
+        fullDataset = data.slice(0, 100).map(company => ({
+          id: company.Company,
+          name: company.Company,
+          value: company.Profits_M || 1000, // Use profits as size
+          size: company.Profits_M || 1000,
+          sector: company.Sector || 'Other',
+          rank: company.Rank,
+          revenue: company.Revenues_M,
+          employees: company.Number_of_employees,
+          ceo: company.CEO,
+          city: company.HeadquartersCity,
+          state: company.HeadquartersState
+        }));
+        
+        // Start with a subset for better demonstration
+        currentDataset = fullDataset.slice(0, 15);
+        
+        initializeChart();
+        setStatus('success', `Loaded ${fullDataset.length} companies from Fortune 1000 dataset`);
+      })
+      .catch(error => {
+        console.error('Error loading data:', error);
+        setStatus('error', 'Failed to load Fortune 1000 data. Using sample data instead.');
+        
+        // Fallback to sample data
+        fullDataset = [
+          { id: 'tech-1', name: 'Tech Corp', value: 5000, size: 5000, sector: 'Technology' },
+          { id: 'health-1', name: 'Health Plus', value: 3000, size: 3000, sector: 'Healthcare' },
+          { id: 'finance-1', name: 'Finance Co', value: 4000, size: 4000, sector: 'Finance' },
+          { id: 'retail-1', name: 'Retail Giant', value: 2000, size: 2000, sector: 'Retail' },
+          { id: 'energy-1', name: 'Energy Corp', value: 6000, size: 6000, sector: 'Energy' }
+        ];
+        currentDataset = [...fullDataset];
+        initializeChart();
+      });
+    
+    function initializeChart() {
+      try {
+        // Create chart using the new fluent API
+        chart = BubbleChart.create('#chart-container')
+          .withData(currentDataset)
+          .withSize('size')
+          .withLabel('name')
+          .withColor(d => getSectorColor(d.sector))
+          .withDimensions(1100, 600)
+          .withAnimations({
+            enter: { duration: 800, stagger: 50, easing: 'ease-out' },
+            update: { duration: 600, easing: 'ease-in-out' },
+            exit: { duration: 400, easing: 'ease-in' }
+          })
+          .render();
+        
+        // Update controls to match initial preset
+        applyPreset('smooth');
+        
+        setStatus('success', 'Chart initialized with Fortune 1000 data using fluent API');
+      } catch (error) {
+        console.error('Error initializing chart:', error);
+        setStatus('error', 'Failed to initialize chart: ' + error.message);
+      }
+    }
+    
+    function getSectorColor(sector) {
+      const colors = {
+        'Technology': '#3498db',
+        'Healthcare': '#e74c3c',
+        'Finance': '#2ecc71',
+        'Retail': '#f39c12',
+        'Energy': '#9b59b6',
+        'Manufacturing': '#34495e',
+        'Telecommunications': '#16a085',
+        'Other': '#95a5a6'
+      };
+      return colors[sector] || colors['Other'];
+    }
+    
+    function applyPreset(presetName) {
+      currentPreset = presetName;
+      
+      // Update button states
+      document.querySelectorAll('.preset-buttons button').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase() === presetName.toLowerCase()) {
+          btn.classList.add('active');
+        }
+      });
+      
+      try {
+        // Apply preset to chart
+        chart.setAnimations(presetName);
+        
+        // Update controls to match preset
+        updateControlsFromPreset(presetName);
+        
+        setStatus('success', `Applied "${presetName}" preset`);
+      } catch (error) {
+        console.error('Error applying preset:', error);
+        setStatus('error', 'Failed to apply preset: ' + error.message);
+      }
+    }
+    
+    function updateControlsFromPreset(presetName) {
+      const presets = {
+        gentle: { enter: { duration: 1200, stagger: 80, easing: 'ease-out' }, update: { duration: 800, easing: 'ease-in-out' }, exit: { duration: 600, easing: 'ease-in' } },
+        energetic: { enter: { duration: 400, stagger: 30, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' }, update: { duration: 300, easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)' }, exit: { duration: 250, easing: 'ease-out' } },
+        smooth: { enter: { duration: 800, stagger: 50, easing: 'ease-out' }, update: { duration: 600, easing: 'ease-in-out' }, exit: { duration: 400, easing: 'ease-in' } },
+        bouncy: { enter: { duration: 1000, stagger: 60, easing: 'cubic-bezier(0.68, -0.55, 0.265, 1.55)' }, update: { duration: 700, easing: 'cubic-bezier(0.175, 0.885, 0.32, 1.275)' }, exit: { duration: 500, easing: 'cubic-bezier(0.55, 0.055, 0.675, 0.19)' } },
+        fade: { enter: { duration: 600, stagger: 40, easing: 'ease-out' }, update: { duration: 400, easing: 'ease-in-out' }, exit: { duration: 300, easing: 'ease-in' } },
+        minimal: { enter: { duration: 5, stagger: 0, easing: 'linear' }, update: { duration: 1, easing: 'linear' }, exit: { duration: 1, easing: 'linear' } },
+        none: { enter: { duration: 0, stagger: 0, easing: 'linear' }, update: { duration: 0, easing: 'linear' }, exit: { duration: 0, easing: 'linear' } }
+      };
+      
+      const preset = presets[presetName];
+      if (preset) {
+        document.getElementById('enterDuration').value = preset.enter.duration;
+        document.getElementById('enterStagger').value = preset.enter.stagger;
+        document.getElementById('enterEasing').value = preset.enter.easing;
+        document.getElementById('updateDuration').value = preset.update.duration;
+        document.getElementById('updateEasing').value = preset.update.easing;
+        document.getElementById('exitDuration').value = preset.exit.duration;
+        document.getElementById('exitEasing').value = preset.exit.easing;
+        
+        updateCurrentValues();
+      }
+    }
+    
+    function updateAnimations() {
+      const config = {
+        enter: {
+          duration: parseInt(document.getElementById('enterDuration').value),
+          stagger: parseInt(document.getElementById('enterStagger').value),
+          easing: document.getElementById('enterEasing').value
+        },
+        update: {
+          duration: parseInt(document.getElementById('updateDuration').value),
+          easing: document.getElementById('updateEasing').value
+        },
+        exit: {
+          duration: parseInt(document.getElementById('exitDuration').value),
+          easing: document.getElementById('exitEasing').value
+        }
+      };
+      
+      try {
+        chart.setAnimation(config);
+        updateCurrentValues();
+        setStatus('success', 'Animation configuration updated');
+      } catch (error) {
+        console.error('Error updating animations:', error);
+        setStatus('error', 'Failed to update animations: ' + error.message);
+      }
+    }
+    
+    function updateCurrentValues() {
+      const values = {
+        enter: {
+          duration: document.getElementById('enterDuration').value,
+          stagger: document.getElementById('enterStagger').value,
+          easing: document.getElementById('enterEasing').value
+        },
+        update: {
+          duration: document.getElementById('updateDuration').value,
+          easing: document.getElementById('updateEasing').value
+        },
+        exit: {
+          duration: document.getElementById('exitDuration').value,
+          easing: document.getElementById('exitEasing').value
+        }
+      };
+      
+      document.getElementById('currentValues').innerHTML = 
+        `Current Animation Configuration:
+{
+  enter: { duration: ${values.enter.duration}ms, stagger: ${values.enter.stagger}ms, easing: "${values.enter.easing}" },
+  update: { duration: ${values.update.duration}ms, easing: "${values.update.easing}" },
+  exit: { duration: ${values.exit.duration}ms, easing: "${values.exit.easing}" }
+}`;
+    }
+    
+    function addCompanies() {
+      const availableCompanies = fullDataset.filter(company => 
+        !currentDataset.find(current => current.id === company.id)
+      );
+      
+      if (availableCompanies.length === 0) {
+        setStatus('error', 'No more companies available to add');
+        return;
+      }
+      
+      const toAdd = availableCompanies.slice(0, 5);
+      toAdd.forEach(company => {
+        chart.store.add(company);
+      });
+      
+      currentDataset = [...currentDataset, ...toAdd];
+      setStatus('success', `Added ${toAdd.length} companies (${currentDataset.length} total)`);
+    }
+    
+    function removeCompanies() {
+      if (currentDataset.length === 0) {
+        setStatus('error', 'No companies to remove');
+        return;
+      }
+      
+      const toRemove = currentDataset.slice(0, Math.min(5, currentDataset.length));
+      toRemove.forEach(company => {
+        chart.store.remove(d => d.id === company.id);
+      });
+      
+      currentDataset = currentDataset.filter(company => 
+        !toRemove.find(removed => removed.id === company.id)
+      );
+      
+      setStatus('success', `Removed ${toRemove.length} companies (${currentDataset.length} remaining)`);
+    }
+    
+    function shuffleCompanies() {
+      if (currentDataset.length === 0) {
+        setStatus('error', 'No companies to shuffle');
+        return;
+      }
+      
+      // Shuffle the data by changing size values and replace all data
+      const shuffledData = currentDataset.map(company => ({
+        ...company,
+        size: Math.random() * 10000 + 1000,
+        value: Math.random() * 10000 + 1000
+      }));
+      
+      // Use replaceWith for better layout recalculation
+      chart.store.replaceWith(shuffledData);
+      currentDataset = shuffledData;
+      
+      setStatus('success', `Shuffled ${currentDataset.length} companies with new sizes`);
+    }
+    
+    function clearData() {
+      chart.store.clear();
+      currentDataset = [];
+      setStatus('success', 'Cleared all data');
+    }
+    
+    function resetData() {
+      chart.store.clear();
+      currentDataset = fullDataset.slice(0, 15);
+      currentDataset.forEach(company => {
+        chart.store.add(company);
+      });
+      setStatus('success', `Reset to sample of ${currentDataset.length} companies`);
+    }
+    
+    function setStatus(type, message) {
+      const statusEl = document.getElementById('status');
+      statusEl.className = `status ${type}`;
+      statusEl.textContent = message;
+    }
+    
+    // Initialize current values display
+    setTimeout(() => {
+      if (chart) {
+        updateCurrentValues();
+      }
+    }, 1000);
+  </script>
+</body>
+</html> 

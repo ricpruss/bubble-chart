@@ -31,15 +31,16 @@
       { "label": "Saturn", "size": 35 }
     ];
 
-    const chart = new BubbleChart({
-      container: "#chart-container",
-      label: "label",
-      size: "size",
-      type: "orbit"
-    });
+    const chart = BubbleChart.create("#chart-container")
+      .withData(data)
+      .withLabel("label")
+      .withSize("size")
+      .withColor("label")
+      .withType("orbit")
+      .render();
 
-    chart.data(data);
-    chart.render();
+    // Increase orbit speed for clearer motion (1.0 = normal speed)
+    chart.setSpeedMultiplier(1.0);
   </script>
 </body>
 </html> 

@@ -1,5 +1,5 @@
 import type { BubbleChartData } from './types/data.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import * as d3 from 'd3';
 import { resolveColor } from './types/d3-helpers.js';
@@ -7,15 +7,17 @@ import { resolveColor } from './types/d3-helpers.js';
 /**
  * ListBuilder – displays bubbles in a vertical list layout with labels.
  * Migrated to use compositional architecture with significant code reduction.
+ * Implements ChartHandle interface for unified API
  * 
  * @template T - The data type, must extend BubbleChartData
  */
-export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
+export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> implements ChartHandle<T> {
   private radiusScale?: d3.ScalePower<number, number>;
 
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'list';
+  constructor(config: BubbleChartOptions) {
+    // Ensure we can modify the config by creating a mutable copy
+    const mutableConfig = { ...config, type: 'list' as const };
+    super(mutableConfig);
   }
 
   /**
@@ -108,7 +110,11 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
 
       // Apply animations if configured
       if (this.config.animation) {
-        this.animateList(rows, circles, labels, this.config.animation.speed || 800);
+        const animValues = {
+      duration: this.config.animation?.enter?.duration || 800,
+      staggerDelay: this.config.animation?.enter?.stagger || 0
+    };
+        this.animateList(rows, circles, labels, animValues.duration);
       }
 
     } catch (error) {
@@ -174,6 +180,30 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
   }
 
   /**
+   * Get readonly merged options (unified API)
+   * @returns Readonly configuration options
+   */
+  override options(): Readonly<BubbleChartOptions<T>> {
+    return Object.freeze(this.config as unknown as BubbleChartOptions<T>);
+  }
+
+  /**
+   * Merge-update options (unified API)
+   * @param newConfig - Partial configuration to merge
+   * @returns this for method chaining
+   */
+  override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
+    this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
+    
+    // Update building blocks with new config if needed
+    if (this.dataProcessor && this.chartData.length) {
+      this.processedData = this.dataProcessor.process(this.chartData);
+    }
+    
+    return this;
+  }
+
+  /**
    * Update data and re-render
    */
   updateData(newData: T[]): void {
@@ -190,7 +220,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
   /**
    * Update list-specific configuration
    */
-  updateListConfig(config: Partial<NonNullable<BubbleChartConfig['listBubble']>>): void {
+  updateListConfig(config: Partial<NonNullable<BubbleChartOptions['listBubble']>>): void {
     if (!this.config.listBubble) {
       this.config.listBubble = { minRadius: 5, maxRadius: 25, padding: 10, textWidth: 200 };
     }

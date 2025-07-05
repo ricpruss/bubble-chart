@@ -29,16 +29,14 @@
       { "label": "Helium", "size": 70, "count": 70 }
     ];
 
-    const chart = new BubbleChart({
-      container: "#chart-container",
-      label: "label",
-      size: "size",
-      type: "wave",
-      percentage: (d) => d.count / 100
-    });
-
-    chart.data(data);
-    chart.render();
+    const chart = BubbleChart.create("#chart-container")
+      .withData(data)
+      .withLabel("label")
+      .withSize("size")
+      .withColor("label")
+      .withType("wave")
+      .withPercentage((d) => d.count / 100)
+      .render();
   </script>
 
 </body>

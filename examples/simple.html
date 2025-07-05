@@ -5,7 +5,7 @@
   <title>Bubble Chart - Simple Example</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="../dist/bubble-chart.min.js?v=20250630092900"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     #chart-container {
@@ -35,24 +35,24 @@
   <script>
     try {
       const data = [
-        { "label": "Group A", "size": 40, "count": 40 },
-        { "label": "Group B", "size": 60, "count": 60 },
-        { "label": "Group C", "size": 25, "count": 25 },
-        { "label": "Group D", "size": 90, "count": 90 },
-        { "label": "Group E", "size": 15, "count": 15 }
+        { "label": "Apple", "size": 40, "count": 40, "category": "Technology" },
+        { "label": "Microsoft", "size": 35, "count": 35, "category": "Technology" },
+        { "label": "Johnson & Johnson", "size": 60, "count": 60, "category": "Healthcare" },
+        { "label": "Pfizer", "size": 30, "count": 30, "category": "Healthcare" },
+        { "label": "JPMorgan Chase", "size": 25, "count": 25, "category": "Finance" },
+        { "label": "Bank of America", "size": 20, "count": 20, "category": "Finance" },
+        { "label": "Harvard University", "size": 90, "count": 90, "category": "Education" },
+        { "label": "Walmart", "size": 15, "count": 15, "category": "Retail" }
       ];
 
-      const chart = new BubbleChart({
-        container: "#chart-container",
-        label: "label",
-        size: "size",
-        type: "bubble",
-        width: 800,
-        height: 600
-      });
-
-      chart.data(data);
-      chart.render();
+      const chart = BubbleChart.create("#chart-container")
+        .withData(data)
+        .withLabel("label")
+        .withSize("size")
+        .withColor("category")
+        .withAnimations("gentle")
+        .withDimensions(800, 600)
+        .render();
       
       document.getElementById('status').innerHTML = '✅ Chart rendered successfully!';
       document.getElementById('status').style.background = '#e7f6e7';

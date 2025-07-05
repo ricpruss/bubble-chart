@@ -6,7 +6,7 @@
 
 import * as d3 from 'd3';
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig, TooltipItem } from '../types/config.js';
+import type { BubbleChartOptions, TooltipItem } from '../types/config.js';
 import type { BubbleEventHandlers, DataEventHandler } from '../types/events.js';
 // import { createD3EventHandler } from '../types/events.js';
 import type { ProcessedDataPoint } from './data-processor.js';
@@ -26,7 +26,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
   private eventHandlers: Partial<BubbleEventHandlers<T>> = {};
 
   constructor(
-    private config: BubbleChartConfig,
+    private config: BubbleChartOptions,
     private svg: any
   ) {
     if (this.config.tooltip) {
@@ -182,7 +182,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
     }
 
     // Add other common properties
-    const commonProps = ['category', 'tipo', 'year', 'count', 'amount'];
+    const commonProps = ['category', 'type', 'year', 'count', 'amount'];
     commonProps.forEach(prop => {
       if (prop in dataItem && (dataItem as any)[prop] != null) {
         items.push({

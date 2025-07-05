@@ -1,6 +1,6 @@
 import * as d3 from 'd3';
 import { BaseChartBuilder } from './core/index.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions } from './types/config.js';
 import type { BubbleChartData } from './types/data.js';
 import { resolveColor } from './types/d3-helpers.js';
 
@@ -32,9 +32,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   private motionConfig: Required<MotionConfig>;
   private simulation: d3.Simulation<any, undefined> | null = null;
 
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'motion';
+  constructor(config: BubbleChartOptions) {
+    // Ensure we can modify the config by creating a mutable copy
+    const mutableConfig = { ...config, type: 'motion' as const };
+    super(mutableConfig);
     
     // Merge animation defaults with user config
     this.motionConfig = {

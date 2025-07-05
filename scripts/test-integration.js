@@ -170,27 +170,27 @@ class TestRunner {
       const testConfig = configs[0].config;
       const builder = new BubbleBuilder(testConfig);
       
-      // Test configuration getters
-      const config = builder.getConfig();
+      // Test configuration getters (unified API)
+      const config = builder.options();
       
       this.addTest('Configuration Access', 
         config && config.container === testConfig.container,
         `Config container: ${config?.container}`
       );
       
-      // Test configuration updates
+      // Test configuration updates (unified API)
       const updateConfig = { width: 800, height: 600 };
       
-      if (builder.setConfig) {
-        const result = builder.setConfig(updateConfig);
-        const updatedConfig = builder.getConfig();
+      if (builder.updateOptions) {
+        const result = builder.updateOptions(updateConfig);
+        const updatedConfig = builder.options();
         
         this.addTest('Configuration Update',
           result === builder && updatedConfig.width === 800,
           `Updated width: ${updatedConfig.width}`
         );
       } else {
-        this.addTest('Configuration Update', false, 'setConfig method not found');
+        this.addTest('Configuration Update', false, 'updateOptions method not found');
       }
       
     } catch (error) {

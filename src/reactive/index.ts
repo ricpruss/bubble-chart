@@ -42,9 +42,9 @@
 // } from './reactive-chart-builder.js';
 
 // Reactive bubble builder
-// export {
-//   ReactiveBubbleBuilder
-// } from './reactive-bubble-builder.js';
+export {
+  ReactiveBubbleBuilder
+} from './reactive-bubble-builder.js';
 
 // Explicitly re-export streaming methods for UMD/global usage
 // export type { StreamingOptions, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions, StreamingUpdateResult } from '../types/config.js';
@@ -54,11 +54,10 @@
 
 export { DataStore, type ChangeStats } from './store.js';
 export { 
-  createBubbleChart, 
   BubbleChart,
   BubbleChartBuilder,
   type BubbleChart as IBubbleChart, 
-  type BubbleChartOptions 
+  type BubbleChartOptionsExtended as BubbleChartOptions 
 } from './chart.js';
 
 // Phase 2A: Core API Enhancement exports
@@ -71,14 +70,13 @@ export {
 
 export { 
   AnimationPresets,
-  type AnimationConfig,
   type AnimationPresetName 
 } from './animation-presets.js';
 
+// Export AnimationConfig from central types
+export type { AnimationConfig } from '../types/config.js';
+
 export { 
   SmartTooltips,
-  type TooltipConfig,
-  type TooltipMode,
-  type TooltipField,
   type TooltipContent 
 } from './smart-tooltips.js'; 

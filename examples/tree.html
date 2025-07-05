@@ -23,42 +23,51 @@
 
   <script>
     const data = {
+      name: 'organization',
       label: 'Organization',
       children: [
         {
-          label: 'Engineering', amount: 120,
+          name: 'engineering',
+          label: 'Engineering', 
+          amount: 120,
+          category: 'tech',
           children: [
-            { label: 'Frontend', amount: 40 },
-            { label: 'Backend', amount: 50 },
-            { label: 'DevOps', amount: 30 }
+            { name: 'frontend', label: 'Frontend', amount: 40, category: 'tech' },
+            { name: 'backend', label: 'Backend', amount: 50, category: 'tech' },
+            { name: 'devops', label: 'DevOps', amount: 30, category: 'tech' }
           ]
         },
         {
-          label: 'Design', amount: 80,
+          name: 'design',
+          label: 'Design', 
+          amount: 80,
+          category: 'creative',
           children: [
-            { label: 'UX', amount: 35 },
-            { label: 'UI', amount: 45 }
+            { name: 'ux', label: 'UX', amount: 35, category: 'creative' },
+            { name: 'ui', label: 'UI', amount: 45, category: 'creative' }
           ]
         },
         {
-          label: 'Marketing', amount: 60,
+          name: 'marketing',
+          label: 'Marketing', 
+          amount: 60,
+          category: 'business',
           children: [
-            { label: 'Content', amount: 25 },
-            { label: 'Growth', amount: 35 }
+            { name: 'content', label: 'Content', amount: 25, category: 'business' },
+            { name: 'growth', label: 'Growth', amount: 35, category: 'business' }
           ]
         }
       ]
     };
 
-    const chart = new BubbleChart({
-      container: "#chart-container",
-      label: "label",
-      size: "amount",
-      type: "tree"
-    });
-
-    chart.data(data);
-    chart.render();
+    const chart = BubbleChart.create("#chart-container")
+      .withData(data)
+      .withLabel("label")
+      .withSize("amount")
+      .withColor("category")         // Color by category to show grouping
+      .withType("tree")
+      .withAnimations("gentle")      // Add smooth animations
+      .render();
   </script>
 </body>
 </html>

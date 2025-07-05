@@ -1,6 +1,6 @@
 /**
  * Configuration types for Bubble Chart library
- * Based on ConfigBuilder class and D3.js integration patterns
+ * Centralized configuration system with unified interfaces
  */
 
 import * as d3 from 'd3';
@@ -17,11 +17,6 @@ export type ChartType =
   | 'motion' 
   | 'orbit' 
   | 'list';
-
-/**
- * Animation methods for chart transitions
- */
-export type AnimationMethod = 'no-recursive' | 'recursive';
 
 /**
  * Time container placement for timeline controls
@@ -49,6 +44,27 @@ export interface TooltipItem {
 }
 
 /**
+ * Advanced tooltip configuration (unified from smart-tooltips)
+ */
+export type TooltipMode = 'auto' | 'custom' | 'minimal' | 'detailed' | 'none';
+
+export interface TooltipField {
+  key: string;
+  label?: string;
+  formatter?: (value: any) => string;
+  priority?: number; // 1 = highest, 5 = lowest
+}
+
+export interface TooltipConfig {
+  mode: TooltipMode;
+  fields?: TooltipField[];
+  maxFields?: number;
+  customTemplate?: (data: any) => string;
+  showDataTypes?: boolean;
+  includeStatistics?: boolean;
+}
+
+/**
  * Wave animation configuration
  */
 export interface WaveConfig {
@@ -69,15 +85,26 @@ export interface TreeConfig {
 }
 
 /**
- * Animation configuration
+ * Rich animation configuration with enter/update/exit phases
+ * This is the unified animation interface used throughout the library
  */
 export interface AnimationConfig {
-  /** Animation duration in milliseconds */
-  speed: number;
-  /** Animation method type */
-  method: AnimationMethod;
-  /** Stagger delay between elements in milliseconds */
-  staggerDelay?: number;
+  enter?: {
+    duration: number;
+    stagger?: number;
+    easing?: string;
+    delay?: number;
+  } | undefined;
+  update?: {
+    duration: number;
+    easing?: string;
+    delay?: number;
+  } | undefined;
+  exit?: {
+    duration: number;
+    easing?: string;
+    delay?: number;
+  } | undefined;
 }
 
 /**
@@ -136,20 +163,21 @@ export interface EventHandlers<T = BubbleChartData> {
 
 /**
  * Main bubble chart configuration interface
- * Comprehensive configuration options for all chart types
+ * This is the unified configuration interface for all chart types and entry points
+ * @template T - The data type for type-safe function parameters
  */
-export interface BubbleChartConfig {
-  // Core configuration
+export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData> {
+  // Core configuration (required)
   /** DOM selector or element for chart container */
   container: string;
   /** Property name(s) or accessor function for labels */
-  label: string | string[] | ((d: BubbleChartData) => string);
+  label: string | string[] | ((d: T) => string);
   /** Property name(s) or accessor function for sizing */
-  size: string | string[] | ((d: BubbleChartData) => number);
+  size: string | string[] | ((d: T) => number);
   
   // Optional core settings
   /** Property name or accessor for time dimension */
-  time?: string | ((d: BubbleChartData) => number);
+  time?: string | ((d: T) => number);
   /** Chart type */
   type?: ChartType;
   /** Default color for bubbles */
@@ -163,7 +191,7 @@ export interface BubbleChartConfig {
   /** Whether to sort data */
   sort?: boolean;
   /** Percentage calculation function */
-  percentage?: boolean | ((d: BubbleChartData) => number);
+  percentage?: ((d: T) => number);
   
   // Color and styling
   /** 
@@ -190,7 +218,7 @@ export interface BubbleChartConfig {
    * The system automatically detects D3 scales by checking for `domain`/`range` properties
    * and extracts appropriate keys (sector → category → index) for scale input.
    */
-  color?: d3.ScaleOrdinal<string, string> | ((data: BubbleChartData, index?: number) => string) | string;
+  color?: d3.ScaleOrdinal<string, string> | ((data: T, index?: number) => string) | string;
   /** Property name for color grouping */
   colour?: string | boolean;
   
@@ -215,8 +243,15 @@ export interface BubbleChartConfig {
   p?: number;
   
   // Custom functions
-  /** Custom tooltip function */
-  tooltip?: boolean | ((d: BubbleChartData) => TooltipItem[]);
+  /** 
+   * Tooltip configuration - supports multiple modes:
+   * - boolean: enable/disable simple tooltips
+   * - function: custom tooltip generator 
+   * - string[]: field names for tooltip
+   * - TooltipConfig: advanced configuration
+   * - TooltipMode: quick mode setting
+   */
+  tooltip?: boolean | ((d: T) => TooltipItem[]) | string[] | TooltipConfig | TooltipMode;
   /** Format functions */
   format?: FormatFunctions;
   
@@ -239,7 +274,7 @@ export interface BubbleChartConfig {
   wave?: WaveConfig;
   /** Tree layout settings */
   tree?: TreeConfig;
-  /** Animation configuration */
+  /** Rich animation configuration with enter/update/exit phases */
   animation?: AnimationConfig;
   /** Bubble-specific settings */
   bubble?: BubbleConfig;
@@ -254,32 +289,21 @@ export interface BubbleChartConfig {
 }
 
 /**
- * Configuration options that can be passed to BubbleChart constructor
- * Subset of BubbleChartConfig with only user-facing options
- * @template T - The data type for type-safe function parameters
+ * Unified chart handle interface - standard API for all chart builders
+ * This replaces the legacy getConfig/setConfig pattern with options/updateOptions
  */
-export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData> {
-  /** DOM selector for chart container */
-  container: string;
-  /** Label property or accessor */
-  label: string | string[];
-  /** Size property or accessor */
-  size: string | string[];
-  /** Time property for temporal charts */
-  time?: string;
-  /** Chart type */
-  type?: ChartType;
-  /** Default bubble color */
-  defaultColor?: string;
-  /** Chart dimensions */
-  width?: number;
-  height?: number;
-  /** Percentage calculation function */
-  percentage?: (d: T) => number;
-  /** Format functions */
-  format?: FormatFunctions;
-  /** Tooltip function */
-  tooltip?: (d: T) => TooltipItem[];
+export interface ChartHandle<T extends BubbleChartData = BubbleChartData> {
+  /** Get readonly merged options */
+  options(): Readonly<BubbleChartOptions<T>>;
+  
+  /** Merge-update options */
+  updateOptions(options: Partial<BubbleChartOptions<T>>): this;
+  
+  /** Render the chart */
+  render(): this;
+  
+  /** Destroy the chart and clean up resources */
+  destroy(): void;
 }
 
 /**
@@ -304,7 +328,7 @@ export type TextSelection<T = BubbleChartData> = d3.Selection<SVGTextElement, T,
 /**
  * Validates that required configuration options are present
  */
-export function validateConfig(config: Partial<BubbleChartConfig> | null | undefined): string[] {
+export function validateConfig(config: Partial<BubbleChartOptions> | null | undefined): string[] {
   const errors: string[] = [];
   
   if (!config) {
@@ -334,7 +358,7 @@ export function validateConfig(config: Partial<BubbleChartConfig> | null | undef
 /**
  * Creates default configuration with type safety
  */
-export function createDefaultConfig(): BubbleChartConfig {
+export function createDefaultConfig(): BubbleChartOptions {
   const colorPalette = [
     '#FF6384', '#4BC0C0', '#FFCE56', '#c2b9d6', '#36A2EB',
     '#8161c7', '#196998', '#8bc4eb', '#4b36eb', '#ffe197',
@@ -353,7 +377,6 @@ export function createDefaultConfig(): BubbleChartConfig {
     width: 500,
     height: 500,
     sort: false,
-    percentage: false,
     color: d3.scaleOrdinal<string>().range(colorPalette),
     
     // Display options
@@ -398,8 +421,9 @@ export function createDefaultConfig(): BubbleChartConfig {
     },
     
     animation: {
-      speed: 3000,
-      method: 'no-recursive'
+      enter: { duration: 800, stagger: 50, easing: 'ease-out', delay: 0 },
+      update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+      exit: { duration: 400, easing: 'ease-in', delay: 0 }
     },
     
     bubble: {

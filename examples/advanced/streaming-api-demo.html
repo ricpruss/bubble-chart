@@ -5,12 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Fortune 1000 2024 - Live Company Visualization</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script type="module">
-    import { companiesFlat, dataStats, sizeOptions } from '../js/companies.js';
-    window.companiesFlat = companiesFlat;
-    window.dataStats = dataStats;
-    window.sizeOptions = sizeOptions;
-  </script>
+  <script src="../js/companies.js"></script>
   <script src="../../dist/bubble-chart.min.js"></script>
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:20px;background:#f5f7fa}
@@ -93,9 +88,11 @@
   </div>
 
   <script>
-    // Wait for module to load
+    // Wait for scripts to load
     window.onload = () => {
-      const { companiesFlat, dataStats, sizeOptions } = window;
+      const companiesFlat = window.companiesFlat || window.data;
+      const dataStats = window.dataStats;
+      const sizeOptions = window.sizeOptions;
       
       // Update stats display
       document.getElementById('stat-companies').textContent = dataStats.totalCompanies;
@@ -143,15 +140,32 @@
         .attr('class', 'tooltip')
         .style('opacity', 0);
 
-      // Create chart using the new API
-      const chart = BubbleChart.createBubbleChart('#chart', {
-        label: 'name',
-        size: 'displaySize',
-        width: 1300,
-        height: 700,
-        key: d => d.id,
-        color: d => colour(d.sector),
-        onBubbleHover: (event, d) => {
+      // Create chart using modern fluent API
+      const chart = BubbleChart.create('#chart')
+        .withLabel('name')
+        .withSize('displaySize')
+        .withDimensions(1300, 700)
+        .withStreaming({
+          keyFunction: d => d.id,
+          enterAnimation: {
+            duration: 1000,
+            staggerDelay: 30,
+            easing: 'ease-out'
+          },
+          updateAnimation: {
+            duration: 800,
+            easing: 'ease-in-out'
+          },
+          exitAnimation: {
+            duration: 600,
+            easing: 'ease-in'
+          }
+        })
+        .withCustomConfig({
+          color: d => colour(d.sector)
+        })
+        .render()
+        .onBubble('mouseover', (d, event) => {
           tooltip.transition()
             .duration(200)
             .style('opacity', 1);
@@ -175,18 +189,12 @@
           `)
             .style('left', (event.pageX + 15) + 'px')
             .style('top', (event.pageY - 10) + 'px');
-        },
-        onBubbleLeave: () => {
+        })
+        .onBubble('mouseout', () => {
           tooltip.transition()
             .duration(300)
             .style('opacity', 0);
-        },
-        animations: {
-          enter: {duration: 1000, stagger: 30},
-          update: {duration: 800},
-          exit: {duration: 600}
-        }
-      });
+        });
 
       // Initialize with empty data
       chart.store.clear();
@@ -206,9 +214,9 @@
       // Size selector change handler
       document.getElementById('sizeSelect').onchange = (e) => {
         currentSizeOption = e.target.value;
-        const currentData = chart.store.data();
         
-        // Update size for all current bubbles
+        // Update all current bubbles to use the new size metric
+        const currentData = chart.store.data();
         currentData.forEach(company => {
           chart.store.update(
             d => d.id === company.id,

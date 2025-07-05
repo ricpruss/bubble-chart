@@ -41,7 +41,7 @@ jest.mock('d3', () => ({
 }));
 
 import { RenderingPipeline, type RenderingContext, type LayoutNode } from '../rendering-pipeline.js';
-import type { BubbleChartConfig } from '../../types/config.js';
+import type { BubbleChartOptions } from '../../types/config.js';
 import type { ProcessedDataPoint } from '../data-processor.js';
 import type { FlatBubbleData } from '../../types/data.js';
 
@@ -104,7 +104,7 @@ describe('RenderingPipeline', () => {
         label: 'name',
         size: 'value',
         defaultColor: '#ddd'
-      } as BubbleChartConfig
+      } as BubbleChartOptions
     };
 
     pipeline = new RenderingPipeline<TestData>(mockContext);

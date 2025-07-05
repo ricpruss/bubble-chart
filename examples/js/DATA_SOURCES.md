@@ -14,7 +14,7 @@ var data = [{
     "label": "Apple Inc.",
     "size": 2294236972,      // Market cap in millions
     "count": 154,            // Employee count (thousands) 
-    "tipo": "Technology",    // Business sector
+    "type": "Technology",    // Business sector
     "year": 2021            // Data year
 }];
 ```

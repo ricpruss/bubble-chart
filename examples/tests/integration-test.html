@@ -354,17 +354,17 @@
             
             runTest('Configuration Access', () => {
                 const builder = new BubbleBuilder({ container: '#constructor-chart' });
-                const config = builder.getConfig();
-                if (!config) throw new Error('getConfig returned null');
+                const config = builder.options();
+                if (!config) throw new Error('options returned null');
                 if (config.container !== '#constructor-chart') throw new Error('Container not set correctly');
             }, 'constructor-log');
 
             runTest('Configuration Update', () => {
                 const builder = new BubbleBuilder({ container: '#constructor-chart' });
-                if (builder.setConfig) {
-                    const result = builder.setConfig({ width: 800 });
-                    if (result !== builder) throw new Error('setConfig should return this');
-                    const config = builder.getConfig();
+                if (builder.updateOptions) {
+                    const result = builder.updateOptions({ width: 800 });
+                    if (result !== builder) throw new Error('updateOptions should return this');
+                    const config = builder.options();
                     if (config.width !== 800) throw new Error('Configuration not updated');
                 }
             }, 'constructor-log');

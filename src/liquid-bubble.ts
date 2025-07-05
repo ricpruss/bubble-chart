@@ -1,194 +1,132 @@
 import * as d3 from 'd3';
-import { BaseChartBuilder } from './core/index.js';
 import type { BubbleChartData } from './types/data.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions } from './types/config.js';
+import { BaseChartBuilder } from './core/index.js';
 import { resolveColor } from './types/d3-helpers.js';
 
 /**
- * LiquidBubble – a gauge-style bubble chart where the fill level
- * represents a percentage (0–1). The fill animates from 0 to the
- * supplied percentage when rendered.
- * 
- * Ideal for displaying completion rates, progress indicators, or any
- * percentage-based metrics with visual appeal.
- * 
- * @template T - The data type, must extend BubbleChartData
+ * Interface describing the generated wave SVG path data
+ */
+interface WavePath {
+  points: [number, number][];
+  r: number;
+}
+
+/**
+ * LiquidBubble – a static liquid-fill bubble chart.
+ *
+ * This implementation reuses the wave-generation logic from `WaveBubble`
+ * but forces the wave amplitude to zero, producing a perfectly flat fill
+ * level that represents the supplied percentage without animation.
+ *
+ * @template T – The data record type (must satisfy BubbleChartData)
  */
 export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
-  /**
-   * Default animation configuration for liquid fill
-   */
-  private readonly defaultAnimationDuration = 1000;
+  /** Wave configuration – amplitude forced to 0 for a flat surface */
+  private readonly waveConfig = {
+    frequency: 0.4,
+    amplitude: 0 as const,   // <- no vertical displacement
+    speed: 0.05,             // retained for API symmetry (unused)
+    resolution: 5
+  };
 
-  /**
-   * Creates a new LiquidBubble instance
-   * @param config - Chart configuration with optional animation settings
-   */
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'liquid';
-    
-    // Set up bubble animation configuration with defaults
-    if (!this.config.bubble) {
-      this.config.bubble = {
-        minRadius: 10,
-        animation: this.defaultAnimationDuration,
-        padding: 10,
-        allText: 'All'
-      };
-    } else {
-      this.config.bubble.animation = this.config.bubble.animation || this.defaultAnimationDuration;
-    }
+  /** Duration of the fill animation in milliseconds */
+  private readonly animationDuration = 1500;
+
+  constructor(config: BubbleChartOptions) {
+    // Ensure the incoming config has the correct chart type
+    const mutable = { ...config, type: 'liquid' as const };
+    super(mutable);
   }
 
   /**
-   * Renders the liquid bubble chart with animated fill using building blocks
+   * Render the liquid bubbles.
    */
   protected performRender(): void {
-    try {
-      if (!this.processedData || this.processedData.length === 0) {
-        console.warn('LiquidBubble: No data to render');
-        return;
-      }
+    if (!this.processedData.length) return;
 
-      // Use building blocks for standard bubble pack layout
-      const layoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
-      const bubbleElements = this.renderingPipeline.createBubbleElements(layoutNodes, this.processedData);
-
-      // Add liquid fill effects to the bubbles
-      this.createLiquidEffects(bubbleElements.bubbleGroups, layoutNodes);
-
-      // Use InteractionManager for event handling
-      this.interactionManager.attachBubbleEvents(bubbleElements.bubbleGroups, this.processedData);
-
-    } catch (error) {
-      console.error('LiquidBubble render error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Creates liquid fill effects with clip paths and animated rectangles
-   * @param bubbleGroups - D3 selection of bubble groups
-   * @param layoutNodes - Layout data with position and radius information
-   */
-  private createLiquidEffects(bubbleGroups: any, layoutNodes: any[]): void {
-    try {
-      // Add unique clipPath for each bubble to contain the liquid fill
-      bubbleGroups.append('clipPath')
-        .attr('id', (_d: any, i: number) => `liquid-clip-${i}`)
-        .append('circle')
-        .attr('r', (_d: any, i: number) => layoutNodes[i].r);
-
-      // Create group for liquid fill elements with clipping applied
-      const fillGroup = bubbleGroups.append('g')
-        .attr('transform', (_d: any, i: number) => `translate(${layoutNodes[i].x}, ${layoutNodes[i].y})`)
-        .attr('clip-path', (_d: any, i: number) => `url(#liquid-clip-${i})`);
-
-      // Create the liquid fill rectangles
-      const rects = fillGroup.append('rect')
-        .attr('x', (_d: any, i: number) => -layoutNodes[i].r)
-        .attr('width', (_d: any, i: number) => layoutNodes[i].r * 2)
-        .attr('y', (_d: any, i: number) => layoutNodes[i].r)   // Start empty (positioned at bottom)
-        .attr('height', 0)            // Zero height initially
-        .attr('fill', (d: T, i: number) => {
-          return resolveColor(this.config.color, d, i, this.config.defaultColor || '#4CAF50');
-        })
-        .attr('opacity', 0.7)
-        .attr('stroke', 'none');
-
-      // Animate to target height based on percentage
-      const animationDuration = this.config.bubble?.animation || this.defaultAnimationDuration;
-
-      rects.transition()
-        .duration(animationDuration)
-        .ease(d3.easeCircleOut)
-        .attr('y', (d: T, i: number) => {
-          const percentage = this.getPercentageValue(d);
-          return -layoutNodes[i].r + (1 - percentage) * layoutNodes[i].r * 2;
-        })
-        .attr('height', (d: T, i: number) => {
-          const percentage = this.getPercentageValue(d);
-          return layoutNodes[i].r * 2 * percentage;
-        });
-
-    } catch (error) {
-      console.error('LiquidBubble liquid effects error:', error);
-      throw error;
-    }
-  }
-
-  /**
-   * Gets the percentage value for liquid fill level
-   * @param data - The data item
-   * @returns Percentage value between 0 and 1
-   */
-  private getPercentageValue(data: T): number {
-    if (this.config.percentage) {
-      if (typeof this.config.percentage === 'function') {
-        const result = this.config.percentage(data);
-        return Math.max(0, Math.min(1, result)); // Clamp between 0 and 1
-      }
-    }
-    
-    // Default to full (100%) if no percentage function is provided
-    return 1;
-  }
-
-  /**
-   * Updates the liquid fill levels with new data
-   * @param newData - New data to display
-   */
-  updateData(newData: T[]): void {
-    this.chartData = newData;
-    
     const svgElements = this.svgManager.getElements();
-    if (!svgElements) {
-      this.render();
-      return;
-    }
+    if (!svgElements) return;
 
-    const bubbles = svgElements.svg.selectAll('.bubble');
-    const rects = bubbles.selectAll('rect');
+    // Arrange bubbles using the standard pack layout
+    const layoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
+    const { bubbleGroups } = this.renderingPipeline.createBubbleElements(layoutNodes, this.processedData);
 
-    // Animate to new percentage values
-    const animationDuration = this.config.bubble?.animation || this.defaultAnimationDuration;
+    // Add the flat liquid surface
+    this.createLiquidElements(bubbleGroups, layoutNodes);
 
-    rects.transition()
-      .duration(animationDuration)
-      .ease(d3.easeCircleOut)
-      .attr('y', (d: any) => {
-        const percentage = this.getPercentageValue(d.data);
-        return -d.r + (1 - percentage) * d.r * 2;
-      })
-      .attr('height', (d: any) => {
-        const percentage = this.getPercentageValue(d.data);
-        return d.r * 2 * percentage;
+    // Hook up mouse / touch interactions
+    this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
+  }
+
+  /**
+   * Appends clip-paths and wave paths for each bubble group.
+   */
+  private createLiquidElements(bubbleGroups: any, layoutNodes: any[]): void {
+    // Clip path limiting the liquid fill to the circle outline
+    bubbleGroups.append('defs')
+      .append('clipPath')
+      .attr('id', (_d: any, i: number) => `liquid-clip-${i}`)
+      .append('circle')
+      .attr('r', (_d: any, i: number) => layoutNodes[i].r);
+
+    // Group containing the liquid path, constrained by the clip-path
+    const waveGroups = bubbleGroups.append('g')
+      .attr('clip-path', (_d: any, i: number) => `url(#liquid-clip-${i})`);
+
+    // Flat wave path (it is still an SVG path for consistency)
+    const paths = waveGroups.append('path')
+      .attr('class', 'wave')
+      .attr('fill', (_d: any, i: number) => resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#2196F3'))
+      .style('opacity', 0.6)
+      .attr('stroke', 'none')
+      // Initial state: empty (0% filled)
+      .each((_d: any, i: number, nodes: any[]) => {
+        const path = d3.select<SVGPathElement, any>(nodes[i]);
+        const waveData = this.generateWaveData(layoutNodes[i], 0);
+        path.attr('d', d3.line()(waveData.points));
+      });
+
+    // Animate from 0 → target percentage
+    paths.transition()
+      .duration(this.animationDuration)
+      .ease(d3.easeCubicOut)
+      .attrTween('d', (_d: any, i: number, _nodes: any[]) => {
+        const target = this.getPercentageValue(this.processedData[i].data);
+        const interp = d3.interpolateNumber(0, target);
+        const layoutNode = layoutNodes[i];
+        const line = d3.line();
+        return (t: number) => {
+          const waveData = this.generateWaveData(layoutNode, interp(t));
+          return line(waveData.points);
+        };
       });
   }
 
   /**
-   * Get current animation duration setting
-   * @returns Animation duration in milliseconds
+   * Generates a flat wave path matching the requested percentage.
    */
-  getAnimationDuration(): number {
-    return this.config.bubble?.animation || this.defaultAnimationDuration;
+  private generateWaveData(layoutNode: any, percentage: number): WavePath {
+    const r = layoutNode.r;
+    const baseY = (1 - percentage) * 2 * r - r;
+
+    // Because amplitude is 0 the Y coordinate is constant
+    const points: [number, number][] = d3
+      .range(-r * 3, r * 3, this.waveConfig.resolution)
+      .map(x => [x, baseY] as [number, number]);
+
+    // Close the path so that the area beneath the line is filled
+    points.push([r * 3, 2 * r], [-r * 3, 2 * r]);
+    return { points, r };
   }
 
   /**
-   * Set animation duration for liquid fill
-   * @param duration - Duration in milliseconds
+   * Extracts the fill-level percentage for a datum.
    */
-  setAnimationDuration(duration: number): void {
-    if (!this.config.bubble) {
-      this.config.bubble = {
-        minRadius: 10,
-        animation: duration,
-        padding: 10,
-        allText: 'All'
-      };
-    } else {
-      this.config.bubble.animation = duration;
+  private getPercentageValue(data: T): number {
+    if (this.config.percentage && typeof this.config.percentage === 'function') {
+      return Math.max(0, Math.min(1, this.config.percentage(data)));
     }
+    return 0.7; // sensible default
   }
 } 

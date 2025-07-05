@@ -26,7 +26,7 @@ export interface FlatBubbleData extends BubbleDataPoint {
   /** Secondary metric for multi-dimensional analysis */
   count?: number;
   /** Category/type for grouping and coloring */
-  tipo?: string;
+  type?: string;
   /** Alternative category field */
   category?: string;
   /** Alternative size field name */

@@ -5,24 +5,7 @@
 
 import type { BubbleChartData } from '../types/data.js';
 import type { DataFieldAnalysis } from './data-intelligence.js';
-
-export type TooltipMode = 'auto' | 'custom' | 'minimal' | 'detailed';
-
-export interface TooltipField {
-  key: string;
-  label?: string;
-  formatter?: (value: any) => string;
-  priority?: number; // 1 = highest, 5 = lowest
-}
-
-export interface TooltipConfig {
-  mode: TooltipMode;
-  fields?: TooltipField[];
-  maxFields?: number;
-  customTemplate?: (data: any) => string;
-  showDataTypes?: boolean;
-  includeStatistics?: boolean;
-}
+import type { TooltipField, TooltipConfig } from '../types/config.js';
 
 export interface TooltipContent {
   title: string;

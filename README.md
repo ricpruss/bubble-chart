@@ -1,6 +1,6 @@
 # Bubble Chart
 
-A TypeScript library for creating interactive bubble visualizations with D3.js.
+A modern TypeScript library for creating interactive bubble visualizations with intelligent defaults and a fluent API.
 
 ## Install
 
@@ -10,106 +10,227 @@ npm install bubble-chart
 
 ## Quick Start
 
-```javascript
+```typescript
 import { BubbleChart } from 'bubble-chart';
 
-const data = [
-  { name: "JavaScript", value: 100, usage: 85 },
-  { name: "Python", value: 80, usage: 70 },
-  { name: "Java", value: 65, usage: 60 }
+const companies = [
+  { name: "Apple", revenue: 383285, sector: "Technology" },
+  { name: "Walmart", revenue: 648125, sector: "Retail" },
+  { name: "Amazon", revenue: 513983, sector: "Technology" }
 ];
 
-const chart = new BubbleChart({
-  container: "#chart",
-  label: "name",
-  size: "value"
-});
+// Simple: Auto-detects best fields for labels, sizing, and colors
+const chart = BubbleChart.create('#chart')
+  .withData(companies)
+  .render();
 
-chart.data(data);
+// Enhanced: Override specific fields  
+const chart = BubbleChart.create('#chart')
+  .withData(companies)
+  .withSize('revenue')
+  .withAnimations('gentle')
+  .render();
+```
+
+## Features
+
+✨ **Intelligent Defaults** - Auto-detects optimal fields for labels, sizing, and colors  
+🎯 **Fluent API** - Method chaining with progressive enhancement  
+📊 **Multiple Chart Types** - Bubble, tree, motion, orbital, liquid, and more  
+🔄 **Real-time Updates** - Streaming data support with smooth animations  
+🎨 **Smart Tooltips** - Automatic tooltip generation with data intelligence  
+⚡ **TypeScript Native** - Full type safety with intelligent inference  
+🎭 **Animation Presets** - Built-in animation styles optimized for different use cases
+
+## Fluent API
+
+### Basic Usage
+```typescript
+// Minimal configuration - intelligent defaults
+BubbleChart.create('#chart')
+  .withData(dataset)
+  .render();
+```
+
+### Data Mapping
+```typescript
+BubbleChart.create('#chart')
+  .withData(companies)
+  .withSize('revenue')                    // Size by revenue
+  .withLabel('name')                      // Label by company name
+  .withColor('sector')                    // Color by sector
+  .withTime('year')                       // Animate over time
+  .render();
+```
+
+### Visual Configuration
+```typescript
+BubbleChart.create('#chart')
+  .withData(companies)
+  .withDimensions(800, 600)               // Custom dimensions
+  .withType('motion')                     // Chart type
+  .withAnimations('energetic')            // Animation preset
+  .withTooltips(['name', 'sector', 'revenue'])
+  .render();
+```
+
+### Streaming Data
+```typescript
+BubbleChart.create('#chart')
+  .withData(initialData)
+  .withStreaming()
+  .fromWebSocket({ url: 'ws://api.com/live' })
+  .render();
 ```
 
 ## Chart Types
 
-**Standard Bubbles**
-```javascript
-new BubbleChart({ type: "bubble" })
+**Standard Bubbles** - Classic bubble chart with size-based visualization
+```typescript
+BubbleChart.create('#chart')
+  .withData(data)
+  .withType('bubble')
+  .render();
 ```
 
-**Wave Animation** - Animated wave fill based on percentage
-```javascript
-new BubbleChart({ 
-  type: "wave",
-  percentage: d => d.usage / 100
-})
+**Tree/Hierarchy** - Nested bubble structures for hierarchical data
+```typescript
+BubbleChart.create('#chart')
+  .withData(hierarchicalData)
+  .withType('tree')
+  .render();
 ```
 
-**Tree/Hierarchy** - Nested bubble structures
-```javascript
-const treeData = {
-  label: "Company",
-  children: [
-    { label: "Engineering", amount: 120,
-      children: [
-        { label: "Frontend", amount: 40 },
-        { label: "Backend", amount: 50 }
-      ]
-    }
-  ]
-};
-new BubbleChart({ type: "tree", size: "amount" })
+**Motion Charts** - Time-series animation with smooth transitions
+```typescript
+BubbleChart.create('#chart')
+  .withData(timeSeriesData)
+  .withType('motion')
+  .withTime('year')
+  .render();
 ```
 
-**Orbital Motion** - Bubbles with orbital animations
-```javascript
-new BubbleChart({ type: "orbit" })
+**Orbital Motion** - Bubbles with orbital physics animations
+```typescript
+BubbleChart.create('#chart')
+  .withData(data)
+  .withType('orbit')
+  .render();
 ```
 
-Plus: `liquid`, `motion` types with various animation effects.
-
-## Timeline Filtering
-
-Filter hierarchical data by time periods:
-
-```javascript
-const chart = new BubbleChart({
-  type: "tree",
-  time: "year"  // data property containing year values
-});
-
-// Automatically creates timeline controls
+**Wave Animation** - Animated wave fill effects
+```typescript
+BubbleChart.create('#chart')
+  .withData(data)
+  .withType('wave')
+  .render();
 ```
 
-## TypeScript
+**Liquid Gauge** - Liquid-filled bubble gauges
+```typescript
+BubbleChart.create('#chart')
+  .withData(data)
+  .withType('liquid')
+  .render();
+```
 
-Full type support with generics:
+## Animation Presets
+
+Choose from optimized animation presets:
+
+- `'gentle'` - Slow, smooth transitions for dashboards
+- `'energetic'` - Fast, bouncy animations for presentations  
+- `'smooth'` - Balanced timing for general use
+- `'bouncy'` - Playful spring effects for interactive demos
+- `'minimal'` - Quick, subtle changes for performance
+- `'none'` - No animation for static charts
 
 ```typescript
-interface DataItem {
-  label: string;
-  size: number;
-  percentage: number;
+BubbleChart.create('#chart')
+  .withData(data)
+  .withAnimations('bouncy')
+  .render();
+```
+
+## Data Intelligence
+
+The library automatically analyzes your data to provide intelligent defaults:
+
+```typescript
+const chart = BubbleChart.create('#chart')
+  .withData(companies)
+  .render();
+
+// Inspect what was auto-detected
+const insights = chart.inspectData();
+console.log(insights.suggested); 
+// { size: 'revenue', label: 'name', color: 'sector' }
+```
+
+## Runtime Control
+
+Dynamic updates after chart creation:
+
+```typescript
+// Data manipulation
+chart.store.add(newCompany);
+chart.store.remove(d => d.id === 'AAPL');
+chart.store.updateWhere(d => d.sector === 'Tech', { highlighted: true });
+
+// Configuration changes
+chart.setSize('marketCap');
+chart.setAnimations('gentle');
+chart.setTooltips(['name', 'marketCap']);
+```
+
+## TypeScript Support
+
+Full type safety with intelligent inference:
+
+```typescript
+interface Company {
+  name: string;
+  revenue: number;
+  sector: string;
+  founded: number;
 }
 
-const chart = new BubbleChart<DataItem>({
-  container: "#chart",
-  label: "label", 
-  size: "size",
-  percentage: d => d.percentage / 100
-});
+const chart = BubbleChart.create<Company>('#chart')
+  .withData(companies)
+  .withSize('revenue')                    // Type-safe field access
+  .withLabel(d => `${d.name} (${d.founded})`) // Type-safe functions
+  .render();
 ```
 
 ## Examples
 
+Run the development server to explore examples:
+
 ```bash
-npm run demo
+npm run dev
+# Visit http://localhost:3333/examples/
 ```
 
-Visit `/examples/` for:
-- Basic usage patterns
-- Animation effects  
-- Hierarchical data
-- Timeline interactions
-- TypeScript integration
+Available examples:
+- **Basic Usage** - Simple bubble charts with auto-detection
+- **Animation Showcase** - All animation presets demonstrated
+- **Streaming Data** - Real-time updates via WebSocket
+- **Time Series** - Motion charts with temporal data
+- **Hierarchical** - Tree structures and nested data
+- **TypeScript** - Advanced type usage patterns
+
+## Configuration
+
+For detailed configuration options, see [CONFIG.md](docs/CONFIG.md).
+
+## Testing
+
+```bash
+npm run test:smoke      # Quick verification
+npm run test:unit       # Core functionality
+npm run test:integration # Full scenarios
+npm run test:browser    # Visual verification
+```
 
 ## License
 

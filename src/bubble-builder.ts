@@ -1,18 +1,19 @@
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import type { BubbleChartData } from './types/data.js';
 import { BaseChartBuilder, DataProcessor } from './core/index.js';
 
 /**
  * Basic bubble chart builder with TypeScript generics for data flexibility
  * Migrated to use compositional architecture with building blocks
+ * Implements ChartHandle interface for unified API
  */
-export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
+export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> implements ChartHandle<T> {
 
   /**
    * Creates a new BubbleBuilder instance
    * @param config - Configuration object for the chart
    */
-  constructor(config: BubbleChartConfig) {
+  constructor(config: BubbleChartOptions) {
     super(config);
   }
 
@@ -36,10 +37,14 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
 
       // Apply entrance animations
       if (this.config.animation) {
+        const animValues = {
+      duration: this.config.animation?.enter?.duration || 800,
+      staggerDelay: this.config.animation?.enter?.stagger || 0
+    };
         this.renderingPipeline.applyEntranceAnimation(bubbleElements, {
-          duration: this.config.animation.speed || 800,
+          duration: animValues.duration,
           delay: 0,
-          staggerDelay: this.config.animation.staggerDelay || 0
+          staggerDelay: animValues.staggerDelay
         });
       }
     } catch (error) {
@@ -48,20 +53,20 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
   }
 
   /**
-   * Get current configuration
-   * @returns Current configuration
+   * Get readonly merged options (unified API)
+   * @returns Readonly configuration options
    */
-  override getConfig(): BubbleChartConfig {
-    return this.config;
+  override options(): Readonly<BubbleChartOptions<T>> {
+    return Object.freeze(this.config as unknown as BubbleChartOptions<T>);
   }
 
   /**
-   * Update configuration
+   * Merge-update options (unified API)
    * @param newConfig - Partial configuration to merge
    * @returns this for method chaining
    */
-  override setConfig(newConfig: Partial<BubbleChartConfig>): this {
-    this.config = { ...this.config, ...newConfig };
+  override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
+    this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
     // Update building blocks with new config
     if (this.dataProcessor) {

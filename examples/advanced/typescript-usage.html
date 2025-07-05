@@ -22,26 +22,28 @@
           { label: 'Java', size: 48130171902, count: 65 },
         ];
 
-        const chart = new BubbleChart({
-                      container: '#bubble-chart',
-          label: 'label',
-          size: 'size',
-          type: 'wave',
-          defaultColor: '#4CAF50',
-          percentage: (d) => d.count / 100,
-          format: {
-            text: (text) => text.toUpperCase(),
-            number: (num) => Intl.NumberFormat('en', { notation: 'compact' }).format(num),
-          },
-          tooltip: (d) => [
-            { value: d.label, name: 'Language:' },
-            { value: Intl.NumberFormat('en').format(d.size), name: 'Size:' },
-            { value: `${d.count}%`, name: 'Popularity:' },
-          ],
-        });
-
-        chart.data(data);
-        chart.render();
+        const chart = BubbleChart.create('#bubble-chart')
+          .withData(data)
+          .withLabel('label')
+          .withSize('size')
+          .withType('wave')
+          .withPercentage((d) => d.count / 100)
+          .withAnimations('gentle')
+          .withTooltips(['label', 'size', 'count'])  // Built-in tooltip support
+          .render()
+          .onBubble('click', (d) => {
+            console.log(`Clicked ${d.label}: ${d.size} bytes (${d.count}% popular)`);
+          })
+          .onBubble('mouseenter', (d, event, element) => {
+            element.style.strokeWidth = '2px';
+            element.style.stroke = '#333';
+          })
+          .onBubble('mouseleave', (d, event, element) => {
+            element.style.stroke = 'none';
+          });
+        
+        // Note: Custom formatting and complex tooltip config would be done
+        // through the withCustomConfig() method for advanced use cases
     </script>
   </body>
 </html> 

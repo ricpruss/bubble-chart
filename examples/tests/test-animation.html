@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Animation System Test</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <style>
+    body { font-family: monospace; margin: 20px; }
+    .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
+    .trace { background: #fff2e7; }
+    .critical { background: #ffe7e7; border: 2px solid red; }
+    .timing { background: #e7f5ff; }
+    #chart { width: 400px; height: 200px; border: 1px solid #ddd; margin: 10px 0; }
+    .timestamp { color: #666; font-size: 0.8em; }
+  </style>
+</head>
+<body>
+
+  <h1>Animation System Test & Debug</h1>
+  
+  <div class="debug trace">
+    <h3>Configuration & Timing Trace:</h3>
+    <div id="trace"></div>
+  </div>
+
+  <div id="chart"></div>
+
+  <script>
+    const logs = [];
+    const startTime = performance.now();
+    
+    function getTimestamp() {
+      return `[${(performance.now() - startTime).toFixed(1)}ms]`;
+    }
+    
+    function log(message) {
+      const timestampedMessage = `${getTimestamp()} ${message}`;
+      logs.push(timestampedMessage);
+      console.log(timestampedMessage);
+    }
+
+    // Enhanced transition monitoring with timing
+    let transitionCount = 0;
+    const originalTransition = d3.selection.prototype.transition;
+    d3.selection.prototype.transition = function() {
+      transitionCount++;
+      log(`🎬 D3 TRANSITION #${transitionCount} called with ${this.size()} elements`);
+      const transition = originalTransition.apply(this, arguments);
+      
+      // Enhanced delay monitoring
+      const originalDelay = transition.delay;
+      transition.delay = function(delay) {
+        if (typeof delay === 'function') {
+          // Test multiple indices for better stagger visibility
+          for (let i = 0; i < Math.min(3, this.size()); i++) {
+            const sampleDelay = delay.call(this, null, i);
+            log(`⏰ Transition delay function returns: ${sampleDelay}ms for index ${i}`);
+          }
+        } else {
+          log(`⏰ Transition static delay: ${delay}ms`);
+        }
+        return originalDelay.call(this, delay);
+      };
+      
+      // Monitor transition start/end
+      const originalDuration = transition.duration;
+      transition.duration = function(duration) {
+        if (typeof duration === 'function' || typeof duration === 'number') {
+          log(`⏱️ Transition duration set: ${duration}ms`);
+        }
+        return originalDuration.call(this, duration);
+      };
+      
+      return transition;
+    };
+
+    try {
+      const data = [
+        { "label": "A", "size": 40 },
+        { "label": "B", "size": 60 },
+        { "label": "C", "size": 25 }
+      ];
+
+      log('=== STEP 1: Creating BubbleChart ===');
+      const chart = new BubbleChart({
+        container: "#chart",
+        label: "label",
+        size: "size",
+        width: 400,
+        height: 200
+      });
+
+      log('=== STEP 2: Checking Initial Config ===');
+      const config1 = chart.options();
+      log(`Initial animation config: ${JSON.stringify(config1.animation)}`);
+
+      log('=== STEP 3: Setting Data ===');
+      chart.data(data);
+      
+      log('=== STEP 4: Checking Config Before Render ===');
+      const config2 = chart.options();
+      log(`Pre-render animation config: ${JSON.stringify(config2.animation)}`);
+
+      log('=== STEP 5: Rendering ===');
+      const renderStart = performance.now();
+      chart.render();
+      const renderEnd = performance.now();
+      log(`Render call completed in ${(renderEnd - renderStart).toFixed(1)}ms`);
+      
+      log('=== STEP 6: Checking Config After Render ===');
+      const config3 = chart.options();
+      log(`Post-render animation config: ${JSON.stringify(config3.animation)}`);
+
+      log('=== STEP 7: Checking Builder Config ===');
+      const builder = chart.getBuilder && chart.getBuilder();
+      if (builder && typeof builder.options === 'function') {
+        const builderConfig = builder.options();
+        log(`Builder animation config: ${JSON.stringify(builderConfig.animation)}`);
+      } else {
+        log('Builder or unified API not available');
+      }
+
+      log('=== STEP 8: DOM State Check ===');
+      setTimeout(() => {
+        const circles = document.querySelectorAll('#chart circle');
+        log(`Final DOM: ${circles.length} circles found`);
+        circles.forEach((circle, i) => {
+          const r = circle.getAttribute('r');
+          const opacity = circle.style.opacity || getComputedStyle(circle).opacity;
+          log(`Circle ${i}: r=${r}, opacity=${opacity}`);
+        });
+        
+        log(`\n=== SUMMARY ===`);
+        log(`Total D3 transitions called: ${transitionCount}`);
+        log(`Total test execution time: ${(performance.now() - startTime).toFixed(1)}ms`);
+        
+        // Display all logs with enhanced formatting
+        const formattedLogs = logs.map(logLine => {
+          if (logLine.includes('ms]')) {
+            const parts = logLine.split('] ');
+            return `<span class="timestamp">${parts[0]}]</span> ${parts[1]}`;
+          }
+          return logLine;
+        });
+        
+        document.getElementById('trace').innerHTML = '<pre>' + formattedLogs.join('\n') + '</pre>';
+      }, 500);
+
+    } catch (error) {
+      log(`ERROR: ${error.message}`);
+      log(`Stack: ${error.stack}`);
+      document.getElementById('trace').innerHTML = '<pre>' + logs.join('\n') + '</pre>';
+    }
+  </script>
+
+</body>
+</html> 

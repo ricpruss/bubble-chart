@@ -1,8 +1,7 @@
 import type { BubbleChartData, HierarchicalBubbleData } from './types/data.js';
-import type { BubbleChartConfig } from './types/config.js';
+import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
 import * as d3 from 'd3';
-import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * Tree bubble chart builder for hierarchical data visualization
@@ -10,10 +9,11 @@ import { resolveColor } from './types/d3-helpers.js';
  * 
  * Migrated to use core building blocks - 87% code reduction achieved!
  * Compare to original: 121 lines -> ~45 lines
+ * Implements ChartHandle interface for unified API
  * 
  * @template T - The data type, must extend BubbleChartData
  */
-export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> extends BaseChartBuilder<T> {
+export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> extends BaseChartBuilder<T> implements ChartHandle<T> {
   /**
    * D3.js pack layout instance for hierarchical positioning
    */
@@ -23,9 +23,10 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
    * Creates a new TreeBuilder instance
    * @param config - Chart configuration
    */
-  constructor(config: BubbleChartConfig) {
-    super(config);
-    this.config.type = 'tree';
+  constructor(config: BubbleChartOptions) {
+    // Ensure we can modify the config by creating a mutable copy
+    const mutableConfig = { ...config, type: 'tree' as const };
+    super(mutableConfig);
   }
 
   /**
@@ -102,6 +103,19 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     // Apply tree-specific styling for hierarchical structure
     this.applyTreeStyling(bubbleElements, nodes);
     
+    // Apply entrance animations if configured (matching BubbleBuilder pattern)
+    if (this.config.animation) {
+      const animValues = {
+        duration: this.config.animation?.enter?.duration || 800,
+        staggerDelay: this.config.animation?.enter?.stagger || 0
+      };
+      this.renderingPipeline.applyEntranceAnimation(bubbleElements, {
+        duration: animValues.duration,
+        delay: 0,
+        staggerDelay: animValues.staggerDelay
+      });
+    }
+    
     // Attach interactions using interaction manager (only to leaf nodes)
     const leafBubbles = bubbleElements.bubbleGroups.filter((_d: any, i: number) => !nodes[i]?.children);
     this.interactionManager.attachBubbleEvents(leafBubbles, this.processedData);
@@ -112,24 +126,40 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
    */
   private applyTreeStyling(bubbleElements: any, hierarchyNodes: any[]): void {
     // Update circles with hierarchical styling
+    // Override fill only for parent nodes (transparent); keep leaf nodes' existing colors
     bubbleElements.circles
-      .attr('fill', (_d: any, i: number) => {
-        const hierarchyNode = hierarchyNodes[i];
-        // Parent nodes (with children) are transparent, leaves get colors
-        if (hierarchyNode?.children) {
-          return 'none';
-        }
-        return resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#ddd');
-      })
-      .attr('stroke', '#ccc')
-      .attr('stroke-width', 1);
+      .filter((_d: any, i: number) => !!hierarchyNodes[i]?.children)
+      .style('fill', 'none')
+      .style('stroke', '#ccc')
+      .style('stroke-width', 2)
+      .style('opacity', 0.8);
 
     // Hide labels on parent nodes, keep only on leaf nodes
-    bubbleElements.labels
-      .style('display', (_d: any, i: number) => {
-        const hierarchyNode = hierarchyNodes[i];
-        return hierarchyNode?.children ? 'none' : 'block';
-      });
+    bubbleElements.labels.style('display', 'block');
+  }
+
+  /**
+   * Get readonly merged options (unified API)
+   * @returns Readonly configuration options
+   */
+  override options(): Readonly<BubbleChartOptions<T>> {
+    return Object.freeze(this.config as unknown as BubbleChartOptions<T>);
+  }
+
+  /**
+   * Merge-update options (unified API)
+   * @param newConfig - Partial configuration to merge
+   * @returns this for method chaining
+   */
+  override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
+    this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
+    
+    // Update building blocks with new config if needed
+    if (this.dataProcessor && this.chartData.length) {
+      this.processedData = this.dataProcessor.process(this.chartData);
+    }
+    
+    return this;
   }
 
   /**

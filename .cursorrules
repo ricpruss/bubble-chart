@@ -18,6 +18,12 @@
 **FORBIDDEN without verification:** "✅ Working!", "Fixed!", "Complete!", "Success!"
 **REQUIRED:** Code → Build → Test → Success claim
 
+## **🖥️ DEVELOPMENT SERVER**
+**NEVER start servers** - User always runs `npm run dev` (Vite server)
+- Examples accessible at `http://localhost:3333/examples/`
+- Browser tests at `http://localhost:3333/examples/tests/`
+- No need for `python -m http.server` or other servers
+
 ## **🧪 TESTING STRATEGY**
 **Use appropriate test level for your changes:**
 - **Quick verification**: `npm run test:smoke` (5s)

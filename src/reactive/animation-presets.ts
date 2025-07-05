@@ -3,24 +3,7 @@
  * Predefined animation configurations for different use cases
  */
 
-export interface AnimationConfig {
-  enter?: {
-    duration: number;
-    stagger?: number;
-    easing?: string;
-    delay?: number;
-  } | undefined;
-  update?: {
-    duration: number;
-    easing?: string;
-    delay?: number;
-  } | undefined;
-  exit?: {
-    duration: number;
-    easing?: string;
-    delay?: number;
-  } | undefined;
-}
+import type { AnimationConfig } from '../types/config.js';
 
 export type AnimationPresetName = 'gentle' | 'energetic' | 'minimal' | 'smooth' | 'bouncy' | 'fade' | 'none';
 
@@ -91,10 +74,24 @@ export class AnimationPresets {
    */
   static custom(config: Partial<AnimationConfig>): AnimationConfig {
     const defaultConfig = this.presets.smooth;
+    
+    // Helper function to merge phase configurations without undefined values
+    const mergePhase = (defaultPhase: any, customPhase: any) => {
+      if (!defaultPhase) return customPhase;
+      if (!customPhase) return defaultPhase;
+      
+      // Filter out undefined values from custom phase to prevent overriding defaults
+      const filteredCustom = Object.fromEntries(
+        Object.entries(customPhase).filter(([_, value]) => value !== undefined)
+      );
+      
+      return { ...defaultPhase, ...filteredCustom };
+    };
+    
     return {
-      enter: defaultConfig.enter ? { ...defaultConfig.enter, ...config.enter } : config.enter,
-      update: defaultConfig.update ? { ...defaultConfig.update, ...config.update } : config.update,
-      exit: defaultConfig.exit ? { ...defaultConfig.exit, ...config.exit } : config.exit
+      enter: mergePhase(defaultConfig.enter, config.enter),
+      update: mergePhase(defaultConfig.update, config.update),
+      exit: mergePhase(defaultConfig.exit, config.exit)
     };
   }
 

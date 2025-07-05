@@ -21,34 +21,56 @@
   <div id="toggle-container"></div>
 
   <script>
-    const dataset = window.data.slice(0,20); // subset for brevity
+    // Map companies data to format expected by chart with multiple size options
+    const dataset = window.data.slice(0,20).map(d => ({
+      ...d,
+      label: d.name,
+      count: d.employees / 1000, // employees in thousands for alternative size
+      size: d.profits // profits as default size
+    }));
+    
     const sizeOptions = [
-      { key:'size', label:'Size' },
-      { key:'count', label:'Count' }
+      { key:'size', label:'Profits' },
+      { key:'count', label:'Employees (K)' }
     ];
     let currentKey = 'size';
 
+    // Create chart using modern fluent API
+    const chart = BubbleChart.create('#toggle-container')
+      .withData(dataset)
+      .withLabel('label')
+      .withSize(currentKey)
+      .withColor('sector')  // Color by sector for better visualization
+      .withAnimations('smooth')
+      .render();
+
+    // Create toggle buttons
     const controls = d3.select('#controls');
+    
+    // Add title for controls
+    controls.append('span')
+      .style('margin-right', '1rem')
+      .style('font-weight', 'bold')
+      .text('Size Bubbles By:');
+    
     controls.selectAll('button')
       .data(sizeOptions)
       .enter()
       .append('button')
       .attr('class', d=> 'toggle-btn'+ (d.key===currentKey?' active':''))
       .text(d=> d.label)
-      .on('click',(e,d)=>{ if(d.key!==currentKey){currentKey=d.key;controls.selectAll('button').classed('active',x=>x.key===currentKey);update();}});
-
-    const chart = new BubbleChart({
-      container:'#toggle-container',
-      label:'label',
-      size: currentKey
-    });
+      .on('click',(e,d)=> { 
+        if(d.key!==currentKey){
+          currentKey=d.key;
+          controls.selectAll('button').classed('active',x=>x.key===currentKey);
+          update();
+        }
+      });
 
     function update(){
-      chart.config.size = currentKey;
-      chart.data(dataset);
-      chart.render();
+      // Use modern fluent API method to change size metric
+      chart.setSizeMetric(currentKey);
     }
-    update();
   </script>
 </body>
 </html>

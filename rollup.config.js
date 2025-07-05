@@ -15,12 +15,14 @@ export default [
         file: packageJson.main,
         format: 'cjs',
         sourcemap: true,
+        sourcemapExcludeSources: false,
         exports: 'named',
       },
       {
         file: packageJson.module,
         format: 'esm',
         sourcemap: true,
+        sourcemapExcludeSources: false,
       },
     ],
     plugins: [
@@ -30,7 +32,9 @@ export default [
         tsconfig: './tsconfig.json',
         exclude: ['**/*.test.ts', '**/*.spec.ts'],
         declaration: false, // We'll generate types separately
-        declarationMap: false
+        declarationMap: false,
+        sourceMap: true,
+        inlineSources: true
       }),
     ],
     external: ['d3'],
@@ -42,6 +46,7 @@ export default [
       format: 'umd',
       name: 'BubbleChart',
       sourcemap: true,
+      sourcemapExcludeSources: false,
       exports: 'default',
       globals: {
         d3: 'd3',
@@ -54,7 +59,9 @@ export default [
         tsconfig: './tsconfig.json',
         exclude: ['**/*.test.ts', '**/*.spec.ts'],
         declaration: false, // No types needed for UMD build
-        declarationMap: false
+        declarationMap: false,
+        sourceMap: true,
+        inlineSources: true
       }),
       terser(),
     ],

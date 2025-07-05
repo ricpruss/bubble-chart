@@ -36,16 +36,13 @@
   <script>
     try {
       // Dataset provided as global `data` from JSON script
-      const chart = new BubbleChart({
-        container:'#list-container',
-        label:'name',
-        size:'value',
-        type:'list',
-        width: 700
-      });
-
-      chart.data(window.data);
-      chart.render();
+      const chart = BubbleChart.create('#list-container')
+        .withData(window.data)
+        .withLabel('name')
+        .withSize('value')
+        .withType('list')
+        .withDimensions(700, undefined)
+        .render();
       
       document.getElementById('status').innerHTML = '✅ Chart rendered successfully!';
       document.getElementById('status').style.background = '#e7f6e7';

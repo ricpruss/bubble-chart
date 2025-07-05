@@ -102,19 +102,29 @@
     // ------------------------------------------------------------------
     // Chart instance
     // ------------------------------------------------------------------
-    const chart = new BubbleChart({
-      container: '#tree-tl-container',
-      label: 'label',
-      size: 'amount',
-      type: 'tree'
-    });
+    let chart = null;
 
     // Initial render
     updateChart(maxYear);
 
     function updateChart(year) {
       const filtered = filterByYear(fullData, year);
-      chart.data(filtered).render();
+      
+      // Create or update chart with fluent API
+      if (!chart) {
+        chart = BubbleChart.create('#tree-tl-container')
+          .withData(filtered)
+          .withLabel('label')
+          .withSize('amount')
+          .withColor('name')  // Color by module/category name
+          .withType('tree')
+          .withAnimations('gentle')
+          .render();
+      } else {
+        // Update existing chart with new data
+        chart.store.clear();
+        chart.store.add(filtered);
+      }
     }
   </script>
 </body>

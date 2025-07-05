@@ -1,7 +1,7 @@
 // Fortune 1000 Companies 2024 Data
 // Generated from fortune1000_2024.csv
 
-export const companiesFlat = [
+window.companiesFlat = [
   {
     "id": "company-1",
     "name": "Walmart",
@@ -18004,7 +18004,7 @@ export const companiesFlat = [
   }
 ];
 
-export const companiesHierarchical = {
+window.companiesHierarchical = {
   "name": "Fortune 1000 Companies 2024",
   "children": [
     {
@@ -32220,7 +32220,7 @@ export const companiesHierarchical = {
   ]
 };
 
-export const dataStats = {
+window.dataStats = {
   "totalCompanies": 1000,
   "totalProfits": 1863431.500000001,
   "totalRevenue": 20965064.2,
@@ -32232,10 +32232,13 @@ export const dataStats = {
 };
 
 // Size options for different visualizations
-export const sizeOptions = {
+window.sizeOptions = {
   profits: { label: 'Profits (Millions)', accessor: d => d.profits || 1 },
   revenue: { label: 'Revenue (Millions)', accessor: d => d.revenue || 1 },
   marketCap: { label: 'Market Cap (Millions)', accessor: d => d.marketCap || 1 },
   employees: { label: 'Number of Employees', accessor: d => d.employees || 1 },
   rank: { label: 'Fortune Rank (Inverse)', accessor: d => 1001 - d.rank }
 };
+
+// Compatibility: Many examples expect window.data
+window.data = window.companiesFlat;

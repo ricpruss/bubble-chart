@@ -92,7 +92,7 @@ export class DataIntelligence {
       
       const analysis: DataFieldAnalysis = {
         name: fieldName,
-        type: this.detectFieldType(values),
+        type: this.detectFieldType(values, fieldName),
         uniqueValues: uniqueValues.size,
         nullCount,
         sampleValues: Array.from(uniqueValues).slice(0, 5)
@@ -113,9 +113,9 @@ export class DataIntelligence {
   }
 
   /**
-   * Detect the type of a field based on its values
+   * Detect the type of a field based on its values and field name
    */
-  private static detectFieldType(values: any[]): DataFieldAnalysis['type'] {
+  private static detectFieldType(values: any[], fieldName?: string): DataFieldAnalysis['type'] {
     if (values.length === 0) return 'unknown';
 
     const sample = values.slice(0, Math.min(100, values.length));
@@ -144,10 +144,18 @@ export class DataIntelligence {
     const uniqueValues = new Set(sample);
     const uniqueRatio = uniqueValues.size / sample.length;
     
+    // Check if field name suggests categorical nature
+    const categoricalKeywords = ['category', 'type', 'sector', 'group', 'class', 'region', 'status', 'kind', 'genre'];
+    const fieldNameSuggestsCategorical = fieldName && 
+      categoricalKeywords.some(keyword => fieldName.toLowerCase().includes(keyword));
+    
     // Enhanced categorical detection:
     // - Low cardinality (≤ 20 unique values) AND reasonable ratio (≤ 70%)
     // - OR very low ratio (≤ 30%) regardless of cardinality
-    if ((uniqueValues.size <= 20 && uniqueRatio <= 0.7) || uniqueRatio <= 0.3) {
+    // - OR field name suggests categorical nature (≤ 50 unique values for safety)
+    if ((uniqueValues.size <= 20 && uniqueRatio <= 0.7) || 
+        uniqueRatio <= 0.3 ||
+        (fieldNameSuggestsCategorical && uniqueValues.size <= 50)) {
       return 'categorical';
     }
     

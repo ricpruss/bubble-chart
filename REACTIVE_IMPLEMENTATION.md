@@ -153,6 +153,8 @@ chart.setSizeMetric('revenue');                  // Dynamic metric switching
   });
   ```
 
+- [ ] **Intelligent Text Placement** (e.g., Tree Bubble parent & leaf labels)
+
 ### 📋 Phase 2D: Framework Integration (Weeks 7-8)
 **Goal**: Seamless framework experience
 
@@ -345,7 +347,7 @@ Following repository rules for mandatory verification:
 - ✅ Smoke Tests: 7/7 tests passing
 - ✅ Unit Tests: 99/99 tests passing  
 - ✅ Integration Tests: 21/21 tests passing
-- ✅ Demo Created: Complete Phase 2A feature demonstration
+- ✅ Demo Created: Complete Phase 2A feature demonstration (`examples/tests/phase2a-demo.html`)
 
 **Performance:**
 - Execution time: 7.38ms for 100 data points (Excellent)

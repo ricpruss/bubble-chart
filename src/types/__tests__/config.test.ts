@@ -25,7 +25,7 @@ jest.mock('d3', () => ({
 }));
 
 import {
-  type BubbleChartConfig,
+  type BubbleChartOptions,
   type ChartType,
   type FormatFunctions,
   type TooltipItem,
@@ -36,7 +36,7 @@ import {
 describe('Configuration Validation', () => {
   describe('validateConfig', () => {
     it('should pass validation for valid configuration', () => {
-      const validConfig: Partial<BubbleChartConfig> = {
+      const validConfig: Partial<BubbleChartOptions> = {
         container: '#chart',
         label: 'label',
         size: 'size'
@@ -47,7 +47,7 @@ describe('Configuration Validation', () => {
     });
 
     it('should fail validation for missing required fields', () => {
-      const invalidConfig: Partial<BubbleChartConfig> = {};
+      const invalidConfig: Partial<BubbleChartOptions> = {};
       
       const errors = validateConfig(invalidConfig);
       expect(errors).toContain('container is required');
@@ -57,7 +57,7 @@ describe('Configuration Validation', () => {
     });
 
     it('should fail validation for invalid chart type', () => {
-      const invalidConfig: Partial<BubbleChartConfig> = {
+      const invalidConfig: Partial<BubbleChartOptions> = {
         container: '#chart',
         label: 'label',
         size: 'size',
@@ -72,7 +72,7 @@ describe('Configuration Validation', () => {
       const validTypes: ChartType[] = ['none', 'wave', 'liquid', 'tree', 'motion', 'orbit', 'list'];
       
       validTypes.forEach(type => {
-        const config: Partial<BubbleChartConfig> = {
+        const config: Partial<BubbleChartOptions> = {
           container: '#chart',
           label: 'label',
           size: 'size',
@@ -85,7 +85,7 @@ describe('Configuration Validation', () => {
     });
 
     it('should handle partial validation correctly', () => {
-      const partialConfig: Partial<BubbleChartConfig> = {
+      const partialConfig: Partial<BubbleChartOptions> = {
         container: '#chart',
         label: 'label'
         // missing size
@@ -99,7 +99,7 @@ describe('Configuration Validation', () => {
 });
 
 describe('Default Configuration', () => {
-  let defaultConfig: BubbleChartConfig;
+  let defaultConfig: BubbleChartOptions;
 
   beforeEach(() => {
     defaultConfig = createDefaultConfig();
@@ -119,7 +119,8 @@ describe('Default Configuration', () => {
     expect(defaultConfig.width).toBe(500);
     expect(defaultConfig.height).toBe(500);
     expect(defaultConfig.sort).toBe(false);
-    expect(defaultConfig.percentage).toBe(false);
+    // percentage is optional and undefined by default
+    expect(defaultConfig.percentage).toBeUndefined();
   });
 
   it('should have proper display defaults', () => {
@@ -156,8 +157,10 @@ describe('Default Configuration', () => {
     expect(defaultConfig.tree?.speed).toBe(150);
     expect(defaultConfig.tree?.minRadius).toBe(10);
     
-    expect(defaultConfig.animation?.speed).toBe(3000);
-    expect(defaultConfig.animation?.method).toBe('no-recursive');
+    expect(defaultConfig.animation?.enter?.duration).toBe(800);
+    expect(defaultConfig.animation?.enter?.stagger).toBe(50);
+    expect(defaultConfig.animation?.update?.duration).toBe(600);
+    expect(defaultConfig.animation?.exit?.duration).toBe(400);
     
     expect(defaultConfig.bubble?.minRadius).toBe(10);
     expect(defaultConfig.bubble?.animation).toBe(2000);
@@ -240,7 +243,7 @@ describe('Type Safety', () => {
   });
 
   it('should handle different accessor types', () => {
-    const config: Partial<BubbleChartConfig> = {
+    const config: Partial<BubbleChartOptions> = {
       container: '#chart',
       label: 'label',
       size: ['size1', 'size2'],
@@ -253,8 +256,8 @@ describe('Type Safety', () => {
   });
 
   it('should handle boolean and function tooltip configurations', () => {
-    const booleanTooltip: BubbleChartConfig['tooltip'] = false;
-    const functionTooltip: BubbleChartConfig['tooltip'] = (d) => [
+    const booleanTooltip: BubbleChartOptions['tooltip'] = false;
+    const functionTooltip: BubbleChartOptions['tooltip'] = (d) => [
       { name: 'Name', value: (d as any).label || 'Unknown' }
     ];
     
@@ -270,11 +273,11 @@ describe('Type Safety', () => {
   });
 
   it('should handle percentage configuration types', () => {
-    const booleanPercentage: BubbleChartConfig['percentage'] = true;
-    const functionPercentage: BubbleChartConfig['percentage'] = (d) => (d as any).size / 1000;
+    const functionPercentage: BubbleChartOptions['percentage'] = (d) => (d as any).size / 1000;
+    const undefinedPercentage: BubbleChartOptions['percentage'] = undefined;
     
-    expect(typeof booleanPercentage).toBe('boolean');
     expect(typeof functionPercentage).toBe('function');
+    expect(undefinedPercentage).toBeUndefined();
     
     if (typeof functionPercentage === 'function') {
       const result = functionPercentage({ label: 'Test', size: 500 } as any);
@@ -286,7 +289,7 @@ describe('Type Safety', () => {
 describe('Configuration Composition', () => {
   it('should allow merging default config with user options', () => {
     const defaultConfig = createDefaultConfig();
-    const userOptions: Partial<BubbleChartConfig> = {
+    const userOptions: Partial<BubbleChartOptions> = {
       container: '#my-chart',
       label: 'name',
       size: 'value',
@@ -309,7 +312,7 @@ describe('Configuration Composition', () => {
 
   it('should allow deep merging of nested configurations', () => {
     const defaultConfig = createDefaultConfig();
-    const userConfig: Partial<BubbleChartConfig> = {
+    const userConfig: Partial<BubbleChartOptions> = {
       wave: {
         dy: 15,
         count: 6
@@ -356,5 +359,155 @@ describe('Edge Cases', () => {
     
     const errors = validateConfig(configWithExtras);
     expect(errors).toHaveLength(0);
+  });
+});
+
+// Add new describe block for unified animation configuration tests
+describe('Unified Animation Configuration Tests', () => {
+  it('should preserve rich animation configuration structure', () => {
+    const config = createDefaultConfig();
+    
+    // Test that default animation config uses rich format
+    expect(config.animation).toBeDefined();
+    expect(config.animation?.enter).toBeDefined();
+    expect(config.animation?.update).toBeDefined();
+    expect(config.animation?.exit).toBeDefined();
+    
+    expect(typeof config.animation?.enter?.duration).toBe('number');
+    expect(typeof config.animation?.enter?.stagger).toBe('number');
+  });
+
+  it('should validate rich animation configuration during config validation', () => {
+    const configWithAnimation: Partial<BubbleChartOptions> = {
+      container: '#chart',
+      label: 'label',
+      size: 'size',
+      animation: {
+        enter: { duration: 1000, stagger: 50, easing: 'ease-out', delay: 0 },
+        update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+        exit: { duration: 400, easing: 'ease-in', delay: 0 }
+      }
+    };
+    
+    const errors = validateConfig(configWithAnimation);
+    // Should not have errors related to animation configuration
+    expect(errors.filter(error => error.includes('animation'))).toHaveLength(0);
+  });
+
+  it('should handle animation preset integration with rich format', () => {
+    const baseConfig = createDefaultConfig();
+    const originalEnterStagger = baseConfig.animation?.enter?.stagger;
+    
+    // Simulate applying a preset that might override animation config
+    const updatedConfig = {
+      ...baseConfig,
+      animation: {
+        enter: { duration: 1200, stagger: originalEnterStagger || 0, easing: 'ease-out', delay: 0 },
+        update: { duration: 800, easing: 'ease-in-out', delay: 0 },
+        exit: { duration: 500, easing: 'ease-in', delay: 0 }
+      }
+    };
+    
+    expect(updatedConfig.animation?.enter?.stagger).toBe(originalEnterStagger);
+    expect(updatedConfig.animation?.enter?.duration).toBe(1200);
+  });
+
+  it('should maintain rich animation configuration structure consistency', () => {
+    const config = createDefaultConfig();
+    
+    // Test the structure matches expected rich format
+    if (config.animation) {
+      expect(config.animation).toHaveProperty('enter');
+      expect(config.animation).toHaveProperty('update');
+      expect(config.animation).toHaveProperty('exit');
+      
+      if (config.animation.enter) {
+        expect(typeof config.animation.enter.duration).toBe('number');
+        expect(typeof config.animation.enter.stagger).toBe('number');
+        expect(typeof config.animation.enter.easing).toBe('string');
+      }
+    }
+  });
+
+  it('should prevent animation configuration from being accidentally nullified', () => {
+    const config: Partial<BubbleChartOptions> = {
+      container: '#chart',
+      label: 'label',
+      size: 'size',
+      animation: {
+        enter: { duration: 800, stagger: 50, easing: 'ease-out', delay: 0 },
+        update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+        exit: { duration: 400, easing: 'ease-in', delay: 0 }
+      }
+    };
+    
+    // Simulate configuration update that should preserve animation
+    const updatedConfig = {
+      ...config,
+      width: 600,
+      height: 400
+    };
+    
+    expect(updatedConfig.animation).toBeDefined();
+    expect(updatedConfig.animation?.enter?.stagger).toBe(50);
+  });
+
+  it('should handle undefined animation values gracefully', () => {
+    const configWithUndefinedAnimation: Partial<BubbleChartOptions> = {
+      container: '#chart',
+      label: 'label',
+      size: 'size'
+      // animation is omitted (undefined)
+    };
+    
+    // Should not throw errors during validation
+    expect(() => validateConfig(configWithUndefinedAnimation)).not.toThrow();
+  });
+
+  it('should support rich animation configuration merging scenarios', () => {
+    const baseConfig: Partial<BubbleChartOptions> = {
+      animation: {
+        enter: { duration: 800, stagger: 50, easing: 'ease-out', delay: 0 },
+        update: { duration: 600, easing: 'ease-in-out', delay: 0 },
+        exit: { duration: 400, easing: 'ease-in', delay: 0 }
+      }
+    };
+    
+    const update1 = {
+      animation: {
+        enter: { duration: 1200, stagger: 50, easing: 'ease-out', delay: 0 }
+        // update and exit should be preserved through merging
+      }
+    };
+    
+    // Simulate deep merge scenario
+    const mergedConfig = {
+      ...baseConfig,
+      animation: {
+        ...baseConfig.animation,
+        ...update1.animation
+      }
+    };
+    
+    expect(mergedConfig.animation?.enter?.duration).toBe(1200);
+    expect(mergedConfig.animation?.enter?.stagger).toBe(50);
+    expect(mergedConfig.animation?.update?.duration).toBe(600); // Preserved
+  });
+
+  it('should handle zero and negative animation values appropriately', () => {
+    const configWithZeroAnimation: Partial<BubbleChartOptions> = {
+      container: '#chart',
+      label: 'label',
+      size: 'size',
+      animation: {
+        enter: { duration: 0, stagger: 0, easing: 'ease-out', delay: 0 },
+        update: { duration: 0, easing: 'ease-in-out', delay: 0 },
+        exit: { duration: 0, easing: 'ease-in', delay: 0 }
+      }
+    };
+    
+    // Zero values should be valid (disable animation)
+    const zeroErrors = validateConfig(configWithZeroAnimation);
+    expect(zeroErrors.filter(e => e.includes('animation'))).toHaveLength(0);
   });
 }); 

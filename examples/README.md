@@ -36,8 +36,10 @@ Complex implementations and feature combinations:
 ### **Test Examples** `/examples/tests/`
 Verification and testing implementations:
 
-- `test-migrated-*.html` - Builder migration tests
-- `test-final-verification.html` - Comprehensive functionality test
+- `browser-test.html` - Interactive visual testing with event logging
+- `integration-test.html` - Comprehensive integration testing  
+- `phase2a-demo.html` - Phase 2A feature tests (smart tooltips, data intelligence, animation presets)
+- `phase2b-demo.html` - Phase 2B reactive tests (enhanced binding, error handling, data sources)
 - Additional testing scenarios
 
 ## 💡 Development Notes

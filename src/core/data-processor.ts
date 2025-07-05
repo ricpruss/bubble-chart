@@ -5,7 +5,7 @@
  */
 
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartConfig } from '../types/config.js';
+import type { BubbleChartOptions } from '../types/config.js';
 import { 
   isFlatBubbleData, 
   isHierarchicalBubbleData, 
@@ -33,7 +33,7 @@ export interface ProcessedDataPoint<T = BubbleChartData> {
  * Data processor for consistent data handling across all chart types
  */
 export class DataProcessor<T extends BubbleChartData = BubbleChartData> {
-  constructor(private config: BubbleChartConfig) {}
+  constructor(private config: BubbleChartOptions) {}
 
   /**
    * Process raw data array into standardized format
@@ -165,7 +165,7 @@ export class DataProcessor<T extends BubbleChartData = BubbleChartData> {
     }
     
     // Default to extracting from common color properties
-    const colorProps = ['category', 'tipo', 'type', 'group'];
+    const colorProps = ['category', 'type', 'type', 'group'];
     for (const prop of colorProps) {
       if (prop in item) {
         return String((item as any)[prop]);
