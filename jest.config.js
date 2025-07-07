@@ -3,6 +3,12 @@ export default {
   preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
   testEnvironment: 'node',
+  // Force CommonJS for D3 to avoid ESM transformation issues
+  globals: {
+    'ts-jest': {
+      useESM: true
+    }
+  },
   roots: ['<rootDir>/src'],
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',
@@ -29,10 +35,10 @@ export default {
   ],
   moduleNameMapper: {
     '^(\\.{1,2}/.*)\\.js$': '$1',
-    '^d3$': '<rootDir>/__mocks__/d3.ts'
+    '^d3$': '<rootDir>/node_modules/d3/dist/d3.js'
   },
   transformIgnorePatterns: [
-    'node_modules/(?!(d3|d3-array|d3-scale|d3-selection|d3-transition|d3-ease|d3-format|d3-time-format|d3-hierarchy|d3-force|d3-zoom|d3-drag|d3-shape|d3-path|d3-color|d3-interpolate|d3-timer|internmap)/)'
+    'node_modules/(?!d3)'
   ],
   setupFiles: ['<rootDir>/test/jest-setup.ts']
 }; 

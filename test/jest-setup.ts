@@ -7,7 +7,9 @@ if (typeof global.document === 'undefined') {
       appendChild: jest.fn(),
       setAttribute: jest.fn(),
       getContext: jest.fn()
-    }))
+    })),
+    querySelectorAll: jest.fn(() => []), // Return empty array for D3 selectAll
+    querySelector: jest.fn(() => null)
   };
 }
 

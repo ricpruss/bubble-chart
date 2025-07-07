@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import { BaseChartBuilder } from './core/index.js';
 import type { BubbleChartOptions } from './types/config.js';
 import type { BubbleChartData } from './types/data.js';
-import { resolveColor } from './types/d3-helpers.js';
+import { D3DataUtils } from './utils/d3-data-utils.js';
 
 /**
  * Motion configuration for force simulation
@@ -71,19 +71,20 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
 
       const { svg, dimensions } = svgElements;
 
-      // Create initial layout for bubble sizes using building blocks
-      const layoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
+      // Create scales using D3DataUtils
+      const radiusScale = D3DataUtils.createRadiusScale(
+        this.processedData,
+        (d) => d.size,
+        [5, Math.min(dimensions.width, dimensions.height) / 20]
+      );
       
-      // Create motion nodes with initial positions and bubble pack radii
-      const motionNodes = this.processedData.map((d, i) => {
-        const layoutNode = layoutNodes[i];
-        return {
-          data: d,
-          r: layoutNode ? layoutNode.r : 5,
-          x: layoutNode ? layoutNode.x : Math.random() * dimensions.width,
-          y: layoutNode ? layoutNode.y : Math.random() * dimensions.height
-        };
-      });
+      // Create motion nodes with random initial positions
+      const motionNodes = this.processedData.map((d) => ({
+        data: d,
+        r: radiusScale(d.size),
+        x: Math.random() * dimensions.width,
+        y: Math.random() * dimensions.height
+      }));
 
       // Create bubble groups and elements
       const bubbleGroups = svg.selectAll('g.bubble')
@@ -92,10 +93,19 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .append('g')
         .attr('class', 'bubble');
 
+      // Create color scale for bubbles
+      const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
+      const colorScale = colorValues.length > 0 ? 
+        D3DataUtils.createColorScale(colorValues) : 
+        () => this.config.defaultColor || '#1f77b4';
+
+      // Create font scale based on radius
+      const fontScale = D3DataUtils.createFontScale([5, Math.min(dimensions.width, dimensions.height) / 20], [10, 18]);
+
       // Create circles with motion-specific styling
       bubbleGroups.append('circle')
         .attr('r', (d: any) => d.r)
-        .attr('fill', (d: any, i: number) => resolveColor(this.config.color, d.data, i, this.config.defaultColor || '#ddd'))
+        .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
         .attr('stroke', '#fff')
         .attr('stroke-width', 1.5)
         .attr('opacity', 0.85)
@@ -106,11 +116,11 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
         .style('fill', '#333')
-        .style('font-size', (d: any) => Math.max(10, d.r / 3))
+        .style('font-size', (d: any) => fontScale(d.r))
         .style('pointer-events', 'none')
         .text((d: any) => {
-          const label = this.dataProcessor.extractLabel(d.data);
-          return this.config.format?.text ? this.config.format.text(label) : label;
+          const label = d.data.label;
+          return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
         });
 
       // Use InteractionManager for event handling
@@ -165,7 +175,18 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
    */
   updateData(data: T[]): void {
     this.chartData = data;
-    this.processedData = this.dataProcessor.process(data);
+    // Process data using D3DataUtils instead of DataProcessor
+    const colorConfig = this.config.color;
+    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+      ? colorConfig as (string | ((d: BubbleChartData) => string))
+      : undefined;
+    
+    this.processedData = D3DataUtils.processForVisualization(
+      data,
+      this.config.label || 'label',
+      this.config.size || 'size',
+      colorAccessor
+    );
     
     // Re-render with new data
     this.stopSimulation();

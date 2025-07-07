@@ -1,6 +1,7 @@
 import type { BubbleChartData, HierarchicalBubbleData } from './types/data.js';
 import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
+import { D3DataUtils } from './utils/d3-data-utils.js';
 import * as d3 from 'd3';
 
 /**
@@ -37,14 +38,34 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     // Store the original data (could be array or hierarchical object)
     this.chartData = Array.isArray(data) ? data : [data] as T[];
 
-    // For hierarchical data, extract leaf nodes for DataProcessor
+    // For hierarchical data, extract leaf nodes for D3DataUtils processing
     if (!Array.isArray(data) && data && typeof data === 'object') {
       // Extract all leaf nodes from the hierarchy
       const leafNodes = this.extractLeafNodes(data);
-      this.processedData = this.dataProcessor.process(leafNodes);
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        leafNodes,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
     } else {
-      // For array data, use normal processing
-      this.processedData = this.dataProcessor.process(this.chartData);
+      // For array data, use D3DataUtils processing
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
     }
 
     return this;
@@ -74,11 +95,13 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
 
   /**
    * Specialized rendering logic for hierarchical tree layout
-   * All common functionality (SVG setup, data processing, events) handled by building blocks
+   * Uses D3DataUtils for D3-native hierarchical layout
    */
   protected performRender(): void {
     const svgElements = this.svgManager.getElements();
     if (!svgElements) return;
+    
+    const { svg, dimensions } = svgElements;
     
     // Get the original hierarchical data structure
     // If we have a single hierarchical object, use it directly
@@ -90,53 +113,88 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
       ? this.chartData[0] // Use the single hierarchical object directly
       : { children: this.chartData } as any; // Wrap array in root node
 
-    // Create hierarchical layout using rendering pipeline
-    const layoutNodes = this.renderingPipeline.createHierarchicalLayout(rootDatum);
+    // Create hierarchical layout using D3DataUtils
+    const layoutNodes = D3DataUtils.createHierarchyLayout(
+      rootDatum,
+      dimensions.width,
+      dimensions.height,
+      5
+    );
     
-    // Create DOM elements using rendering pipeline
-    const bubbleElements = this.renderingPipeline.createBubbleElements(layoutNodes, this.processedData);
-    
+    // Create color scale for tree nodes
+    const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
+    const colorScale = colorValues.length > 0 ? 
+      D3DataUtils.createColorScale(colorValues) : 
+      () => this.config.defaultColor || '#1f77b4';
+
     // Create D3.js hierarchy for node information (parents vs children)
     const root = d3.hierarchy(rootDatum);
-    const nodes = root.descendants();
+    const hierarchyNodes = root.descendants();
     
-    // Apply tree-specific styling for hierarchical structure
-    this.applyTreeStyling(bubbleElements, nodes);
-    
-    // Apply entrance animations if configured (matching BubbleBuilder pattern)
-    if (this.config.animation) {
-      const animValues = {
-        duration: this.config.animation?.enter?.duration || 800,
-        staggerDelay: this.config.animation?.enter?.stagger || 0
-      };
-      this.renderingPipeline.applyEntranceAnimation(bubbleElements, {
-        duration: animValues.duration,
-        delay: 0,
-        staggerDelay: animValues.staggerDelay
-      });
-    }
-    
-    // Attach interactions using interaction manager (only to leaf nodes)
-    const leafBubbles = bubbleElements.bubbleGroups.filter((_d: any, i: number) => !nodes[i]?.children);
-    this.interactionManager.attachBubbleEvents(leafBubbles, this.processedData);
-  }
+    // Create bubble groups
+    const bubbleGroups = svg.selectAll('g.bubble')
+      .data(layoutNodes)
+      .enter()
+      .append('g')
+      .attr('class', 'bubble')
+      .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
-  /**
-   * Apply tree-specific styling (parent vs leaf nodes)
-   */
-  private applyTreeStyling(bubbleElements: any, hierarchyNodes: any[]): void {
-    // Update circles with hierarchical styling
-    // Override fill only for parent nodes (transparent); keep leaf nodes' existing colors
-    bubbleElements.circles
+    // Create circles with tree-specific styling
+    const circles = bubbleGroups.append('circle')
+      .attr('r', (d: any) => d.r);
+
+    // Style circles based on hierarchy (parent vs leaf)
+    circles
       .filter((_d: any, i: number) => !!hierarchyNodes[i]?.children)
       .style('fill', 'none')
       .style('stroke', '#ccc')
       .style('stroke-width', 2)
       .style('opacity', 0.8);
+      
+    circles
+      .filter((_d: any, i: number) => !hierarchyNodes[i]?.children)
+      .attr('fill', (d: any) => {
+        // For leaf nodes, find corresponding processed data for color
+        const leafData = this.processedData.find(pd => pd.data === d.data);
+        return leafData?.colorValue ? colorScale(leafData.colorValue) : (this.config.defaultColor || '#1f77b4');
+      })
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 1.5)
+      .style('cursor', 'pointer');
 
-    // Hide labels on parent nodes, keep only on leaf nodes
-    bubbleElements.labels.style('display', 'block');
+    // Add labels only to leaf nodes
+    bubbleGroups
+      .filter((_d: any, i: number) => !hierarchyNodes[i]?.children)
+      .append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .style('fill', '#333')
+      .style('font-size', (d: any) => Math.max(10, d.r / 3))
+      .style('pointer-events', 'none')
+      .text((d: any) => {
+        // For leaf nodes, find corresponding processed data for label
+        const leafData = this.processedData.find(pd => pd.data === d.data);
+        return leafData ? D3DataUtils.formatLabel(leafData.label, 15) : '';
+      });
+    
+    // Apply entrance animations if configured
+    if (this.config.animation) {
+      const animDuration = this.config.animation?.enter?.duration || 800;
+      const staggerDelay = this.config.animation?.enter?.stagger || 0;
+      
+      bubbleGroups
+        .style('opacity', 0)
+        .transition()
+        .duration(animDuration)
+        .delay((_d: any, i: number) => i * staggerDelay)
+        .style('opacity', 1);
+    }
+    
+    // Attach interactions only to leaf nodes
+    const leafBubbles = bubbleGroups.filter((_d: any, i: number) => !hierarchyNodes[i]?.children);
+    this.interactionManager.attachBubbleEvents(leafBubbles, this.processedData);
   }
+
 
   /**
    * Get readonly merged options (unified API)
@@ -154,9 +212,19 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
   override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
-    // Update building blocks with new config if needed
-    if (this.dataProcessor && this.chartData.length) {
-      this.processedData = this.dataProcessor.process(this.chartData);
+    // Re-process data with new config if needed
+    if (this.chartData.length) {
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
     }
     
     return this;

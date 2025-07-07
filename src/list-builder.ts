@@ -1,8 +1,8 @@
 import type { BubbleChartData } from './types/data.js';
 import type { BubbleChartOptions, ChartHandle } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
+import { D3DataUtils } from './utils/d3-data-utils.js';
 import * as d3 from 'd3';
-import { resolveColor } from './types/d3-helpers.js';
 
 /**
  * ListBuilder – displays bubbles in a vertical list layout with labels.
@@ -32,8 +32,8 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       
       const { svg } = svgElements;
 
-      // Sort processed data by size (descending)
-      const sortedData = [...this.processedData].sort((a, b) => (b.size || 0) - (a.size || 0));
+      // Sort processed data by size (descending) using D3DataUtils
+      const sortedData = D3DataUtils.sortData(this.processedData, 'size', 'desc');
 
       // Configuration with defaults
       const maxRadius = this.config.listBubble?.maxRadius || 25;
@@ -41,12 +41,12 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       const padding = this.config.listBubble?.padding || 10;
       const textWidth = this.config.listBubble?.textWidth || 200;
 
-      // Create radius scale
-      const sizeExtent = d3.extent(sortedData, d => d.size || 0) as [number, number];
-      this.radiusScale = d3.scaleSqrt<number, number>()
-        .domain([0, sizeExtent[1] || 1])
-        .range([minRadius, maxRadius])
-        .clamp(true);
+      // Create radius scale using D3DataUtils
+      this.radiusScale = D3DataUtils.createRadiusScale(
+        sortedData,
+        (d) => d.size,
+        [minRadius, maxRadius]
+      );
 
       // Calculate layout and update SVG dimensions properly
       const lineHeight = maxRadius * 2 + padding;
@@ -57,6 +57,12 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         this.svgManager.getElements()?.dimensions.width || 500,
         newHeight
       );
+
+      // Create color scale using D3DataUtils
+      const colorValues = D3DataUtils.getUniqueValues(sortedData, 'colorValue');
+      const colorScale = colorValues.length > 0 ? 
+        D3DataUtils.createColorScale(colorValues) : 
+        () => this.config.defaultColor || '#2196F3';
 
       // Clear existing list rows first
       svg.selectAll('g.list-row').remove();
@@ -74,12 +80,12 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .attr('cx', maxRadius)
         .attr('cy', 0)
         .attr('r', (d: any) => this.radiusScale!(d.size || 0))
-        .attr('fill', (d: any, i: number) => resolveColor(this.config.color, d, i, this.config.defaultColor || '#2196F3'))
+        .attr('fill', (d: any) => d.colorValue ? colorScale(d.colorValue) : (this.config.defaultColor || '#2196F3'))
         .attr('stroke', '#fff')
         .attr('stroke-width', 2)
         .style('opacity', 0.8);
 
-      // Add labels
+      // Add labels using D3DataUtils formatting
       const labels = rows.append('text')
         .attr('x', maxRadius * 2 + padding)
         .attr('y', 0)
@@ -88,10 +94,13 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .style('font-family', 'sans-serif')
         .style('fill', '#333')
         .style('pointer-events', 'none')
-        .text((d: any) => this.config.format?.text ? this.config.format.text(d.label) : d.label)
+        .text((d: any) => {
+          const label = this.config.format?.text ? this.config.format.text(d.label) : d.label;
+          return D3DataUtils.formatLabel(label, 30);
+        })
         .call(this.wrapText.bind(this), textWidth);
 
-      // Add optional size values
+      // Add optional size values using D3DataUtils formatting
       if (this.config.format?.number) {
         rows.append('text')
           .attr('x', maxRadius * 2 + padding)
@@ -103,6 +112,18 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
           .text((d: any) => this.config.format!.number!(d.size || 0));
+      } else {
+        // Default number formatting using D3DataUtils
+        rows.append('text')
+          .attr('x', maxRadius * 2 + padding)
+          .attr('y', 0)
+          .attr('dy', '1.5em')
+          .style('font-size', '12px')
+          .style('font-family', 'sans-serif')
+          .style('fill', '#666')
+          .style('opacity', 0.7)
+          .style('pointer-events', 'none')
+          .text((d: any) => D3DataUtils.formatNumber(d.size || 0));
       }
 
       // Use interaction manager for events
@@ -195,9 +216,20 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
   override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
-    // Update building blocks with new config if needed
-    if (this.dataProcessor && this.chartData.length) {
-      this.processedData = this.dataProcessor.process(this.chartData);
+    // Re-process data with new config if needed
+    if (this.chartData.length) {
+      // Handle color accessor type filtering
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
     }
     
     return this;
