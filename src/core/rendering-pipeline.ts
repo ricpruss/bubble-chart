@@ -94,6 +94,18 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
       config.bubble?.padding || 5
     );
 
+    // Create D3 scales for styling
+    const radiusExtent = layoutNodes.length > 0 ? 
+      [Math.min(...layoutNodes.map(d => d.r)), Math.max(...layoutNodes.map(d => d.r))] as [number, number] :
+      [10, 50] as [number, number];
+    const fontScale = D3DataUtils.createFontScale(radiusExtent, [10, 20]);
+    
+    // Create color scale if color data exists
+    const colorValues = D3DataUtils.getUniqueValues(data as any, 'colorValue');
+    const colorScale = colorValues.length > 0 ? 
+      D3DataUtils.createColorScale(colorValues) : 
+      () => config.defaultColor || '#ddd';
+
     // Create data binding with key function
     const keyFn = options.keyFunction || ((d: any) => {
       // For layout nodes, extract the original data and apply key function
@@ -130,7 +142,10 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
           // Add circles to new bubbles
           enterGroups.append('circle')
             .attr('r', (d: LayoutNode) => d.r)
-            .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i))
+            .style('fill', (d: LayoutNode) => {
+              const processedData = d.data;
+              return processedData?.colorValue ? colorScale(processedData.colorValue) : (config.defaultColor || '#ddd');
+            })
             .style('stroke', config.defaultColor || '#fff')
             .style('stroke-width', 2);
 
@@ -138,13 +153,15 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
           enterGroups.append('text')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
-            .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
+            .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
             .style('font-weight', 'bold')
             .style('fill', '#333')
             .style('pointer-events', 'none')
-            .text((d: LayoutNode, i: number) => {
-              const label = this.extractLabel(d, i, data);
-              return this.formatLabel(label, d.r);
+            .text((d: LayoutNode) => {
+              const processedData = d.data;
+              const label = processedData?.label || 'Unknown';
+              const maxLength = Math.max(3, Math.floor(d.r / 4));
+              return D3DataUtils.formatLabel(label, maxLength);
             });
 
           // Apply enter animation with D3 transitions
@@ -184,16 +201,21 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
             .transition('update-circles')
             .duration(optimalUpdateDuration)
             .attr('r', (d: LayoutNode) => d.r)
-            .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i));
+            .style('fill', (d: LayoutNode) => {
+              const processedData = d.data;
+              return processedData?.colorValue ? colorScale(processedData.colorValue) : (config.defaultColor || '#ddd');
+            });
 
           // Update labels
           update.select('text')
             .transition('update-text')
             .duration(optimalUpdateDuration)
-            .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
-            .text((d: LayoutNode, i: number) => {
-              const label = this.extractLabel(d, i, data);
-              return this.formatLabel(label, d.r);
+            .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
+            .text((d: LayoutNode) => {
+              const processedData = d.data;
+              const label = processedData?.label || 'Unknown';
+              const maxLength = Math.max(3, Math.floor(d.r / 4));
+              return D3DataUtils.formatLabel(label, maxLength);
             });
 
           return update;
@@ -222,110 +244,6 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   }
 
 
-  /**
-   * Calculate appropriate font size based on bubble radius
-   * @param radius - Bubble radius
-   * @returns Font size in pixels
-   */
-  private calculateFontSize(radius: number): string {
-    const fontSize = Math.max(10, Math.min(20, radius / 3));
-    return `${fontSize}px`;
-  }
-
-  /**
-   * Get circle color based on configuration
-   * @param layoutNode - Layout node
-   * @param index - Node index
-   * @returns Color string
-   */
-  private getCircleColor(layoutNode: LayoutNode, index: number): string {
-    const { config } = this.context;
-
-    if (config.color) {
-      // Get the processed data point which contains the extracted color value
-      const processedData = layoutNode.data;
-      
-      // Check if this is a D3 scale (has domain/range methods)
-      if (typeof config.color === 'function' && 
-          ('domain' in config.color || 'range' in config.color)) {
-        // D3 scale - use the processed color value or fallback to index
-        const colorKey = processedData?.color || index.toString();
-        return (config.color as any)(colorKey);
-      } else if (typeof config.color === 'function') {
-        // Custom color function
-        const colorFunction = config.color as any;
-        if (colorFunction.length > 1) {
-          // Multi-parameter function - pass (processedData, index)
-          return colorFunction(processedData?.data, index);
-        } else {
-          // Single-parameter function - pass the original data object
-          return colorFunction(processedData?.data);
-        }
-      } else {
-        // Fallback - treat as scale
-        const colorKey = processedData?.color || index.toString();
-        return (config.color as any)(colorKey);
-      }
-    }
-
-    return config.defaultColor || '#ddd';
-  }
-
-  /**
-   * Extract label text from layout node
-   * @param layoutNode - Layout node
-   * @param index - Node index
-   * @param data - Original processed data
-   * @returns Label text
-   */
-  private extractLabel(
-    layoutNode: LayoutNode, 
-    _index: number, 
-    _data: ProcessedDataPoint<T>[]
-  ): string {
-    const { config } = this.context;
-
-    // Use the processed data from the layout node (correct data)
-    const processedData = layoutNode.data;
-    if (processedData?.label) {
-      return processedData.label;
-    }
-
-    // Fall back to raw data extraction from the node
-    if (processedData?.data && typeof config.label === 'string') {
-      return String(processedData.data[config.label] || 'Unknown');
-    }
-
-    // Last resort fallback
-    if (typeof config.label === 'string' && processedData) {
-      return String(processedData[config.label] || 'Unknown');
-    }
-
-    return 'Unknown';
-  }
-
-  /**
-   * Format label text to fit within bubble
-   * @param label - Original label text
-   * @param radius - Bubble radius
-   * @returns Formatted label text
-   */
-  private formatLabel(label: string, radius: number): string {
-    const { config } = this.context;
-
-    // Apply text formatting if configured
-    let formattedLabel = config.format?.text 
-      ? config.format.text(label) 
-      : label;
-
-    // Truncate if too long for bubble size
-    const maxLength = Math.max(3, Math.floor(radius / 4));
-    if (formattedLabel.length > maxLength) {
-      formattedLabel = formattedLabel.substring(0, maxLength - 1) + '…';
-    }
-
-    return formattedLabel;
-  }
 
 
 }
