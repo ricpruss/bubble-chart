@@ -72,4 +72,9 @@ export default [
     output: [{ file: packageJson.types, format: 'es' }],
     plugins: [dts()],
   },
+  {
+    input: 'src/index.ts',
+    output: [{ file: 'dist/bubble-chart.esm.d.ts', format: 'es' }],
+    plugins: [dts()],
+  },
 ]; 

@@ -11,7 +11,7 @@
 // For local development inside this repo we import the built ESM file so the
 // TypeScript compiler can resolve the declaration file that sits next to it.
 // BubbleChart now uses the modern fluent API by default
-import BubbleChart from '../../dist/bubble-chart.esm.js';
+import BubbleChart, { type BubbleChartData } from '../../dist/bubble-chart.esm.js';
 
 interface LanguageDatum {
   id: string;
@@ -19,7 +19,7 @@ interface LanguageDatum {
   size: number;
   count: number;
   category: string;
-  // Additional properties to satisfy BubbleChartData constraint
+  // Allow additional properties to make it compatible with BubbleChartData
   [key: string]: unknown;
 }
 
@@ -31,36 +31,41 @@ const data: LanguageDatum[] = [
 
 // Create chart using fluent API - automatic field detection
 const chart = BubbleChart.create('#bubble-chart')
-  .withData(data)
+  .withData(data as BubbleChartData[])
   .withLabel('label')
   .withSize('size')
   .withType('wave')
   .withColor('category')  // Color by category for visual distinction
-  .withPercentage((d: LanguageDatum) => d.count / 100)
+  .withPercentage((d: BubbleChartData) => (d as unknown as LanguageDatum).count / 100)
   .withAnimations('gentle')
   .withCustomConfig({
     format: {
       text: (text: string) => text.toUpperCase(),
       number: (num: number) => Intl.NumberFormat('en', { notation: 'compact' }).format(num),
     },
-    tooltip: (d: LanguageDatum) => [
-      { value: d.label, name: 'Language:' },
-      { value: Intl.NumberFormat('en').format(d.size), name: 'Size:' },
-      { value: `${d.count}%`, name: 'Popularity:' },
-      { value: d.category, name: 'Category:' },
-    ],
+    tooltip: (d: BubbleChartData) => {
+      const lang = d as unknown as LanguageDatum;
+      return [
+        { value: lang.label, name: 'Language:' },
+        { value: Intl.NumberFormat('en').format(lang.size), name: 'Size:' },
+        { value: `${lang.count}%`, name: 'Popularity:' },
+        { value: lang.category, name: 'Category:' },
+      ];
+    },
   })
   .render();
 
 // Example of adding event handlers for DOM interactions
 // Note: Events use the reactive store data, not layout node indices
-chart.onBubble('click', (d: LanguageDatum) => {
-  console.log(`Clicked ${d.label}: ${Intl.NumberFormat('en').format(d.size)} bytes (${d.count}% popular)`);
-  alert(`You clicked on ${d.label} (${d.category})!`);
+chart.onBubble('click', (d: BubbleChartData, _event: MouseEvent, _element: SVGElement) => {
+  const lang = d as unknown as LanguageDatum;
+  console.log(`Clicked ${lang.label}: ${Intl.NumberFormat('en').format(lang.size)} bytes (${lang.count}% popular)`);
+  alert(`You clicked on ${lang.label} (${lang.category})!`);
 });
 
-chart.onBubble('mouseover', (d: LanguageDatum) => {
-  console.log(`Mouse over ${d.label}`);
+chart.onBubble('mouseover', (d: BubbleChartData, _event: MouseEvent, _element: SVGElement) => {
+  const lang = d as unknown as LanguageDatum;
+  console.log(`Mouse over ${lang.label}`);
 });
 
 // Example of listening to lifecycle events
@@ -78,6 +83,6 @@ setTimeout(() => {
   ];
   
   // Use the reactive store to update data
-  chart.store.replaceWith(newData);
+  chart.store.replaceWith(newData as BubbleChartData[]);
   console.log('Data updated with TypeScript added');
 }, 5000);
