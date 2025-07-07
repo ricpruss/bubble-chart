@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import type { BubbleChartData } from './types/data.js';
 import type { BubbleChartOptions } from './types/config.js';
 import { BaseChartBuilder } from './core/index.js';
-import { resolveColor } from './types/d3-helpers.js';
+import { D3DataUtils } from './utils/d3-data-utils.js';
 
 /**
  * Interface describing the generated wave SVG path data
@@ -43,26 +43,63 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
    * Render the liquid bubbles.
    */
   protected performRender(): void {
-    if (!this.processedData.length) return;
+    if (!this.chartData || this.chartData.length === 0) {
+      console.warn('LiquidBubble: No data to render');
+      return;
+    }
+
+    // Process data with color accessor using D3DataUtils
+    const colorConfig = this.config.color;
+    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+      ? colorConfig as (string | ((d: BubbleChartData) => string))
+      : undefined;
+    
+    const processedData = D3DataUtils.processForVisualization(
+      this.chartData,
+      this.config.label || 'label',
+      this.config.size || 'size',
+      colorAccessor
+    );
 
     const svgElements = this.svgManager.getElements();
     if (!svgElements) return;
 
-    // Arrange bubbles using the standard pack layout
-    const layoutNodes = this.renderingPipeline.createBubblePackLayout(this.processedData);
-    const { bubbleGroups } = this.renderingPipeline.createBubbleElements(layoutNodes, this.processedData);
+    const { svg, dimensions } = svgElements;
+
+    // Create layout nodes using D3DataUtils
+    const layoutNodes = D3DataUtils.createPackLayout(
+      processedData,
+      dimensions.width,
+      dimensions.height,
+      5
+    );
+
+    // Create bubble groups using D3's native data binding
+    const bubbleGroups = svg.selectAll('.bubble')
+      .data(layoutNodes)
+      .join('g')
+      .attr('class', 'bubble-chart bubble')
+      .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`)
+      .style('cursor', 'pointer');
+
+    // Create circles (background for liquid fill)
+    bubbleGroups.append('circle')
+      .attr('r', (d: any) => d.r)
+      .attr('fill', 'transparent')
+      .attr('stroke', '#fff')
+      .attr('stroke-width', 2);
 
     // Add the flat liquid surface
-    this.createLiquidElements(bubbleGroups, layoutNodes);
+    this.createLiquidElements(bubbleGroups, layoutNodes, processedData);
 
     // Hook up mouse / touch interactions
-    this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
+    this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
   }
 
   /**
    * Appends clip-paths and wave paths for each bubble group.
    */
-  private createLiquidElements(bubbleGroups: any, layoutNodes: any[]): void {
+  private createLiquidElements(bubbleGroups: any, layoutNodes: any[], processedData: any[]): void {
     // Clip path limiting the liquid fill to the circle outline
     bubbleGroups.append('defs')
       .append('clipPath')
@@ -77,7 +114,20 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     // Flat wave path (it is still an SVG path for consistency)
     const paths = waveGroups.append('path')
       .attr('class', 'wave')
-      .attr('fill', (_d: any, i: number) => resolveColor(this.config.color, this.processedData[i]?.data, i, this.config.defaultColor || '#2196F3'))
+      .attr('fill', (_d: any, i: number) => {
+        const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
+        const colorScale = colorValues.length > 0 ? 
+          d3.scaleOrdinal()
+            .domain(colorValues)
+            .range([
+              '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
+              '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
+            ]) :
+          () => this.config.defaultColor || '#2196F3';
+        
+        const item = processedData[i];
+        return item?.colorValue ? colorScale(item.colorValue) : (this.config.defaultColor || '#2196F3');
+      })
       .style('opacity', 0.6)
       .attr('stroke', 'none')
       // Initial state: empty (0% filled)
@@ -92,7 +142,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       .duration(this.animationDuration)
       .ease(d3.easeCubicOut)
       .attrTween('d', (_d: any, i: number, _nodes: any[]) => {
-        const target = this.getPercentageValue(this.processedData[i].data);
+        const target = this.getPercentageValue(processedData[i].data);
         const interp = d3.interpolateNumber(0, target);
         const layoutNode = layoutNodes[i];
         const line = d3.line();

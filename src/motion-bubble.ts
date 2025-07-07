@@ -54,10 +54,24 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
    */
   protected performRender(): void {
     try {
-      if (!this.processedData || this.processedData.length === 0) {
+      if (!this.chartData || this.chartData.length === 0) {
         console.warn('MotionBubble: No data to render');
         return;
       }
+
+      // Process data with color accessor using D3DataUtils
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
+      
 
       // Stop any existing simulation
       this.stopSimulation();
@@ -75,7 +89,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       const radiusScale = D3DataUtils.createRadiusScale(
         this.processedData,
         (d) => d.size,
-        [5, Math.min(dimensions.width, dimensions.height) / 20]
+        [8, Math.min(dimensions.width, dimensions.height) / 12]
       );
       
       // Create motion nodes with random initial positions
@@ -91,16 +105,21 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .data(motionNodes)
         .enter()
         .append('g')
-        .attr('class', 'bubble');
+        .attr('class', 'bubble-chart bubble');
 
-      // Create color scale for bubbles
+      // Create color scale for bubbles using vibrant palette
       const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
       const colorScale = colorValues.length > 0 ? 
-        D3DataUtils.createColorScale(colorValues) : 
+        d3.scaleOrdinal()
+          .domain(colorValues)
+          .range([
+            '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
+            '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
+          ]) :
         () => this.config.defaultColor || '#1f77b4';
 
       // Create font scale based on radius
-      const fontScale = D3DataUtils.createFontScale([5, Math.min(dimensions.width, dimensions.height) / 20], [10, 18]);
+      const fontScale = D3DataUtils.createFontScale([8, Math.min(dimensions.width, dimensions.height) / 12], [10, 20]);
 
       // Create circles with motion-specific styling
       bubbleGroups.append('circle')

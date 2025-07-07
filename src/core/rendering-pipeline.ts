@@ -4,10 +4,10 @@
  * Eliminates duplication across all chart builders
  */
 
-import * as d3 from 'd3';
 import type { BubbleChartData } from '../types/data.js';
 import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions } from '../types/config.js';
 import type { ProcessedDataPoint } from './data-processor.js';
+import { D3DataUtils } from '../utils/d3-data-utils.js';
 // import type { SVGElements } from './svg-manager.js';
 
 export interface RenderingContext {
@@ -40,80 +40,8 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     // RenderingPipeline initialized with context
   }
 
-  /**
-   * Create basic bubble pack layout
-   * @param data - Processed data points
-   * @returns Layout nodes with positions and sizes
-   */
-  createBubblePackLayout(data: ProcessedDataPoint<T>[]): LayoutNode[] {
-    const { width, height, config } = this.context;
 
-    // Create pack layout
-    const pack = d3.pack()
-      .size([width, height])
-      .padding(config.bubble?.padding || 5);
 
-    // Create hierarchy for pack layout
-    const root = d3.hierarchy({ children: data } as any)
-      .sum((d: any) => d.size || 1)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-
-    // Apply pack layout
-    const nodes = pack(root).descendants().slice(1); // Skip root node
-
-    return nodes.map(node => ({
-      x: node.x,
-      y: node.y,
-      r: node.r,
-      data: node.data
-    }));
-  }
-
-  /**
-   * Create hierarchical pack layout for tree structures
-   * @param data - Hierarchical data
-   * @returns Layout nodes with nested structure
-   */
-  createHierarchicalLayout(data: any): LayoutNode[] {
-    const { width, height, config } = this.context;
-
-    const pack = d3.pack()
-      .size([width, height])
-      .padding(config.tree?.minRadius || 5);
-
-    const root = d3.hierarchy(data)
-      .sum((d: any) => d.size || d.amount || 1)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-
-    const nodes = pack(root).descendants();
-
-    return nodes.map(node => ({
-      x: node.x,
-      y: node.y,
-      r: node.r,
-      data: node.data
-    }));
-  }
-
-  /**
-   * Create force-directed layout for motion bubbles
-   * @param data - Processed data points
-   * @returns Initial layout nodes for simulation
-   */
-  createForceLayout(data: ProcessedDataPoint<T>[]): LayoutNode[] {
-    const { width, height } = this.context;
-
-    // Create initial packed layout for sizes
-    const initialLayout = this.createBubblePackLayout(data);
-
-    // Convert to force simulation format
-    return initialLayout.map(node => ({
-      x: Math.random() * width,
-      y: Math.random() * height,
-      r: node.r,
-      data: node.data
-    }));
-  }
 
   /**
    * Create bubble elements with consistent styling
@@ -298,8 +226,14 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   ): StreamingUpdateResult {
     const { svg } = this.context;
 
-    // Create layout nodes from new data
-    const layoutNodes = this.createBubblePackLayout(data);
+    // Create layout nodes from new data using D3DataUtils
+    const { width, height, config } = this.context;
+    const layoutNodes = D3DataUtils.createPackLayout(
+      data as any,
+      width,
+      height,
+      config.bubble?.padding || 5
+    );
 
     // Create data binding with key function
     const keyFn = options.keyFunction || ((d: any) => {

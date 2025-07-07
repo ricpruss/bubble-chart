@@ -200,6 +200,77 @@ export class D3DataUtils {
   }
 
   /**
+   * Create D3-native pack layout for bubble positioning
+   * Replaces RenderingPipeline.createBubblePackLayout()
+   * @param data - Processed data array
+   * @param width - Container width
+   * @param height - Container height
+   * @param padding - Bubble padding (default: 5)
+   * @returns Array of layout nodes with x, y, r positions
+   */
+  static createPackLayout<T = any>(
+    data: D3ProcessedData<T>[],
+    width: number,
+    height: number,
+    padding: number = 5
+  ): Array<{ x: number; y: number; r: number; data: D3ProcessedData<T> }> {
+    // Create pack layout using D3's native patterns
+    const pack = d3.pack()
+      .size([width, height])
+      .padding(padding);
+
+    // Create hierarchy for pack layout
+    const root = d3.hierarchy({ children: data } as any)
+      .sum((d: any) => d.size || 1)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    // Apply pack layout
+    const nodes = pack(root).descendants().slice(1); // Skip root node
+
+    return nodes.map(node => ({
+      x: node.x,
+      y: node.y,
+      r: node.r,
+      data: node.data as D3ProcessedData<T>
+    }));
+  }
+
+  /**
+   * Create D3-native hierarchical pack layout for tree structures
+   * Replaces RenderingPipeline.createHierarchicalLayout()
+   * @param hierarchyData - Nested data structure
+   * @param width - Container width
+   * @param height - Container height
+   * @param padding - Node padding (default: 5)
+   * @returns Array of layout nodes with nested structure
+   */
+  static createHierarchyLayout(
+    hierarchyData: any,
+    width: number,
+    height: number,
+    padding: number = 5
+  ): Array<{ x: number; y: number; r: number; data: any; depth: number; parent: any | null }> {
+    const pack = d3.pack()
+      .size([width, height])
+      .padding(padding);
+
+    const root = d3.hierarchy(hierarchyData)
+      .sum((d: any) => d.size || d.amount || 1)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    const nodes = pack(root).descendants();
+
+    return nodes.map(node => ({
+      x: node.x,
+      y: node.y,
+      r: node.r,
+      data: node.data,
+      depth: node.depth,
+      parent: node.parent?.data || null
+    }));
+  }
+
+  /**
    * Calculate statistics using D3's native math functions
    * @param data - Processed data array
    * @returns Statistics object
@@ -224,73 +295,6 @@ export class D3DataUtils {
     };
   }
 
-  /**
-   * Create bubble pack layout using D3's native hierarchy and pack
-   * @param data - Processed data array
-   * @param width - Layout width
-   * @param height - Layout height
-   * @param padding - Padding between bubbles
-   * @returns Layout nodes with positions and radii
-   */
-  static createPackLayout<T = any>(
-    data: D3ProcessedData<T>[],
-    width: number,
-    height: number,
-    padding: number = 2
-  ): Array<{ x: number; y: number; r: number; data: D3ProcessedData<T> }> {
-    // Create pack layout
-    const pack = d3.pack<D3ProcessedData<T>>()
-      .size([width, height])
-      .padding(padding);
-
-    // Create hierarchy for pack layout
-    const root = d3.hierarchy<any>({ children: data })
-      .sum((d: any) => d.size || 1)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-
-    // Apply pack layout and return descendants (skip root)
-    const nodes = pack(root).descendants().slice(1);
-
-    return nodes.map(node => ({
-      x: node.x,
-      y: node.y,
-      r: node.r,
-      data: node.data as D3ProcessedData<T>
-    }));
-  }
-
-  /**
-   * Create hierarchical layout using D3's native hierarchy patterns
-   * @param hierarchicalData - Hierarchical data structure
-   * @param width - Layout width
-   * @param height - Layout height
-   * @param padding - Padding between nodes
-   * @returns Hierarchical layout nodes
-   */
-  static createHierarchyLayout(
-    hierarchicalData: any,
-    width: number,
-    height: number,
-    padding: number = 5
-  ): Array<{ x: number; y: number; r: number; data: any; depth: number }> {
-    const pack = d3.pack()
-      .size([width, height])
-      .padding(padding);
-
-    const root = d3.hierarchy(hierarchicalData)
-      .sum((d: any) => d.size || d.amount || 1)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-
-    const nodes = pack(root).descendants();
-
-    return nodes.map(node => ({
-      x: node.x,
-      y: node.y,
-      r: node.r,
-      data: node.data,
-      depth: node.depth
-    }));
-  }
 
   /**
    * Normalize accessor to handle arrays and provide fallbacks
