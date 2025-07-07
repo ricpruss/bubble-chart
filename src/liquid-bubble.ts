@@ -83,11 +83,23 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       .style('cursor', 'pointer');
 
     // Create circles (background for liquid fill)
+    bubbleGroups.selectAll('circle').remove(); // Clear existing to avoid duplicates
     bubbleGroups.append('circle')
       .attr('r', (d: any) => d.r)
-      .attr('fill', 'transparent')
+      .attr('fill', '#f0f0f0')
       .attr('stroke', '#fff')
-      .attr('stroke-width', 2);
+      .attr('stroke-width', 2)
+      .style('opacity', 0.8);
+
+    // Add labels
+    bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
+    bubbleGroups.append('text')
+      .attr('text-anchor', 'middle')
+      .attr('dominant-baseline', 'central')
+      .style('fill', '#333')
+      .style('font-size', (d: any) => Math.max(10, d.r / 3))
+      .style('pointer-events', 'none')
+      .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
 
     // Add the flat liquid surface
     this.createLiquidElements(bubbleGroups, layoutNodes, processedData);
@@ -100,6 +112,10 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
    * Appends clip-paths and wave paths for each bubble group.
    */
   private createLiquidElements(bubbleGroups: any, layoutNodes: any[], processedData: any[]): void {
+    // Clear existing elements to avoid duplicates
+    bubbleGroups.selectAll('defs').remove();
+    bubbleGroups.selectAll('g[clip-path]').remove();
+    
     // Clip path limiting the liquid fill to the circle outline
     bubbleGroups.append('defs')
       .append('clipPath')

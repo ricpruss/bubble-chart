@@ -44,18 +44,39 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
   };
 
   constructor(config: BubbleChartOptions) {
+    console.log('WaveBubble: Constructor called with config type:', config.type);
     // Ensure we can modify the config by creating a mutable copy
     const mutableConfig = { ...config, type: 'wave' as const };
+    console.log('WaveBubble: Constructor modified config type to:', mutableConfig.type);
     super(mutableConfig);
+    console.log('WaveBubble: Constructor completed');
   }
 
   /**
    * Specialized rendering logic for wave bubbles with animated filling
    */
   protected performRender(): void {
-    if (!this.processedData.length) return;
+    console.log('WaveBubble: performRender called with', this.chartData?.length, 'data items');
+    
+    if (!this.chartData || this.chartData.length === 0) {
+      console.warn('WaveBubble: No data to render');
+      return;
+    }
 
     try {
+      // Process data with color accessor using D3DataUtils
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      const processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
+
       const svgElements = this.svgManager.getElements();
       if (!svgElements) return;
       
@@ -63,27 +84,27 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
 
       // Create bubble layout using D3DataUtils
       const layoutNodes = D3DataUtils.createPackLayout(
-        this.processedData,
+        processedData,
         dimensions.width,
         dimensions.height,
         2
       );
 
       // Create color scale for waves
-      const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
+      const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
       const colorScale = colorValues.length > 0 ? 
         D3DataUtils.createColorScale(colorValues) : 
         () => this.config.defaultColor || '#2196F3';
 
-      // Create bubble groups
+      // Create bubble groups using D3's native .join() pattern
       const bubbleGroups = svg.selectAll('g.bubble')
         .data(layoutNodes)
-        .enter()
-        .append('g')
-        .attr('class', 'bubble')
+        .join('g')
+        .attr('class', 'bubble-chart bubble')
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
       // Create bubble circles
+      bubbleGroups.selectAll('circle').remove(); // Clear existing to avoid duplicates
       bubbleGroups.append('circle')
         .attr('r', (d: any) => d.r)
         .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd'))
@@ -92,6 +113,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         .style('cursor', 'pointer');
 
       // Add labels
+      bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
       bubbleGroups.append('text')
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
@@ -101,11 +123,11 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
 
       // Add wave-specific elements
-      this.createWaveElements(bubbleGroups);
+      this.createWaveElements(bubbleGroups, processedData);
 
       // Attach events and start animation
-      this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
-      this.startWaveAnimation(bubbleGroups);
+      this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
+      this.startWaveAnimation(bubbleGroups, processedData);
 
     } catch (error) {
       console.error('WaveBubble: Error during rendering:', error);
@@ -115,35 +137,50 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
   /**
    * Creates wave-specific visual elements for each bubble
    */
-  private createWaveElements(bubbleGroups: any): void {
+  private createWaveElements(bubbleGroups: any, processedData: any[]): void {
+    console.log('WaveBubble: Creating wave elements for', bubbleGroups.size(), 'bubbles');
+    
     // Create color scale for waves
-    const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
+    const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
     const colorScale = colorValues.length > 0 ? 
       D3DataUtils.createColorScale(colorValues) : 
       () => this.config.defaultColor || '#2196F3';
 
-    // Create clip paths and wave elements
-    bubbleGroups.append('defs')
-      .append('clipPath')
-      .attr('id', (_d: any, i: number) => `wave-clip-${i}`)
-      .append('circle')
-      .attr('r', (d: any) => d.r);
+    // Clear existing wave elements to avoid duplicates
+    bubbleGroups.selectAll('defs').remove();
+    bubbleGroups.selectAll('g[clip-path]').remove();
 
+    // Create defs section for clip paths
+    bubbleGroups.append('defs');
+
+    // Create clip paths for each bubble
+    bubbleGroups.each(function (this: SVGGElement, d: any, i: number) {
+      const group = d3.select(this);
+      const groupDefs = group.select('defs');
+      
+      groupDefs.append('clipPath')
+        .attr('id', `wave-clip-${i}`)
+        .append('circle')
+        .attr('r', d.r);
+    });
+
+    // Append wave path to each bubble using the clip-path
     const waveGroups = bubbleGroups.append('g')
       .attr('clip-path', (_d: any, i: number) => `url(#wave-clip-${i})`);
-
-    // Add the animated wave path
-    waveGroups.append('path')
+      
+    const wavePaths = waveGroups.append('path')
       .attr('class', 'wave')
       .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#2196F3'))
       .style('opacity', 0.6)
       .attr('stroke', 'none');
+      
+    console.log('WaveBubble: Created', waveGroups.size(), 'wave groups and', wavePaths.size(), 'wave paths');
   }
 
   /**
    * Starts the wave animation using D3.js timer
    */
-  private startWaveAnimation(bubbleGroups: any): void {
+  private startWaveAnimation(bubbleGroups: any, processedData: any[]): void {
     this.stopWaveAnimation();
     this.animationTime = 0;
 
@@ -155,7 +192,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
       const group = d3.select<SVGGElement, any>(this);
       const path = group.select<SVGPathElement>('.wave');
       if (!path.empty()) {
-        const waveData = self.generateWaveData(d, bubbleIndex);
+        const waveData = self.generateWaveData(d, bubbleIndex, processedData);
         path.attr('d', waveData ? d3.line()(waveData.points) : null);
       }
     });
@@ -168,7 +205,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         const bubbleGroup = d3.select<SVGGElement, any>(this);
         const waveElement = bubbleGroup.select<SVGPathElement>('.wave');
         if (!waveElement.empty()) {
-          const waveData = self.generateWaveData(d, bubbleIndex);
+          const waveData = self.generateWaveData(d, bubbleIndex, processedData);
           waveElement.attr('d', waveData ? d3.line()(waveData.points) : null);
         }
       });
@@ -178,9 +215,9 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
   /**
    * Generates wave path data for a single bubble
    */
-  private generateWaveData(layoutNode: any, index: number): WavePoint {
+  private generateWaveData(layoutNode: any, index: number, processedData: any[]): WavePoint {
     const r = layoutNode.r;
-    const percentage = this.getPercentageValue(this.processedData[index].data);
+    const percentage = this.getPercentageValue(processedData[index].data);
     const baseY = (1 - percentage) * 2 * r - r;
     
     const points: [number, number][] = d3.range(-r * 3, r * 3, this.waveConfig.resolution)
@@ -228,23 +265,6 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     return { ...this.waveConfig };
   }
 
-  /**
-   * Pauses the wave animation
-   */
-  pause(): void {
-    this.stopWaveAnimation();
-  }
-
-  /**
-   * Resumes the wave animation
-   */
-  resume(): void {
-    const svgElements = this.svgManager.getElements();
-    if (!svgElements) return;
-    
-    const bubbleGroups = svgElements.svg.selectAll('.bubble-group');
-    this.startWaveAnimation(bubbleGroups);
-  }
 
   /**
    * Clean up resources and stop animations

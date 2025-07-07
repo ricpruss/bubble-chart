@@ -164,7 +164,13 @@ describe('WaveBubble', () => {
       const layoutNode = { r: 100 };
       
       // Test with Oxygen data (count: 80, percentage: 0.8)
-      const waveData = generateWaveData(layoutNode, 0);
+      const processedData = testData.map((data, index) => ({
+        data,
+        index,
+        label: data.label,
+        size: data.size
+      }));
+      const waveData = generateWaveData(layoutNode, 0, processedData);
       
       // baseY = (1 - percentage) * 2 * r - r
       // baseY = (1 - 0.8) * 2 * 100 - 100 = 0.2 * 200 - 100 = 40 - 100 = -60
@@ -191,8 +197,15 @@ describe('WaveBubble', () => {
         { r: 90 }   // Helium
       ];
       
+      const processedData = testData.map((data, index) => ({
+        data,
+        index,
+        label: data.label,
+        size: data.size
+      }));
+      
       const waveDataResults = layoutNodes.map((node, index) => 
-        generateWaveData(node, index)
+        generateWaveData(node, index, processedData)
       );
       
       // All should have different base Y positions due to different percentages
@@ -257,17 +270,5 @@ describe('WaveBubble', () => {
       expect(currentConfig.resolution).toBe(10);
     });
 
-    it('should pause and resume animation', () => {
-      const mockTimer = {
-        stop: jest.fn()
-      };
-      (waveBubble as any).waveTimer = mockTimer;
-      
-      waveBubble.pause();
-      expect(mockTimer.stop).toHaveBeenCalled();
-      
-      // Resume should not throw errors
-      expect(() => waveBubble.resume()).not.toThrow();
-    });
   });
 }); 

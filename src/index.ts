@@ -41,7 +41,6 @@ export {
   type ProcessedDataPoint,
   type TooltipManager,
   type RenderingContext,
-  type BubbleElements,
   type LayoutNode
 } from './core/index.js';
 

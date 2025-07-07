@@ -22,7 +22,6 @@ export {
 export { 
   RenderingPipeline, 
   type RenderingContext, 
-  type BubbleElements, 
   type LayoutNode 
 } from './rendering-pipeline.js';
 
@@ -123,18 +122,27 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
    * @returns this for method chaining
    */
   render(): this {
+    console.log('BaseChartBuilder: render() called, class:', this.constructor.name);
+    console.log('BaseChartBuilder: chartData length:', this.chartData.length);
+    console.log('BaseChartBuilder: isInitialized:', this.isInitialized);
+    
     // Initialize components if not already done (even with empty data)
     if (!this.isInitialized) {
+      console.log('BaseChartBuilder: Initializing...');
       this.initialize();
     } else {
       // Clear previous content before re-rendering
+      console.log('BaseChartBuilder: Clearing chart...');
       this.clearChart();
     }
 
     // Only perform actual rendering if we have data
     if (this.chartData.length) {
+      console.log('BaseChartBuilder: Calling performRender() on', this.constructor.name);
       // Delegate to specialized render method
       this.performRender();
+    } else {
+      console.log('BaseChartBuilder: No data to render');
     }
     
     return this;

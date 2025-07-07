@@ -87,20 +87,28 @@ class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> implements 
     this.keyFunction = key;
 
     // Create the appropriate builder based on chart type
+    console.log('BubbleChartFacade: Creating builder for type:', config.type);
     if (config.type === 'orbit') {
       this.builder = new OrbitBuilder<T>(config);
+      console.log('BubbleChartFacade: Created OrbitBuilder');
     } else if (config.type === 'tree') {
       this.builder = new TreeBuilder<T>(config);
+      console.log('BubbleChartFacade: Created TreeBuilder');
     } else if (config.type === 'motion') {
       this.builder = new MotionBubble<T>(config);
+      console.log('BubbleChartFacade: Created MotionBubble');
     } else if (config.type === 'list') {
       this.builder = new ListBuilder<T>(config);
+      console.log('BubbleChartFacade: Created ListBuilder');
     } else if (config.type === 'wave') {
       this.builder = new WaveBubble<T>(config);
+      console.log('BubbleChartFacade: Created WaveBubble');
     } else if (config.type === 'liquid') {
       this.builder = new LiquidBubble<T>(config);
+      console.log('BubbleChartFacade: Created LiquidBubble');
     } else {
       this.builder = new BubbleBuilder<T>(config);
+      console.log('BubbleChartFacade: Created default BubbleBuilder');
     }
     
     this.store = new DataStore<T>([], key);
@@ -217,9 +225,12 @@ class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> implements 
    */
   render(): this {
     const currentData = [...this.store.data()] as T[];
+    console.log('BubbleChartFacade: render() called with', currentData.length, 'data items');
+    console.log('BubbleChartFacade: builder type:', this.builder.constructor.name);
     // Always render, even with empty data to initialize the builder
     this.builder.data(currentData).render();
     this.isInitialized = true;
+    console.log('BubbleChartFacade: render() completed');
     return this;
   }
 
@@ -313,8 +324,16 @@ class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> implements 
   }
 
   setSizeMetric(field: string): this {
+    // Update the builder configuration
     this.builder.updateOptions({ size: field });
-    this.redraw();
+    
+    // Get current data from store
+    const currentData = [...this.store.data()] as T[];
+    
+    // Force reprocessing with new size field by calling data() then render()
+    // This ensures the radius scale is recalculated with the new size field
+    this.builder.data(currentData).render();
+    
     return this;
   }
 
@@ -798,8 +817,8 @@ export class BubbleChartBuilder<T extends BubbleChartData = BubbleChartData> {
       if (this.dataSource) {
         // Ensure we have array data for initial render
         const arrayData = Array.isArray(this.dataSource) ? this.dataSource : [this.dataSource];
-        chart.render(); // Initialize with empty data first
-        chart.store.addMany(arrayData); // Then add data which will trigger streaming updates
+        chart.store.addMany(arrayData); // Add data to the store
+        chart.render(); // Then render the chart with the data
       } else {
         chart.render(); // Initialize even without data
       }

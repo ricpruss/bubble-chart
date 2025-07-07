@@ -5,7 +5,7 @@
  */
 
 import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions } from '../types/config.js';
+import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult } from '../types/config.js';
 import type { ProcessedDataPoint } from './data-processor.js';
 import { D3DataUtils } from '../utils/d3-data-utils.js';
 // import type { SVGElements } from './svg-manager.js';
@@ -17,11 +17,6 @@ export interface RenderingContext {
   config: BubbleChartOptions;
 }
 
-export interface BubbleElements {
-  bubbleGroups: any;
-  circles: any;
-  labels: any;
-}
 
 export interface LayoutNode {
   x: number;
@@ -43,142 +38,7 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
 
 
 
-  /**
-   * Create bubble elements with consistent styling
-   * @param layoutNodes - Layout nodes with positions
-   * @param data - Original processed data
-   * @returns Bubble elements object
-   */
-  createBubbleElements(
-    layoutNodes: LayoutNode[], 
-    data: ProcessedDataPoint<T>[]
-  ): BubbleElements {
-    const { svg, config } = this.context;
 
-    // Create bubble groups
-    const bubbleGroups = svg.selectAll('.bubble')
-      .data(layoutNodes)
-      .join('g')
-      .attr('class', 'bubble')
-      .attr('transform', (d: LayoutNode) => `translate(${d.x}, ${d.y})`)
-      .style('cursor', 'pointer');
-
-    // Create circles
-    const circles = bubbleGroups
-      .append('circle')
-      .attr('r', (d: LayoutNode) => d.r)
-      .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i))
-      .style('stroke', config.defaultColor || '#fff')
-      .style('stroke-width', 2)
-      .style('opacity', 0.8);
-
-    // Create labels
-    const labels = this.createLabels(bubbleGroups, layoutNodes, data);
-
-    return {
-      bubbleGroups,
-      circles,
-      labels
-    };
-  }
-
-  /**
-   * Create text labels for bubbles
-   * @param bubbleGroups - D3 selection of bubble groups
-   * @param layoutNodes - Layout nodes
-   * @param data - Original processed data
-   * @returns Text selection
-   */
-  createLabels(
-    bubbleGroups: any, 
-    _layoutNodes: LayoutNode[], 
-    data: ProcessedDataPoint<T>[]
-  ): any {
-    const { config: _config } = this.context;
-
-    return bubbleGroups
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
-      .style('font-weight', 'bold')
-      .style('fill', '#333')
-      .style('pointer-events', 'none')
-      .text((d: LayoutNode, i: number) => {
-        const label = this.extractLabel(d, i, data);
-        return this.formatLabel(label, d.r);
-      });
-  }
-
-  /**
-   * Apply entrance animations to bubble elements
-   * @param elements - Bubble elements to animate
-   * @param animationConfig - Animation configuration
-   */
-  applyEntranceAnimation(
-    elements: BubbleElements,
-    animationConfig: { duration?: number; delay?: number; staggerDelay?: number } = {}
-  ): void {
-    const { duration = 800, delay = 0, staggerDelay = 0 } = animationConfig;
-
-    // Animate circles
-    elements.circles
-      .attr('r', 0)
-      .style('opacity', 0)
-      .transition()
-      .delay((_d: any, i: number) => delay + i * staggerDelay)
-      .duration(duration)
-      .attr('r', (d: LayoutNode) => d.r)
-      .style('opacity', 0.8);
-
-    // Animate labels
-    elements.labels
-      .style('opacity', 0)
-      .transition()
-      .delay((_d: any, i: number) => delay + i * staggerDelay + (staggerDelay > 0 ? 200 : 0))
-      .duration(duration / 2)
-      .style('opacity', 1);
-  }
-
-  /**
-   * Update existing bubble elements with new data
-   * @param elements - Existing bubble elements
-   * @param newLayoutNodes - New layout nodes
-   * @param newData - New processed data
-   */
-  updateBubbleElements(
-    elements: BubbleElements,
-    newLayoutNodes: LayoutNode[],
-    newData: ProcessedDataPoint<T>[]
-  ): void {
-    const { config: _config } = this.context;
-
-    // Update data binding
-    const updatedGroups = elements.bubbleGroups.data(newLayoutNodes);
-
-    // Update positions
-    updatedGroups
-      .transition()
-      .duration(500)
-      .attr('transform', (d: LayoutNode) => `translate(${d.x}, ${d.y})`);
-
-    // Update circles
-    elements.circles
-      .transition()
-      .duration(500)
-      .attr('r', (d: LayoutNode) => d.r)
-      .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i));
-
-    // Update labels
-    elements.labels
-      .transition()
-      .duration(500)
-      .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
-      .text((d: LayoutNode, i: number) => {
-        const label = this.extractLabel(d, i, newData);
-        return this.formatLabel(label, d.r);
-      });
-  }
 
   /**
    * Calculate optimal update duration to prevent timing conflicts
@@ -215,7 +75,7 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   }
 
   /**
-   * Perform streaming update using D3 enter/update/exit pattern
+   * Perform streaming update using D3's native .join() pattern
    * @param data - New data for streaming update
    * @param options - Streaming animation options
    * @returns Result summary of streaming update
@@ -224,10 +84,9 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     data: ProcessedDataPoint<T>[],
     options: StreamingOptions
   ): StreamingUpdateResult {
-    const { svg } = this.context;
+    const { svg, width, height, config } = this.context;
 
     // Create layout nodes from new data using D3DataUtils
-    const { width, height, config } = this.context;
     const layoutNodes = D3DataUtils.createPackLayout(
       data as any,
       width,
@@ -242,83 +101,118 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
       return original.id ?? original.name ?? JSON.stringify(original);
     });
 
-    // Apply key function to layout nodes for D3 data binding
-    const bubbleSelection = svg.selectAll('g.bubble')
+    // Track enter/update/exit counts for return result
+    let enteredCount = 0;
+    let exitedCount = 0;
+    let updatedCount = 0;
+
+    // Use D3's native .join() pattern for clean enter/update/exit handling
+    svg.selectAll('g.bubble')
       .data(layoutNodes, (d: any) => {
         // Extract original data from layout node structure:
         // layoutNode.data (processed) -> data.data (original)
         const processedData = d.data;
         const originalData = processedData?.data ?? processedData;
         return keyFn(originalData);
-      });
+      })
+      .join(
+        // ENTER: Create new bubble groups
+        (enter: any) => {
+          enteredCount = enter.size();
+          
+          const enterGroups = enter
+            .append('g')
+            .attr('class', 'bubble-chart bubble')
+            .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
+            .style('opacity', 0)
+            .style('cursor', 'pointer');
 
-    // EXIT: Remove elements that no longer exist
-    const exitSelection = bubbleSelection.exit();
-    const exitedCount = exitSelection.size();
-    this.animateExit(exitSelection, options.exitAnimation);
+          // Add circles to new bubbles
+          enterGroups.append('circle')
+            .attr('r', (d: LayoutNode) => d.r)
+            .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i))
+            .style('stroke', config.defaultColor || '#fff')
+            .style('stroke-width', 2);
 
-    // ENTER: Add new elements
-    const enterSelection = bubbleSelection.enter();
-    const enteredCount = enterSelection.size();
-    
-    if (enteredCount > 0) {
-      // Create new bubble groups
-      const enterGroups = enterSelection
-        .append('g')
-        .attr('class', 'bubble')
-        .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
-        .style('opacity', 0)
-        .style('cursor', 'pointer');
+          // Add labels to new bubbles
+          enterGroups.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
+            .style('font-weight', 'bold')
+            .style('fill', '#333')
+            .style('pointer-events', 'none')
+            .text((d: LayoutNode, i: number) => {
+              const label = this.extractLabel(d, i, data);
+              return this.formatLabel(label, d.r);
+            });
 
-      // Add circles to new bubbles
-      enterGroups.append('circle')
-        .attr('r', (d: LayoutNode) => d.r)
-        .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i))
-        .style('stroke', this.context.config.defaultColor || '#fff')
-        .style('stroke-width', 2);
+          // Apply enter animation with D3 transitions
+          enterGroups
+            .transition('enter')
+            .duration(options.enterAnimation.duration)
+            .delay((_d: any, i: number) => i * options.enterAnimation.staggerDelay)
+            .style('opacity', 1)
+            .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
 
-      // Add labels to new bubbles
-      enterGroups.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
-        .style('font-weight', 'bold')
-        .style('fill', '#333')
-        .style('pointer-events', 'none')
-        .text((d: LayoutNode, i: number) => {
-          const label = this.extractLabel(d, i, data);
-          return this.formatLabel(label, d.r);
-        });
+          return enterGroups;
+        },
+        
+        // UPDATE: Update existing elements
+        (update: any) => {
+          updatedCount = update.size();
+          
+          // Calculate optimal update duration to prevent timing conflicts
+          const useAutoCalculation = options.updateAnimation.duration === 0;
+          const configuredDuration = useAutoCalculation ? 600 : options.updateAnimation.duration;
+          
+          const optimalUpdateDuration = this.calculateOptimalUpdateDuration(
+            options.enterAnimation.duration,
+            options.enterAnimation.staggerDelay,
+            enteredCount,
+            configuredDuration
+          );
 
-      // Animate new bubbles in
-      this.animateEnter(enterGroups, options.enterAnimation);
-    }
+          // Update bubble group positions
+          update
+            .transition('update')
+            .duration(optimalUpdateDuration)
+            .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
 
-    // UPDATE: Update existing elements (positions may have changed due to layout)
-    const updatedCount = bubbleSelection.size();
-    
-    if (updatedCount > 0) {
-      // Calculate optimal update duration to prevent timing conflicts with enter animations
-      // If updateAnimation.duration is 0, it means auto-calculate (no user override)
-      const useAutoCalculation = options.updateAnimation.duration === 0;
-      const configuredDuration = useAutoCalculation ? 600 : options.updateAnimation.duration; // fallback to 600 if auto-calc
-      
-      const optimalUpdateDuration = this.calculateOptimalUpdateDuration(
-        options.enterAnimation.duration,
-        options.enterAnimation.staggerDelay,
-        enteredCount,
-        configuredDuration
+          // Update circles
+          update.select('circle')
+            .transition('update-circles')
+            .duration(optimalUpdateDuration)
+            .attr('r', (d: LayoutNode) => d.r)
+            .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i));
+
+          // Update labels
+          update.select('text')
+            .transition('update-text')
+            .duration(optimalUpdateDuration)
+            .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
+            .text((d: LayoutNode, i: number) => {
+              const label = this.extractLabel(d, i, data);
+              return this.formatLabel(label, d.r);
+            });
+
+          return update;
+        },
+        
+        // EXIT: Remove elements that no longer exist
+        (exit: any) => {
+          exitedCount = exit.size();
+          
+          exit
+            .transition('exit')
+            .duration(options.exitAnimation.duration)
+            .style('opacity', 0)
+            .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
+            .remove();
+
+          return exit;
+        }
       );
-      
-      // Create adjusted update animation options
-      const adjustedUpdateAnimation = {
-        ...options.updateAnimation,
-        duration: optimalUpdateDuration
-      };
-      
-      // Update positions for all existing bubbles (layout may have shifted)
-      this.animateUpdate(bubbleSelection, layoutNodes, data, adjustedUpdateAnimation);
-    }
 
     return {
       entered: enteredCount,
@@ -327,70 +221,6 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     };
   }
 
-  /**
-   * Animate entering bubbles
-   * @param elements - D3 selection of entering elements
-   * @param animation - Enter animation options
-   */
-  private animateEnter(elements: any, animation: EnterAnimationOptions): void {
-    elements
-      .transition('enter')
-      .duration(animation.duration)
-      .delay((_d: any, i: number) => i * animation.staggerDelay)
-      .style('opacity', 1)
-      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
-  }
-
-  /**
-   * Animate exiting bubbles
-   * @param elements - D3 selection of exiting elements
-   * @param animation - Exit animation options
-   */
-  private animateExit(elements: any, animation: ExitAnimationOptions): void {
-    elements
-      .transition('exit')
-      .duration(animation.duration)
-      .style('opacity', 0)
-      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(0)`)
-      .remove();
-  }
-
-  /**
-   * Animate updating bubbles
-   * @param elements - D3 selection of updating elements
-   * @param _layoutNodes - New layout nodes
-   * @param data - New data
-   * @param animation - Update animation options
-   */
-  private animateUpdate(
-    elements: any, 
-    _layoutNodes: LayoutNode[], 
-    data: ProcessedDataPoint<T>[], 
-    animation: UpdateAnimationOptions
-  ): void {
-    // Animate position changes
-    elements
-      .transition('update')
-      .duration(animation.duration)
-      .attr('transform', (d: LayoutNode) => `translate(${d.x},${d.y}) scale(1)`);
-
-    // Animate circle changes
-    elements.select('circle')
-      .transition('update-circles')
-      .duration(animation.duration)
-      .attr('r', (d: LayoutNode) => d.r)
-      .style('fill', (d: LayoutNode, i: number) => this.getCircleColor(d, i));
-
-    // Animate text changes
-    elements.select('text')
-      .transition('update-text')
-      .duration(animation.duration)
-      .style('font-size', (d: LayoutNode) => this.calculateFontSize(d.r))
-      .text((d: LayoutNode, i: number) => {
-        const label = this.extractLabel(d, i, data);
-        return this.formatLabel(label, d.r);
-      });
-  }
 
   /**
    * Calculate appropriate font size based on bubble radius
@@ -497,60 +327,5 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     return formattedLabel;
   }
 
-  /**
-   * Create clip paths for advanced animations (e.g., wave effects)
-   * @param elements - Bubble elements
-   * @returns Clip path selections
-   */
-  createClipPaths(elements: BubbleElements): any {
-    const { svg } = this.context;
 
-    // Create defs section if it doesn't exist
-    let defs = svg.select('defs');
-    if (defs.empty()) {
-      defs = svg.append('defs');
-    }
-
-    // Create clip paths for each bubble
-    const clipPaths = defs.selectAll('.bubble-clip')
-      .data(elements.bubbleGroups.data())
-      .enter()
-      .append('clipPath')
-      .attr('class', 'bubble-clip')
-      .attr('id', (_d: any, i: number) => `bubble-clip-${i}`);
-
-    clipPaths.append('circle')
-      .attr('cx', (d: LayoutNode) => d.x)
-      .attr('cy', (d: LayoutNode) => d.y)
-      .attr('r', (d: LayoutNode) => d.r);
-
-    return clipPaths;
-  }
-
-  /**
-   * Add responsive behavior to rendered elements
-   * @param elements - Bubble elements
-   * @param onResize - Callback for resize events
-   */
-  makeResponsive(
-    _elements: BubbleElements,
-    onResize: (newWidth: number, newHeight: number) => void
-  ): void {
-    // This would typically be handled by the SVGManager
-    // but we can provide layout-specific responsive behavior here
-    
-    const handleResize = () => {
-      const { svg } = this.context;
-      const container = svg.node()?.parentElement;
-      
-      if (container) {
-        const newWidth = container.clientWidth;
-        const newHeight = container.clientHeight;
-        
-        onResize(newWidth, newHeight);
-      }
-    };
-
-    window.addEventListener('resize', handleResize);
-  }
 }
