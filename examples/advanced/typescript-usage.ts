@@ -30,7 +30,7 @@ const data: LanguageDatum[] = [
 ];
 
 // Create chart using fluent API - automatic field detection
-const chart = BubbleChart.create('#bubble-chart')
+const chart = BubbleChart('#bubble-chart')
   .withData(data as BubbleChartData[])
   .withLabel('label')
   .withSize('size')
@@ -68,10 +68,8 @@ chart.onBubble('mouseover', (d: BubbleChartData, _event: MouseEvent, _element: S
   console.log(`Mouse over ${lang.label}`);
 });
 
-// Example of listening to lifecycle events
-chart.on('render', () => {
-  console.log('Chart rendered successfully');
-});
+// Chart is now rendered - lifecycle events are handled internally
+console.log('Chart created and rendered successfully');
 
 // Example of updating data dynamically using the reactive store
 setTimeout(() => {

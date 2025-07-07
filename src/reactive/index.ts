@@ -50,15 +50,25 @@ export {
 // export type { StreamingOptions, EnterAnimationOptions, ExitAnimationOptions, UpdateAnimationOptions, StreamingUpdateResult } from '../types/config.js';
 // export { defaultStreamingOptions } from '../types/config.js';
 
-// New reactive API exports
+// New D3-native reactive API exports
+export {
+  FluentChartAPI,
+  createChart,
+  type BubbleChart as IChart
+} from './fluent-api.js';
 
+// Legacy reactive API exports
 export { DataStore, type ChangeStats } from './store.js';
 export { 
   BubbleChart,
   BubbleChartBuilder,
-  type BubbleChart as IBubbleChart, 
-  type BubbleChartOptionsExtended as BubbleChartOptions 
+  type BubbleChart as IBubbleChart
 } from './chart.js';
+
+// Export configuration types
+export {
+  type BubbleChartOptionsExtended as BubbleChartOptions
+} from './reactive-config.js';
 
 // Phase 2A: Core API Enhancement exports
 export { 

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Test D3-Native Fluent API</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chart { border: 1px solid #ccc; margin: 20px 0; }
+    .controls { margin: 10px 0; }
+    .controls button { margin-right: 10px; padding: 8px 16px; }
+  </style>
+</head>
+<body>
+  <h1>D3-Native Fluent API Test</h1>
+  
+  <div class="controls">
+    <button onclick="testBasicChart()">Test Basic Chart</button>
+    <button onclick="testStreamingChart()">Test Streaming Chart</button>
+    <button onclick="testMotionChart()">Test Motion Chart</button>
+    <button onclick="clearChart()">Clear Chart</button>
+  </div>
+  
+  <div id="chart"></div>
+  <div id="status"></div>
+
+  <script>
+    // Test data
+    const testData = [
+      { id: 1, name: 'Apple', size: 100, sector: 'Technology' },
+      { id: 2, name: 'Microsoft', size: 90, sector: 'Technology' },
+      { id: 3, name: 'Amazon', size: 80, sector: 'E-commerce' },
+      { id: 4, name: 'Google', size: 85, sector: 'Technology' },
+      { id: 5, name: 'Tesla', size: 70, sector: 'Automotive' }
+    ];
+
+    let currentChart = null;
+    const statusEl = document.getElementById('status');
+    
+    function setStatus(msg) {
+      statusEl.textContent = msg;
+      console.log(msg);
+    }
+
+    function testBasicChart() {
+      try {
+        clearChart();
+        
+        // Test new D3-native API
+        if (typeof createChart !== 'undefined') {
+          currentChart = createChart('#chart')
+            .withData(testData)
+            .withLabel('name')
+            .withSize('size')
+            .withColor('sector')
+            .withDimensions(600, 400)
+            .render();
+          
+          setStatus('✅ D3-native API: Basic chart created successfully');
+        } else {
+          // Fallback to legacy API
+          currentChart = BubbleChart.create('#chart')
+            .withData(testData)
+            .withLabel('name')
+            .withSize('size')
+            .withColor('sector')
+            .withDimensions(600, 400)
+            .render();
+          
+          setStatus('✅ Legacy API: Basic chart created successfully');
+        }
+      } catch (error) {
+        setStatus('❌ Error creating basic chart: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    function testStreamingChart() {
+      try {
+        clearChart();
+        
+        // Test streaming with new API
+        if (typeof createChart !== 'undefined') {
+          currentChart = createChart('#chart')
+            .withData([]) // Start with empty data
+            .withLabel('name')
+            .withSize('size')
+            .withColor('sector')
+            .withDimensions(600, 400)
+            .withStreaming({
+              keyFunction: d => d.id,
+              enterAnimation: { duration: 800, staggerDelay: 100, easing: 'ease-out' },
+              updateAnimation: { duration: 600, easing: 'ease-in-out' },
+              exitAnimation: { duration: 400, easing: 'ease-in' }
+            })
+            .render();
+          
+          // Add data items one by one
+          let index = 0;
+          const addNext = () => {
+            if (index < testData.length) {
+              currentChart.store.add(testData[index]);
+              setStatus(`Added ${testData[index].name} (${index + 1}/${testData.length})`);
+              index++;
+              setTimeout(addNext, 1000);
+            } else {
+              setStatus('✅ D3-native streaming chart completed');
+            }
+          };
+          
+          setTimeout(addNext, 500);
+        } else {
+          setStatus('❌ D3-native API not available, cannot test streaming');
+        }
+      } catch (error) {
+        setStatus('❌ Error creating streaming chart: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    function testMotionChart() {
+      try {
+        clearChart();
+        
+        if (typeof createChart !== 'undefined') {
+          currentChart = createChart('#chart')
+            .withData(testData)
+            .withLabel('name')
+            .withSize('size')
+            .withColor('sector')
+            .withType('motion')
+            .withDimensions(600, 400)
+            .render();
+          
+          setStatus('✅ D3-native API: Motion chart created successfully');
+        } else {
+          setStatus('❌ D3-native API not available');
+        }
+      } catch (error) {
+        setStatus('❌ Error creating motion chart: ' + error.message);
+        console.error(error);
+      }
+    }
+
+    function clearChart() {
+      const chartEl = document.getElementById('chart');
+      chartEl.innerHTML = '';
+      
+      if (currentChart && currentChart.destroy) {
+        currentChart.destroy();
+      }
+      currentChart = null;
+      setStatus('Chart cleared');
+    }
+
+    // Test on load
+    window.onload = () => {
+      setStatus('Ready to test D3-native API...');
+    };
+  </script>
+</body>
+</html>

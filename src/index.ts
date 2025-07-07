@@ -1,5 +1,11 @@
-// Export the modern fluent API as the main interface
+// Export the D3-native fluent API as the main interface
 export {
+  // New D3-native API
+  FluentChartAPI,
+  createChart,
+  type IChart,
+  
+  // Legacy API (deprecated)
   BubbleChart,
   BubbleChartBuilder,
   type IBubbleChart,
@@ -62,6 +68,6 @@ export type {
   BubbleEventHandlers
 } from './types/index.js';
 
-// Make the fluent API the default export
-import { BubbleChart } from './reactive/index.js';
-export { BubbleChart as default };
+// Make the D3-native API the default export
+import { createChart } from './reactive/index.js';
+export { createChart as default };
