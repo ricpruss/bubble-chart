@@ -17,7 +17,7 @@
 </head>
 <body>
 
-  <h1>Liquid Bubble Chart</h1>
+  <h1>💧 D3-Native Liquid Bubbles (Auto-Rendering)</h1>
   <div id="chart-container"></div>
 
   <script>
@@ -29,14 +29,15 @@
       { "label": "Helium", "size": 70, "count": 70 }
     ];
 
+    // 🚀 D3-Native: Liquid animations render automatically on data binding
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)
+      .withData(data)                        // ✨ Auto-renders liquid bubbles!
       .withLabel("label")
       .withSize("size")
       .withColor("label")
-      .withType("liquid")
-      .withPercentage((d) => d.count / 100)
-      .render();
+      .withType("liquid")                    // Liquid gauge animations
+      .withPercentage((d) => d.count / 100)  // Fill level calculation
+      .build();                              // Returns live animated chart
   </script>
 
 </body>

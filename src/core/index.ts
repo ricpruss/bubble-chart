@@ -25,6 +25,7 @@ export {
   type LayoutNode 
 } from './rendering-pipeline.js';
 
+
 /**
  * Core chart building system
  * Unified base classes and components for all chart types

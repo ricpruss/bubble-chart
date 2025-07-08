@@ -1,41 +1,234 @@
-// Export the D3-native fluent API as the main interface
-export {
-  // New D3-native API
-  FluentChartAPI,
-  createChart,
-  type IChart,
-  
-  // Legacy API (deprecated)
-  BubbleChart,
-  BubbleChartBuilder,
-  type IBubbleChart,
-  
-  // Data management
-  DataStore,
-  type ChangeStats,
-  
-  // Intelligence and automation
-  DataIntelligence,
-  type DataIntelligenceInsights,
-  type DataFieldAnalysis,
-  type DataQualityIssue,
-  
-  // Animation system
-  AnimationPresets,
-  type AnimationConfig,
-  type AnimationPresetName,
-  
-  // Smart tooltips
-  SmartTooltips,
-  type TooltipContent
-} from './reactive/index.js';
+// Pure D3-Native Bubble Chart Library
 
-// Export reactive builder for advanced use cases
-export {
-  ReactiveBubbleBuilder
-} from './reactive/index.js';
+import * as d3 from 'd3';
+import { BuilderFactory } from './builders/builder-factory.js';
+import type { BubbleChartData, BubbleChartOptions } from './types/index.js';
 
-// Export common building blocks for advanced usage
+/**
+ * Simple D3-native chart wrapper that adds events directly to D3 selections
+ */
+class D3ChartWrapper {
+  private config: Partial<BubbleChartOptions> = {};
+  private chartData: BubbleChartData[] | any = null;
+  private chartInstance: any = null;
+  private eventHandlers: Map<string, Function> = new Map();
+  private animationConfig: any = null;
+  
+  constructor(container: string) {
+    this.config.container = container;
+  }
+  
+  withData(data: BubbleChartData[] | any) {
+    this.chartData = data;
+    return this;
+  }
+  
+  withLabel(label: string) {
+    this.config.label = label;
+    return this;
+  }
+  
+  withSize(size: string) {
+    this.config.size = size;
+    return this;
+  }
+  
+  withColor(color: string | ((d: any) => string)) {
+    this.config.color = color;
+    return this;
+  }
+  
+  withType(type: string) {
+    this.config.type = type as any;
+    return this;
+  }
+  
+  withDimensions(width: number, height: number) {
+    this.config.width = width;
+    this.config.height = height;
+    return this;
+  }
+  
+  withPercentage(fn: any) {
+    this.config.percentage = fn;
+    return this;
+  }
+  
+  withAnimations(preset: string | any) {
+    // Simple D3-native animation presets
+    if (preset === 'gentle' || preset === 'smooth') {
+      this.animationConfig = {
+        duration: 800,
+        staggerDelay: 50,
+        easing: 'ease-out'
+      };
+    } else if (preset === 'fast') {
+      this.animationConfig = {
+        duration: 400,
+        staggerDelay: 20,
+        easing: 'ease-out'
+      };
+    } else if (typeof preset === 'object') {
+      this.animationConfig = preset;
+    }
+    return this;
+  }
+  
+  /**
+   * Build/render the chart using pure D3 patterns
+   */
+  build(): any {
+    return this.render();
+  }
+  
+  render(): any {
+    const finalConfig = {
+      container: this.config.container!,
+      label: this.config.label || 'name',
+      size: this.config.size || 'value',
+      color: this.config.color,
+      type: this.config.type || 'bubble',
+      width: this.config.width,
+      height: this.config.height,
+      percentage: this.config.percentage
+    } as BubbleChartOptions;
+    
+    this.chartInstance = BuilderFactory.create(finalConfig);
+    
+    if (this.chartData) {
+      this.chartInstance.data(this.chartData).render();
+      
+      // Apply D3-native animations if configured
+      if (this.animationConfig) {
+        this.applyD3Animations();
+      }
+      
+      // Attach pure D3 events after rendering
+      this.attachEventsToD3Selection();
+    }
+    
+    // Return chart interface
+    return {
+      update: (newData: any) => {
+        this.chartInstance.data(newData).render();
+        // Apply animations if configured
+        if (this.animationConfig) {
+          this.applyD3Animations();
+        }
+        // Re-attach events after update
+        this.attachEventsToD3Selection();
+      },
+      
+      on: (event: string, handler: Function) => {
+        this.eventHandlers.set(event, handler);
+        // If chart is already rendered, attach immediately
+        if (this.chartInstance) {
+          this.attachEventsToD3Selection();
+        }
+        return this;
+      },
+      
+      getBuilder: () => this.chartInstance
+    };
+  }
+  
+  /**
+   * Apply simple D3-native entrance animations
+   */
+  private applyD3Animations(): void {
+    if (!this.animationConfig) return;
+    
+    const container = this.config.container;
+    if (!container) return;
+    
+    const svg = d3.select(container).select('svg');
+    const bubbleGroups = svg.selectAll('.bubble');
+    
+    if (bubbleGroups.empty()) {
+      // Retry after a short delay if bubbles aren't ready yet
+      setTimeout(() => this.applyD3Animations(), 50);
+      return;
+    }
+    
+    const { duration, staggerDelay } = this.animationConfig;
+    
+    // Animate circles with staggered entrance
+    bubbleGroups.select('circle')
+      .attr('r', 0)
+      .style('opacity', 0)
+      .transition()
+      .delay((_d: any, i: number) => i * (staggerDelay || 50))
+      .duration(duration || 800)
+      .ease(d3.easeBackOut)
+      .attr('r', function(d: any) {
+        // Get the original radius from the data
+        return d.r;
+      })
+      .style('opacity', 0.8);
+    
+    // Animate labels with slight delay
+    bubbleGroups.select('text')
+      .style('opacity', 0)
+      .transition()
+      .delay((_d: any, i: number) => i * (staggerDelay || 50) + 200)
+      .duration((duration || 800) / 2)
+      .ease(d3.easeBackOut)
+      .style('opacity', 1);
+  }
+  
+  /**
+   * Pure D3 event attachment - no InteractionManager complexity
+   */
+  private attachEventsToD3Selection(): void {
+    if (!this.chartInstance || this.eventHandlers.size === 0) return;
+    
+    // Find the SVG container and select all bubble groups
+    const container = this.config.container;
+    if (!container) return;
+    
+    const svg = d3.select(container).select('svg');
+    const bubbleGroups = svg.selectAll('.bubble');
+    
+    if (bubbleGroups.empty()) {
+      // Retry after a short delay if bubbles aren't ready yet
+      setTimeout(() => this.attachEventsToD3Selection(), 50);
+      return;
+    }
+    
+    // Attach each registered event handler directly to D3 selection
+    this.eventHandlers.forEach((handler, eventName) => {
+      bubbleGroups.on(eventName, (event: any, d: any) => {
+        // Handle different data structures from different chart types
+        let eventData = d;
+        
+        // For pack layout (bubble, wave, tree charts), data is in d.data
+        if (d && d.data) {
+          eventData = d.data;
+          
+          // If the processed data has a nested 'data' property with original fields, use that
+          if (eventData.data && typeof eventData.data === 'object') {
+            eventData = eventData.data;
+          }
+        }
+        
+        // Call handler with the correct data structure
+        handler(eventData, event, event.target);
+      });
+    });
+  }
+}
+
+/**
+ * Pure D3-native BubbleChart API
+ */
+export const BubbleChart = {
+  create: (container: string) => new D3ChartWrapper(container)
+};
+
+// Export BuilderFactory for advanced usage
+export { BuilderFactory } from './builders/builder-factory.js';
+
+// Export core building blocks for advanced usage
 export {
   SVGManager,
   DataProcessor,
@@ -69,5 +262,4 @@ export type {
 } from './types/index.js';
 
 // Make the D3-native API the default export
-import { createChart } from './reactive/index.js';
-export { createChart as default };
+export default BubbleChart;

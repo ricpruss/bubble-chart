@@ -14,9 +14,10 @@ import { AnimationPresets, type AnimationPresetName } from './animation-presets.
 import type { AnimationConfig } from '../types/config.js';
 import { type TooltipConfig, type TooltipMode } from '../types/config.js';
 import { type BubbleChartOptionsExtended } from './reactive-config.js';
-// Import BubbleChartBuilder from extracted module
-import { BubbleChartBuilder } from './bubble-chart-builder.js';
+// Export BubbleChartBuilder from extracted module for backward compatibility
 export { BubbleChartBuilder } from './bubble-chart-builder.js';
+// Import BuilderFactory for simple D3-native chart creation
+import { BuilderFactory } from './builder-factory.js';
 
 
 export type EventName = 'change' | 'render' | 'destroy';
@@ -456,16 +457,92 @@ export class BubbleChartFacade<T extends BubbleChartData = BubbleChartData> impl
 }
 
 /**
- * Enhanced factory method with intelligent defaults
- * Updated to use extracted BubbleChartBuilder
+ * Simple D3-Native factory - bypass reactive system entirely
+ * True D3 patterns: just create builders directly
  */
 export class BubbleChart {
   /**
-   * Create a new bubble chart with intelligent configuration
-   * @deprecated Use createChart from fluent-api.ts for new development
+   * Create a simple D3-native bubble chart builder
+   * No reactive patterns - just direct builder usage like D3 expects
    */
   static create(container: string): any {
-    // Use the imported BubbleChartBuilder
-    return new BubbleChartBuilder(container);
+    // Return a simple wrapper that provides D3-native methods
+    return {
+      withData(data: any[]) {
+        this._data = data;
+        return this;
+      },
+      withLabel(field: string) {
+        this._label = field;
+        return this;
+      },
+      withSize(field: string) {
+        this._size = field;
+        return this;
+      },
+      withColor(field: string) {
+        this._color = field;
+        return this;
+      },
+      withType(type: string) {
+        this._type = type;
+        return this;
+      },
+      withAnimations(preset: string) {
+        this._animations = preset;
+        return this;
+      },
+      withDimensions(width: number, height: number) {
+        this._width = width;
+        this._height = height;
+        return this;
+      },
+      withPercentage(fn: any) {
+        this._percentage = fn;
+        return this;
+      },
+      // D3-native: simple build method that just uses builders directly
+      build() {
+        const config = {
+          container,
+          type: this._type,
+          label: this._label || 'name',
+          size: this._size || 'value',
+          color: this._color,
+          width: this._width,
+          height: this._height,
+          percentage: this._percentage
+        };
+        
+        console.log('Simple D3-native: Creating builder with config', config);
+        const builder = BuilderFactory.create(config);
+        
+        if (this._data) {
+          console.log('Simple D3-native: Rendering with', this._data.length, 'items');
+          builder.data(this._data).render();
+        }
+        
+        // Return simple interface
+        return {
+          builder,
+          onBubble(event: string, handler: any) {
+            if (builder && typeof builder.on === 'function') {
+              (builder as any).on(event, handler);
+            }
+            return this;
+          },
+          destroy() {
+            if (builder && typeof builder.destroy === 'function') {
+              builder.destroy();
+            }
+          }
+        };
+      },
+      // Backward compatibility
+      render() {
+        console.warn('⚠️  Use .build() instead of .render() for D3-native patterns');
+        return this.build();
+      }
+    };
   }
 }

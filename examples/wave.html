@@ -17,7 +17,7 @@
 </head>
 <body>
 
-  <h1>Wave Bubble Chart</h1>
+  <h1>🌊 D3-Native Wave Bubbles (Auto-Rendering)</h1>
   <div id="chart-container"></div>
 
   <script>
@@ -29,14 +29,15 @@
       { "label": "Helium", "size": 70, "count": 70 }
     ];
 
+    // 🚀 D3-Native: Wave animations render automatically on data binding
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)
+      .withData(data)                        // ✨ Auto-renders wave animations!
       .withLabel("label")
       .withSize("size")
       .withColor("label")
-      .withType("wave")
-      .withPercentage((d) => d.count / 100)
-      .render();
+      .withType("wave")                      // Fluid wave animations
+      .withPercentage((d) => d.count / 100)  // Wave fill calculation
+      .build();                              // Returns live animated chart
   </script>
 
 </body>

@@ -61,12 +61,10 @@
           .withSize('size')
           .withColor('sector')  // Color by sector
           .withType('orbit')
-          .withAnimations('gentle')
           .render();
       } else {
-        // Update existing chart with new data
-        chart.store.clear();
-        chart.store.addMany(sectorData);
+        // Update existing chart with D3-native update
+        chart.update(sectorData);
       }
     }
     update();

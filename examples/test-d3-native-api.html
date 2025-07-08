@@ -48,28 +48,19 @@
       try {
         clearChart();
         
-        // Test new D3-native API
-        if (typeof createChart !== 'undefined') {
-          currentChart = createChart('#chart')
-            .withData(testData)
+        // Test D3-native API
+        if (typeof BubbleChart !== 'undefined') {
+          currentChart = BubbleChart.create('#chart')
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
             .withDimensions(600, 400)
-            .render();
+            .build();
           
+          currentChart.update(testData);
           setStatus('✅ D3-native API: Basic chart created successfully');
         } else {
-          // Fallback to legacy API
-          currentChart = BubbleChart.create('#chart')
-            .withData(testData)
-            .withLabel('name')
-            .withSize('size')
-            .withColor('sector')
-            .withDimensions(600, 400)
-            .render();
-          
-          setStatus('✅ Legacy API: Basic chart created successfully');
+          setStatus('❌ BubbleChart API not available');
         }
       } catch (error) {
         setStatus('❌ Error creating basic chart: ' + error.message);
@@ -81,27 +72,27 @@
       try {
         clearChart();
         
-        // Test streaming with new API
-        if (typeof createChart !== 'undefined') {
-          currentChart = createChart('#chart')
-            .withData([]) // Start with empty data
+        // Test streaming with D3-native API
+        if (typeof BubbleChart !== 'undefined') {
+          currentChart = BubbleChart.create('#chart')
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
             .withDimensions(600, 400)
-            .withStreaming({
-              keyFunction: d => d.id,
-              enterAnimation: { duration: 800, staggerDelay: 100, easing: 'ease-out' },
-              updateAnimation: { duration: 600, easing: 'ease-in-out' },
-              exitAnimation: { duration: 400, easing: 'ease-in' }
+            .withAnimations({
+              enter: { duration: 800, stagger: 100, easing: 'ease-out' },
+              update: { duration: 600, easing: 'ease-in-out' },
+              exit: { duration: 400, easing: 'ease-in' }
             })
-            .render();
+            .build();
           
-          // Add data items one by one
+          // Add data items one by one using D3-native updates
+          let currentData = [];
           let index = 0;
           const addNext = () => {
             if (index < testData.length) {
-              currentChart.store.add(testData[index]);
+              currentData.push(testData[index]);
+              currentChart.update(currentData);
               setStatus(`Added ${testData[index].name} (${index + 1}/${testData.length})`);
               index++;
               setTimeout(addNext, 1000);
@@ -124,19 +115,19 @@
       try {
         clearChart();
         
-        if (typeof createChart !== 'undefined') {
-          currentChart = createChart('#chart')
-            .withData(testData)
+        if (typeof BubbleChart !== 'undefined') {
+          currentChart = BubbleChart.create('#chart')
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
             .withType('motion')
             .withDimensions(600, 400)
-            .render();
+            .build();
           
+          currentChart.update(testData);
           setStatus('✅ D3-native API: Motion chart created successfully');
         } else {
-          setStatus('❌ D3-native API not available');
+          setStatus('❌ BubbleChart API not available');
         }
       } catch (error) {
         setStatus('❌ Error creating motion chart: ' + error.message);

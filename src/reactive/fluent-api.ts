@@ -28,7 +28,7 @@ export interface BubbleChart<T extends BubbleChartData = BubbleChartData> {
   readonly store: DataStore<T>;
   
   // Core lifecycle methods
-  render(): this;
+  render?(): this; // Optional - D3-native charts auto-render on data binding
   destroy(): void;
   
   // Configuration methods
@@ -46,14 +46,14 @@ interface FluentChartConfig extends Partial<BubbleChartOptions> {
 
 /**
  * D3-Native Chart Facade
- * Simplified facade focused on data flow and builder coordination
+ * Implements D3's data-driven rendering - charts render automatically when data changes
  */
 class D3ChartFacade<T extends BubbleChartData = BubbleChartData> implements BubbleChart<T> {
   public readonly store: DataStore<T>;
   private builder: any; // Will be typed properly after builder refactoring
   private dataFlowManager: DataFlowManager<T>;
   private config: BubbleChartOptions;
-  private isRendered = false;
+  private isInitialized = false;
 
   constructor(
     container: string,
@@ -76,23 +76,40 @@ class D3ChartFacade<T extends BubbleChartData = BubbleChartData> implements Bubb
     // Create data flow manager
     this.dataFlowManager = new DataFlowManager<T>(this.store, this.builder);
     
-    // Set up reactive data flow
+    // D3-native: automatic rendering on data changes
     this.store.on((stats) => {
-      if (this.isRendered) {
-        this.dataFlowManager.handleStreamingUpdate(stats, config.streaming);
-      }
+      this.autoRender(stats, config.streaming);
     });
   }
 
+  /**
+   * D3-native auto-rendering: charts render when data is bound
+   * Simplified to avoid recursion - single initialization only
+   */
+  private autoRender(_stats: any, _streamingOptions?: any): void {
+    // Prevent infinite recursion by only rendering once
+    if (!this.isInitialized && this.store.data().length > 0) {
+      const currentData = [...this.store.data()] as T[];
+      console.log('D3ChartFacade: Auto-rendering with', currentData.length, 'items');
+      this.dataFlowManager.initializeWithData(currentData);
+      this.isInitialized = true;
+    }
+  }
+
+  /**
+   * @deprecated Manual rendering is anti-D3 pattern
+   * D3-native: charts render automatically when data is bound
+   */
   render(): this {
-    const currentData = [...this.store.data()] as T[];
+    console.warn('⚠️  Manual .render() is deprecated - D3 charts auto-render on data binding');
     
-    if (!this.dataFlowManager.initializeWithData(currentData)) {
-      console.warn('D3ChartFacade: Failed to initialize with data');
-      return this;
+    // Force manual render for backward compatibility
+    const currentData = [...this.store.data()] as T[];
+    if (currentData.length > 0 && !this.isInitialized) {
+      this.dataFlowManager.initializeWithData(currentData);
+      this.isInitialized = true;
     }
     
-    this.isRendered = true;
     return this;
   }
 
@@ -311,9 +328,10 @@ export class FluentChartAPI<T extends BubbleChartData = BubbleChartData> {
   }
 
   /**
-   * Build and render the chart using D3-native patterns
+   * Build chart using D3-native patterns with automatic rendering
+   * Data binding triggers rendering automatically - no manual .render() needed
    */
-  render(): BubbleChart<T> {
+  build(): BubbleChart<T> {
     // Handle tree charts with hierarchical data specially
     if (this.options.type === 'tree' && this.dataSource && !Array.isArray(this.dataSource)) {
       // For tree charts, use TreeBuilder directly with hierarchical data
@@ -337,19 +355,25 @@ export class FluentChartAPI<T extends BubbleChartData = BubbleChartData> {
       return chart;
     }
 
-    // Standard flow for flat data arrays
+    // Standard flow for flat data arrays - D3-native data binding
     const chart = new D3ChartFacade<T>(this.container, this.options, this.keyFunction);
     
-    // Initialize with data if provided
+    // D3-native: data binding triggers automatic rendering
     if (this.dataSource) {
       const arrayData = Array.isArray(this.dataSource) ? this.dataSource : [this.dataSource];
-      chart.store.addMany(arrayData);
+      chart.store.addMany(arrayData); // This triggers automatic render via reactive data flow
     }
     
-    // Render the chart
-    chart.render();
-    
     return chart;
+  }
+
+  /**
+   * @deprecated Use .build() instead - follows D3's data-driven patterns
+   * Manual .render() calls are anti-D3 patterns
+   */
+  render(): BubbleChart<T> {
+    console.warn('⚠️  .render() is deprecated - use .build() for D3-native data binding');
+    return this.build();
   }
 }
 

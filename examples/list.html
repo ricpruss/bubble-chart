@@ -6,7 +6,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
-  <script src="js/economic-timeseries.js"></script>
+  <script src="js/companies.js"></script>
   <style>
     body { font-family: sans-serif; margin: 20px; }
     #list-container {
@@ -35,11 +35,11 @@
 
   <script>
     try {
-      // Dataset provided as global `data` from JSON script
+      // Dataset provided as global `companiesFlat` from companies.js
       const chart = BubbleChart.create('#list-container')
-        .withData(window.data)
+        .withData(window.companiesFlat)
         .withLabel('name')
-        .withSize('value')
+        .withSize('size')
         .withType('list')
         .withDimensions(700, undefined)
         .render();

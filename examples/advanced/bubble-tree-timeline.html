@@ -110,7 +110,7 @@
     function updateChart(year) {
       const filtered = filterByYear(fullData, year);
       
-      // Create or update chart with fluent API
+      // Create or update chart with D3-native API
       if (!chart) {
         chart = BubbleChart.create('#tree-tl-container')
           .withData(filtered)
@@ -121,9 +121,8 @@
           .withAnimations('gentle')
           .render();
       } else {
-        // Update existing chart with new data
-        chart.store.clear();
-        chart.store.add(filtered);
+        // D3-native update: simply call update with new data
+        chart.update(filtered);
       }
     }
   </script>

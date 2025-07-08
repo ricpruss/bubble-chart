@@ -30,48 +30,25 @@ const data: LanguageDatum[] = [
 ];
 
 // Create chart using fluent API - automatic field detection
-const chart = BubbleChart('#bubble-chart')
+const chart = BubbleChart.create('#bubble-chart')
   .withData(data as BubbleChartData[])
   .withLabel('label')
   .withSize('size')
   .withType('wave')
   .withColor('category')  // Color by category for visual distinction
   .withPercentage((d: BubbleChartData) => (d as unknown as LanguageDatum).count / 100)
-  .withAnimations('gentle')
-  .withCustomConfig({
-    format: {
-      text: (text: string) => text.toUpperCase(),
-      number: (num: number) => Intl.NumberFormat('en', { notation: 'compact' }).format(num),
-    },
-    tooltip: (d: BubbleChartData) => {
-      const lang = d as unknown as LanguageDatum;
-      return [
-        { value: lang.label, name: 'Language:' },
-        { value: Intl.NumberFormat('en').format(lang.size), name: 'Size:' },
-        { value: `${lang.count}%`, name: 'Popularity:' },
-        { value: lang.category, name: 'Category:' },
-      ];
-    },
-  })
   .render();
 
 // Example of adding event handlers for DOM interactions
-// Note: Events use the reactive store data, not layout node indices
-chart.onBubble('click', (d: BubbleChartData, _event: MouseEvent, _element: SVGElement) => {
-  const lang = d as unknown as LanguageDatum;
-  console.log(`Clicked ${lang.label}: ${Intl.NumberFormat('en').format(lang.size)} bytes (${lang.count}% popular)`);
-  alert(`You clicked on ${lang.label} (${lang.category})!`);
-});
-
-chart.onBubble('mouseover', (d: BubbleChartData, _event: MouseEvent, _element: SVGElement) => {
-  const lang = d as unknown as LanguageDatum;
-  console.log(`Mouse over ${lang.label}`);
-});
+// Note: Event handling simplified for D3-native API
+console.log('Chart supports event handling via chart.on() method');
+// chart.on('click', (d, event, element) => { /* event handling */ });
+// chart.on('mouseover', (d, event, element) => { /* event handling */ });
 
 // Chart is now rendered - lifecycle events are handled internally
 console.log('Chart created and rendered successfully');
 
-// Example of updating data dynamically using the reactive store
+// Example of updating data dynamically using D3-native update
 setTimeout(() => {
   const newData: LanguageDatum[] = [
     { id: 'lang-1', label: 'JavaScript', size: 2065724632, count: 55, category: 'Frontend' },
@@ -80,7 +57,7 @@ setTimeout(() => {
     { id: 'lang-4', label: 'TypeScript', size: 89456123, count: 45, category: 'Frontend' },
   ];
   
-  // Use the reactive store to update data
-  chart.store.replaceWith(newData as BubbleChartData[]);
+  // Use D3-native update method
+  chart.update(newData as BubbleChartData[]);
   console.log('Data updated with TypeScript added');
 }, 5000);

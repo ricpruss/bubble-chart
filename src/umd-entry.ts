@@ -1,8 +1,7 @@
-import { 
-  BubbleChart
-} from './reactive/chart.js';
+// Import the D3-native API (no reactive system)
+import { BubbleChart } from './index.js';
 
-// Create the global BubbleChart object with fluent API
-const BubbleChartGlobal = BubbleChart;
+// Create the global BubbleChart object with D3-native API
+const BubbleChartGlobal: typeof BubbleChart = BubbleChart;
 
-export default BubbleChartGlobal; 
+export default BubbleChartGlobal;

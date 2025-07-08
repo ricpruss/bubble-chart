@@ -30,31 +30,29 @@
                 .withLabel('label')
                 .withSize('size')
                 .withColor('category')  // Color by sector
-                .withAnimations('gentle')
                 .render();
 
-            // DOM event handlers using onBubble method
-            chart
-                .onBubble('mouseenter', d => {
-                    console.log('Mouse entered:', d.label);
-                })
-                .onBubble('mouseover', d => {
-                    console.log('Mouse over:', d.label);
-                })
-                .onBubble('mouseout', d => {
-                    console.log('Mouse out:', d.label);
-                })
-                .onBubble('click', d => {
-                    console.log('Bubble clicked:', d.label);
-                    const dataCopy = { ...d };
-                    delete dataCopy.parent;
-                    alert(`Clicked: ${d.label}\n\nData: ${JSON.stringify(dataCopy, null, 2)}`);
-                });
-
-            // Lifecycle events using regular on method
-            chart.on('change', (stats) => {
-                console.log('Data changed:', stats);
+            // DOM event handlers using D3-native API
+            chart.on('mouseenter', (d) => {
+                console.log('Mouse entered:', d.label);
             });
+            
+            chart.on('mouseover', (d) => {
+                console.log('Mouse over:', d.label);
+            });
+            
+            chart.on('mouseout', (d) => {
+                console.log('Mouse out:', d.label);
+            });
+            
+            chart.on('click', (d) => {
+                console.log('Bubble clicked:', d.label);
+                const dataCopy = { ...d };
+                delete dataCopy.parent;
+                alert(`Clicked: ${d.label}\n\nData: ${JSON.stringify(dataCopy, null, 2)}`);
+            });
+
+            console.log('Chart created with D3-native event handling');
         });
     </script>
 </head>

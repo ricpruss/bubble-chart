@@ -140,64 +140,64 @@
         .attr('class', 'tooltip')
         .style('opacity', 0);
 
-      // Create chart using modern fluent API
+      // Create chart using D3-native API
       const chart = BubbleChart.create('#chart')
         .withLabel('name')
         .withSize('displaySize')
         .withDimensions(1300, 700)
-        .withStreaming({
-          keyFunction: d => d.id,
-          enterAnimation: {
+        .withAnimations({
+          enter: {
             duration: 1000,
-            staggerDelay: 30,
+            stagger: 30,
             easing: 'ease-out'
           },
-          updateAnimation: {
+          update: {
             duration: 800,
             easing: 'ease-in-out'
           },
-          exitAnimation: {
+          exit: {
             duration: 600,
             easing: 'ease-in'
           }
         })
-        .withCustomConfig({
-          color: d => colour(d.sector)
-        })
-        .render()
-        .onBubble('mouseover', (d, event) => {
-          tooltip.transition()
-            .duration(200)
-            .style('opacity', 1);
-          
-          const badges = [];
-          if (d.femaleCEO) badges.push('<span class="badge female">Female CEO</span>');
-          if (d.founderIsCEO) badges.push('<span class="badge founder">Founder CEO</span>');
-          if (d.profitable) badges.push('<span class="badge profitable">Profitable</span>');
-          
-          tooltip.html(`
-            <h3>${d.name}</h3>
-            <p class="rank">Rank #${d.rank}</p>
-            <p><strong>Sector:</strong> ${d.sector}</p>
-            <p><strong>Industry:</strong> ${d.industry}</p>
-            <p class="profit"><strong>Profits:</strong> $${d.profits?.toLocaleString() || 'N/A'}M</p>
-            <p><strong>Revenue:</strong> $${d.revenue?.toLocaleString() || 'N/A'}M</p>
-            <p><strong>Employees:</strong> ${d.employees?.toLocaleString() || 'N/A'}</p>
-            <p class="ceo"><strong>CEO:</strong> ${d.ceo}</p>
-            <p><strong>Location:</strong> ${d.city}, ${d.state}</p>
-            <div class="badges">${badges.join('')}</div>
-          `)
-            .style('left', (event.pageX + 15) + 'px')
-            .style('top', (event.pageY - 10) + 'px');
-        })
-        .onBubble('mouseout', () => {
-          tooltip.transition()
-            .duration(300)
-            .style('opacity', 0);
-        });
-
-      // Initialize with empty data
-      chart.store.clear();
+        .withColor(d => colour(d.sector))
+        .build();
+        
+      // Attach D3-native event handlers
+      chart.on('mouseover', (d, event) => {
+        tooltip.transition()
+          .duration(200)
+          .style('opacity', 1);
+        
+        const badges = [];
+        if (d.femaleCEO) badges.push('<span class="badge female">Female CEO</span>');
+        if (d.founderIsCEO) badges.push('<span class="badge founder">Founder CEO</span>');
+        if (d.profitable) badges.push('<span class="badge profitable">Profitable</span>');
+        
+        tooltip.html(`
+          <h3>${d.name}</h3>
+          <p class="rank">Rank #${d.rank}</p>
+          <p><strong>Sector:</strong> ${d.sector}</p>
+          <p><strong>Industry:</strong> ${d.industry}</p>
+          <p class="profit"><strong>Profits:</strong> $${d.profits?.toLocaleString() || 'N/A'}M</p>
+          <p><strong>Revenue:</strong> $${d.revenue?.toLocaleString() || 'N/A'}M</p>
+          <p><strong>Employees:</strong> ${d.employees?.toLocaleString() || 'N/A'}</p>
+          <p class="ceo"><strong>CEO:</strong> ${d.ceo}</p>
+          <p><strong>Location:</strong> ${d.city}, ${d.state}</p>
+          <div class="badges">${badges.join('')}</div>
+        `)
+          .style('left', (event.pageX + 15) + 'px')
+          .style('top', (event.pageY - 10) + 'px');
+      });
+      
+      chart.on('mouseout', () => {
+        tooltip.transition()
+          .duration(300)
+          .style('opacity', 0);
+      });
+      
+      // Track current dataset for D3-native updates
+      let currentData = [];
 
       // Status helper
       const statusEl = document.getElementById('status');
@@ -216,13 +216,13 @@
         currentSizeOption = e.target.value;
         
         // Update all current bubbles to use the new size metric
-        const currentData = chart.store.data();
-        currentData.forEach(company => {
-          chart.store.update(
-            d => d.id === company.id,
-            { displaySize: sizeOptions[currentSizeOption].accessor(company) }
-          );
-        });
+        currentData = currentData.map(company => ({
+          ...company,
+          displaySize: sizeOptions[currentSizeOption].accessor(company)
+        }));
+        
+        // D3-native update: refresh chart with new size metric
+        chart.update(currentData);
         
         // Update the sorted dataset for future additions
         fullDataset = companiesFlat.map(company => ({
@@ -238,7 +238,11 @@
         const interval = parseInt(document.getElementById('intervalInput').value) || 800;
         timer = setInterval(() => {
           const company = nextBubble();
-          chart.store.add(company);
+          
+          // D3-native update: add company to current data and update chart
+          currentData.push(company);
+          chart.update(currentData);
+          
           setStatus(`Added ${company.name} (#${company.rank}) - ${company.sector} - $${company.profits?.toLocaleString() || 'N/A'}M profit`);
         }, interval);
         setStatus('⏱ Streaming companies by profit size…');
@@ -255,11 +259,18 @@
       document.getElementById('stopBtn').onclick = stopStream;
       document.getElementById('addBtn').onclick = () => {
         const company = nextBubble();
-        chart.store.add(company);
+        
+        // D3-native update: add company to current data and update chart
+        currentData.push(company);
+        chart.update(currentData);
+        
         setStatus(`Added ${company.name} (#${company.rank}) - ${company.sector} - $${company.profits?.toLocaleString() || 'N/A'}M profit`);
       };
       document.getElementById('clearBtn').onclick = () => {
-        chart.store.clear();
+        // D3-native update: clear all data and update chart
+        currentData = [];
+        chart.update(currentData);
+        
         idx = 0; // Reset streaming index
         setStatus('Chart cleared - ready to stream again');
       };

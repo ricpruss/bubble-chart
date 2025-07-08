@@ -16,7 +16,7 @@
   </style>
 </head>
 <body>
-  <h1>Bubble Chart – Toggle Bubble Size</h1>
+  <h1>🔄 D3-Native Size Toggle (Auto-Rendering)</h1>
   <div id="controls"></div>
   <div id="toggle-container"></div>
 
@@ -35,14 +35,14 @@
     ];
     let currentKey = 'size';
 
-    // Create chart using modern fluent API
-    const chart = BubbleChart.create('#toggle-container')
-      .withData(dataset)
+    // 🚀 D3-Native: Chart renders automatically when data is bound
+    let chart = BubbleChart.create('#toggle-container')
+      .withData(dataset)        // ✨ Auto-renders immediately!
       .withLabel('label')
       .withSize(currentKey)
-      .withColor('sector')  // Color by sector for better visualization
+      .withColor('sector')      // Color by sector for better visualization
       .withAnimations('smooth')
-      .render();
+      .build();                 // Returns live chart (already rendered)
 
     // Create toggle buttons
     const controls = d3.select('#controls');
@@ -68,8 +68,18 @@
       });
 
     function update(){
-      // Use modern fluent API method to change size metric
-      chart.setSizeMetric(currentKey);
+      // D3-native approach: recreate chart with new size configuration
+      // First clear the container
+      d3.select('#toggle-container').selectAll('*').remove();
+      
+      // Create new chart with updated size metric
+      chart = BubbleChart.create('#toggle-container')
+        .withData(dataset)
+        .withLabel('label')
+        .withSize(currentKey)      // Use the updated size key
+        .withColor('sector')
+        .withAnimations('smooth')
+        .build();
     }
   </script>
 </body>

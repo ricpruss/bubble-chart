@@ -89,9 +89,8 @@
           log(`Initial bubble ${i}: ${initialData[i].name}, radius=${r}`);
         });
 
-        log('Step 3: Updating data via reactive store');
-        chart.store.clear();
-        chart.store.addMany(updateData);
+        log('Step 3: Updating data via D3-native update');
+        chart.update(updateData);
 
         log('Step 4: Waiting for update to complete');
         await new Promise(resolve => setTimeout(resolve, 1200));
@@ -110,8 +109,7 @@
         });
 
         log('Step 6: Testing second update (back to original)');
-        chart.store.clear();
-        chart.store.addMany(initialData);
+        chart.update(initialData);
 
         await new Promise(resolve => setTimeout(resolve, 1200));
 
@@ -123,7 +121,7 @@
         }
 
         log('=== TEST RESULT: ✅ PASS ===');
-        log('Data updates working correctly with reactive store');
+        log('Data updates working correctly with D3-native API');
         log(`Total execution time: ${(performance.now() - startTime).toFixed(1)}ms`);
 
       } catch (error) {

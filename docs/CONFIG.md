@@ -1,35 +1,60 @@
 # Bubble Chart Configuration
 
-Modern fluent API with intelligent defaults and reactive data handling.
+D3-native fluent API with intelligent defaults and automatic rendering.
 
 ## Quick Start
 
 ```typescript
 import { BubbleChart } from 'bubble-chart';
 
-// Simple: Auto-detects best fields for labels, sizing, and colors
+// D3-native: Auto-renders when data is bound (no manual .render() needed)
 const chart = BubbleChart.create('#chart')
-  .withData(companies)
-  .render();
+  .withData(companies)  // 🚀 Chart renders automatically!
+  .build();
 
 // Enhanced: Override specific fields and add interactions
 const chart = BubbleChart.create('#chart')
-  .withData(companies)
+  .withData(companies)   // 🚀 Auto-renders immediately
   .withSize('revenue')
   .withColor('sector')
   .withAnimations('gentle')
   .withDimensions(800, 600)
-  .render()
+  .build()  // Returns live chart instance
   .onBubble('click', (data) => console.log(`Clicked: ${data.name}`));
+```
+
+## 🚀 D3-Native Philosophy
+
+This library embraces D3's core principle: **data drives the DOM**. Charts render automatically when data is bound, eliminating the need for manual `.render()` calls.
+
+### Key D3-Native Concepts:
+- **Data Binding**: Charts render when `.withData()` is called
+- **Reactive Updates**: Store changes trigger automatic re-rendering  
+- **Declarative API**: Describe what you want, not how to render it
+- **Functional Composition**: Chain methods to build chart configuration
+
+```typescript
+// ✅ D3-Native Pattern (Recommended)
+const chart = BubbleChart.create('#chart')
+  .withData(companies)  // ✨ Auto-renders here!
+  .build();             // Returns live chart
+
+// ❌ Anti-D3 Pattern (Deprecated)
+const chart = BubbleChart.create('#chart')
+  .withData(companies)
+  .render();            // ⚠️ Manual render (deprecated)
 ```
 
 ## Fluent API Reference
 
-### Required Methods
+### Required Methods - D3-Native Patterns
 ```typescript
 BubbleChart.create(container: string)      // Create chart builder
-  .withData(data: T[])                     // Set data (auto-detects fields)
-  .render()                                // Build and render chart
+  .withData(data: T[])                     // Bind data (triggers auto-render)
+  .build()                                 // Returns live chart instance
+
+// 🚀 D3-Native: Charts render automatically when data is bound!
+// Manual .render() calls are deprecated (anti-D3 pattern)
 ```
 
 ### Data Mapping (Override Auto-Detection)
@@ -70,85 +95,88 @@ BubbleChart.create(container: string)      // Create chart builder
 
 ## Usage Examples
 
-### Basic Visualization
+### Basic Visualization - D3-Native Data Binding
 ```typescript
-// Minimal configuration - intelligent defaults
+// Minimal configuration - intelligent defaults with auto-rendering
 const chart = BubbleChart.create('#chart')
-  .withData(companies)
-  .render();
+  .withData(companies)  // 🚀 Data binding triggers immediate render
+  .build();             // Returns live chart (already rendered)
 
-// The above auto-detects:
-// - size: largest numeric field (e.g., 'revenue')  
-// - label: unique text field (e.g., 'company')
-// - color: categorical field (e.g., 'sector')
-// - animations: optimized for data size
-// - tooltips: key fields automatically
+// D3-native auto-detection:
+// ✓ size: largest numeric field (e.g., 'revenue')  
+// ✓ label: unique text field (e.g., 'company')
+// ✓ color: categorical field (e.g., 'sector')
+// ✓ animations: optimized for data size
+// ✓ tooltips: key fields automatically
+// ✓ rendering: automatic on data binding (D3 pattern)
 ```
 
-### Custom Configuration
+### Custom Configuration - D3-Native Fluent API
 ```typescript
 const chart = BubbleChart.create('#chart')
-  .withData(companies)
+  .withData(companies)                     // 🚀 Auto-renders on data binding
   .withSize('marketCap')                   // Use market cap for sizing
   .withLabel(d => `${d.company} (${d.ceo})`) // Custom label function
   .withColor('sector')                     // Color by sector  
-  .withAnimations('bouncy')                // Playful animations
-  .withDimensions(1000, 700)               // Custom size
+  .withAnimations('bouncy')                // Playful spring effects
+  .withDimensions(1000, 700)               // Custom dimensions
   .withTooltips(['company', 'sector', 'marketCap', 'ceo'])
-  .render();
+  .build();                                // Returns rendered chart instance
+
+// 🚀 D3-Native: No manual .render() needed - data binding triggers rendering!
 ```
 
-### Reactive Data Updates
+### Reactive Data Updates - D3-Native Streaming
 ```typescript
-// Enable streaming with custom key function
+// Enable streaming with custom key function - auto-renders on data changes
 const chart = BubbleChart.create('#chart')
-  .withData(initialData)
+  .withData(initialData)                   // 🚀 Initial render
   .withStreaming({
-    keyFunction: d => d.id,  // Custom identity function
+    keyFunction: d => d.id,                // Custom identity for D3 data joins
     enterAnimation: { duration: 1000, stagger: 100, easing: 'ease-out' },
     updateAnimation: { duration: 800, easing: 'ease-in-out' },
     exitAnimation: { duration: 600, easing: 'ease-in' }
   })
-  .render();
+  .build();                              // Returns live reactive chart
 
-// Dynamic data manipulation via reactive store
-chart.store.add(newCompany);              // Add single item
-chart.store.addMany([company1, company2]); // Add multiple items
-chart.store.update('AAPL', { revenue: 400000 }); // Update by key
-chart.store.remove('MSFT');               // Remove by key
-chart.store.clear();                      // Clear all data
+// 🚀 D3-Native: All data changes trigger automatic re-rendering!
+chart.store.add(newCompany);              // Add single item → auto-renders
+chart.store.addMany([company1, company2]); // Add multiple → auto-renders  
+chart.store.update('AAPL', { revenue: 400000 }); // Update by key → auto-renders
+chart.store.remove('MSFT');               // Remove by key → auto-renders
+chart.store.clear();                      // Clear all data → auto-renders
 
-// Listen to data changes
+// Listen to data changes (optional - rendering is automatic)
 chart.on('change', (stats) => {
-  console.log(`Added: ${stats.entered}, Updated: ${stats.updated}, Removed: ${stats.exited}`);
+  console.log(`Auto-rendered: +${stats.entered}, ~${stats.updated}, -${stats.exited}`);
 });
 ```
 
-### Time-Series Animation
+### Time-Series Animation - D3-Native Motion Charts
 ```typescript
 const chart = BubbleChart.create('#chart')
-  .withData(timeSeriesData)
-  .withTime('year')                        // Animate over time
-  .withType('motion')                      // Motion chart type
+  .withData(timeSeriesData)                // 🚀 Auto-renders motion chart
+  .withTime('year')                        // Animate over time dimension
+  .withType('motion')                      // Motion chart with physics
   .withTooltips(['company', 'year', 'revenue', 'employees'])
-  .render();
+  .build();                                // Returns live animated chart
 ```
 
-### Wave and Liquid Charts
+### Wave and Liquid Charts - D3-Native Fluid Animations
 ```typescript
-// Wave bubbles with custom percentage calculation
+// Wave bubbles with custom percentage calculation - auto-renders
 const waveChart = BubbleChart.create('#wave-chart')
-  .withData(elements)
+  .withData(elements)                      // 🚀 Auto-renders wave animations
   .withType('wave')
-  .withPercentage(d => d.completion / 100)  // Fill level based on completion
-  .render();
+  .withPercentage(d => d.completion / 100) // Fill level based on completion
+  .build();                                // Returns live wave chart
 
-// Liquid gauge with profit margin calculation
+// Liquid gauge with profit margin calculation - auto-renders
 const liquidChart = BubbleChart.create('#liquid-chart')
-  .withData(companies)
+  .withData(companies)                     // 🚀 Auto-renders liquid gauge
   .withType('liquid')
-  .withPercentage(d => d.profits / d.revenue)  // Profit margin as fill level
-  .render();
+  .withPercentage(d => d.profits / d.revenue) // Profit margin as fill level
+  .build();                                // Returns live liquid gauge
 ```
 
 ## Runtime Control
