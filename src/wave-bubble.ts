@@ -44,22 +44,16 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
   };
 
   constructor(config: BubbleChartOptions) {
-    console.log('WaveBubble: Constructor called with config type:', config.type);
     // Ensure we can modify the config by creating a mutable copy
     const mutableConfig = { ...config, type: 'wave' as const };
-    console.log('WaveBubble: Constructor modified config type to:', mutableConfig.type);
     super(mutableConfig);
-    console.log('WaveBubble: Constructor completed');
   }
 
   /**
    * Specialized rendering logic for wave bubbles with animated filling
    */
   protected performRender(): void {
-    console.log('WaveBubble: performRender called with', this.chartData?.length, 'data items');
-    
     if (!this.chartData || this.chartData.length === 0) {
-      console.warn('WaveBubble: No data to render');
       return;
     }
 
@@ -138,8 +132,6 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
    * Creates wave-specific visual elements for each bubble
    */
   private createWaveElements(bubbleGroups: any, processedData: any[]): void {
-    console.log('WaveBubble: Creating wave elements for', bubbleGroups.size(), 'bubbles');
-    
     // Create color scale for waves
     const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
     const colorScale = colorValues.length > 0 ? 
@@ -168,13 +160,11 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     const waveGroups = bubbleGroups.append('g')
       .attr('clip-path', (_d: any, i: number) => `url(#wave-clip-${i})`);
       
-    const wavePaths = waveGroups.append('path')
+    waveGroups.append('path')
       .attr('class', 'wave')
       .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#2196F3'))
       .style('opacity', 0.6)
       .attr('stroke', 'none');
-      
-    console.log('WaveBubble: Created', waveGroups.size(), 'wave groups and', wavePaths.size(), 'wave paths');
   }
 
   /**

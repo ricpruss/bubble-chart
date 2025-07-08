@@ -228,9 +228,6 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
   private attachSimplifiedEvents(selection: d3.Selection<any, any, any, any>): void {
     selection
       .on('click', (event, d) => {
-        // Use D3's native event handling with integration
-        console.log('Clicked orbit node:', d.label, 'Category:', d.colorValue);
-        
         // Simple click feedback with better visual response
         const circle = d3.select(event.currentTarget).select('circle');
         circle
@@ -242,16 +239,8 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
           .duration(150)
           .attr('r', d.r)
           .attr('stroke-width', 2);
-        
-        // Simple integration with existing event system
-        console.log('Orbit click data:', { 
-          label: d.label, 
-          data: d.data, 
-          colorValue: d.colorValue,
-          category: d.colorValue 
-        });
       })
-      .on('mouseover', (event, d) => {
+      .on('mouseover', (event, _d) => {
         // Enhanced hover effect with better visual feedback
         const circle = d3.select(event.currentTarget).select('circle');
         circle
@@ -259,9 +248,6 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
           .duration(200)
           .attr('stroke-width', 4)
           .attr('stroke', '#333'); // Darker stroke on hover
-        
-        // Simple hover logging
-        console.log('Hovering:', d.label, 'Category:', d.colorValue);
       })
       .on('mouseout', (event, _d) => {
         const circle = d3.select(event.currentTarget).select('circle');

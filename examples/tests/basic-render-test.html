@@ -62,7 +62,9 @@
           .render();
 
         log('Step 2: Chart created and rendered');
-        log(`Chart options: ${JSON.stringify(chart.options(), null, 2)}`);
+        // Access chart options through the builder instance
+        const builder = chart.getBuilder();
+        log(`Chart options: ${JSON.stringify(builder.options(), null, 2)}`);
 
         // Wait for rendering to complete
         await new Promise(resolve => setTimeout(resolve, 1000));

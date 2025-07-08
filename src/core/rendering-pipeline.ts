@@ -63,13 +63,7 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     
     const adjustedDuration = Math.round(minUpdateDuration);
     
-    // Debug logging for timing coordination
-    if (adjustedDuration > updateDuration) {
-      console.log(`🎬 Animation Timing Coordination:`);
-      console.log(`  Enter: ${enterDuration}ms + (${bubbleCount} × ${staggerDelay}ms) = ${totalEnterTime}ms total`);
-      console.log(`  Update: ${updateDuration}ms → ${adjustedDuration}ms (adjusted for timing)`);
-      console.log(`  Reason: Preventing overlap during staggered entrance`);
-    }
+    // Adjusted duration calculated to prevent timing conflicts
     
     return adjustedDuration;
   }

@@ -21,35 +21,26 @@ export class BuilderFactory {
   static create<T extends BubbleChartData = BubbleChartData>(
     config: BubbleChartOptions
   ): BubbleBuilder<T> | TreeBuilder<T> | OrbitBuilder<T> | MotionBubble<T> | ListBuilder<T> | WaveBubble<T> | LiquidBubble<T> {
-    console.log('BuilderFactory: Creating builder for type:', config.type);
-    
     switch (config.type) {
       case 'orbit':
-        console.log('BuilderFactory: Created OrbitBuilder');
         return new OrbitBuilder<T>(config);
         
       case 'tree':
-        console.log('BuilderFactory: Created TreeBuilder');
         return new TreeBuilder<T>(config);
         
       case 'motion':
-        console.log('BuilderFactory: Created MotionBubble');
         return new MotionBubble<T>(config);
         
       case 'list':
-        console.log('BuilderFactory: Created ListBuilder');
         return new ListBuilder<T>(config);
         
       case 'wave':
-        console.log('BuilderFactory: Created WaveBubble');
         return new WaveBubble<T>(config);
         
       case 'liquid':
-        console.log('BuilderFactory: Created LiquidBubble');
         return new LiquidBubble<T>(config);
         
       default:
-        console.log('BuilderFactory: Created default BubbleBuilder for type:', config.type);
         return new BubbleBuilder<T>(config);
     }
   }
