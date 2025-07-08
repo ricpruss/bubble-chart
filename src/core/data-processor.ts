@@ -4,15 +4,15 @@
  * Eliminates duplication across all chart builders
  */
 
-import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions } from '../types/config.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions } from '../config/index.js';
 import { 
   isFlatBubbleData, 
   isHierarchicalBubbleData, 
   isTimeSeriesBubbleData,
   getNumericValue,
   getStringValue
-} from '../types/data.js';
+} from '../data/index.js';
 
 export interface ProcessedDataPoint<T = BubbleChartData> {
   /** Original data item */

@@ -1,6 +1,6 @@
-import type { BubbleChartData } from './types/data.js';
-import type { BubbleChartOptions, ChartHandle } from './types/config.js';
-import { BaseChartBuilder } from './core/index.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
+import { BaseChartBuilder } from '../core/index.js';
 import * as d3 from 'd3';
 
 /**

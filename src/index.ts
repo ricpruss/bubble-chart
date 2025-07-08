@@ -244,13 +244,13 @@ export {
 } from './core/index.js';
 
 // Re-export individual builders for advanced usage
-export { BubbleBuilder } from './bubble-builder.js';
-export { TreeBuilder } from './tree-builder.js';
-export { MotionBubble } from './motion-bubble.js';
-export { WaveBubble } from './wave-bubble.js';
-export { LiquidBubble } from './liquid-bubble.js';
-export { OrbitBuilder } from './orbit-builder.js';
-export { ListBuilder } from './list-builder.js';
+export { BubbleBuilder } from './builders/bubble-builder.js';
+export { TreeBuilder } from './builders/tree-builder.js';
+export { MotionBubble } from './builders/motion-bubble.js';
+export { WaveBubble } from './builders/wave-bubble.js';
+export { LiquidBubble } from './builders/liquid-bubble.js';
+export { OrbitBuilder } from './builders/orbit-builder.js';
+export { ListBuilder } from './builders/list-builder.js';
 
 // Re-export key types for external usage
 export type {

@@ -5,10 +5,10 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions, TooltipItem } from '../types/config.js';
-import type { BubbleEventHandlers, DataEventHandler } from '../types/events.js';
-// import { createD3EventHandler } from '../types/events.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions, TooltipItem } from '../config/index.js';
+import type { BubbleEventHandlers, DataEventHandler } from '../events/index.js';
+// import { createD3EventHandler } from '../config/events.js';
 import type { ProcessedDataPoint } from './data-processor.js';
 
 export interface TooltipManager {

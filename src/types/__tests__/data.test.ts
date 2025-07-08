@@ -15,7 +15,7 @@ import {
   isTimeSeriesDataArray,
   getNumericValue,
   getStringValue
-} from '../data.js';
+} from '../../data/index.js';
 
 describe('Data Type Guards', () => {
   describe('isFlatBubbleData', () => {

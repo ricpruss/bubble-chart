@@ -3,7 +3,7 @@
  * Comprehensive testing of D3-native data processing utilities
  */
 
-import { D3DataUtils, type D3ProcessedData } from '../d3-data-utils.js';
+import { D3DataUtils, type D3ProcessedData } from '../../d3/d3-data-utils.js';
 
 // Test data structures - completely generic, no dependency on BubbleChartData!
 interface TestCompany {

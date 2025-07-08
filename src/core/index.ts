@@ -32,9 +32,9 @@ export {
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions, ChartHandle } from '../types/config.js';
-import type { BubbleEventHandlers } from '../types/events.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
+import type { BubbleEventHandlers } from '../events/index.js';
 import { SVGManager } from './svg-manager.js';
 import { DataProcessor } from './data-processor.js';
 import { InteractionManager } from './interaction-manager.js';

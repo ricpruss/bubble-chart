@@ -17,16 +17,16 @@
 </head>
 <body>
 
-  <h1>🌊 D3-Native Wave Bubbles (Auto-Rendering)</h1>
+  <h1>🌊Wave Bubbles</h1>
   <div id="chart-container"></div>
 
   <script>
     const data = [
-      { "label": "Oxygen", "size": 80, "count": 80 },
-      { "label": "Nitrogen", "size": 50, "count": 50 },
-      { "label": "Carbon", "size": 95, "count": 95 },
-      { "label": "Hydrogen", "size": 30, "count": 30 },
-      { "label": "Helium", "size": 70, "count": 70 }
+      { "label": "Oxygen", "size": 80, "count": 40 },
+      { "label": "Nitrogen", "size": 50, "count": 40 },
+      { "label": "Carbon", "size": 95, "count": 40 },
+      { "label": "Hydrogen", "size": 30, "count": 15 },
+      { "label": "Helium", "size": 70, "count": 10 }
     ];
 
     // 🚀 D3-Native: Wave animations render automatically on data binding
@@ -36,7 +36,7 @@
       .withSize("size")
       .withColor("label")
       .withType("wave")                      // Fluid wave animations
-      .withPercentage((d) => d.count / 100)  // Wave fill calculation
+      .withPercentage((d) => d.count / d.size)  // Wave fill calculation
       .build();                              // Returns live animated chart
   </script>
 

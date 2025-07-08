@@ -31,7 +31,7 @@ import {
   type TooltipItem,
   validateConfig,
   createDefaultConfig
-} from '../config.js';
+} from '../../config/index.js';
 
 describe('Configuration Validation', () => {
   describe('validateConfig', () => {

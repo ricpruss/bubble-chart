@@ -57,9 +57,9 @@ jest.mock('d3', () => ({
 }));
 
 import { RenderingPipeline, type RenderingContext } from '../rendering-pipeline.js';
-import type { BubbleChartOptions } from '../../types/config.js';
+import type { BubbleChartOptions } from '../../config/index.js';
 import type { ProcessedDataPoint } from '../data-processor.js';
-import type { FlatBubbleData } from '../../types/data.js';
+import type { FlatBubbleData } from '../../data/index.js';
 
 // Test data
 interface TestData extends FlatBubbleData {

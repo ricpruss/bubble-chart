@@ -1,4 +1,4 @@
-import { WaveBubble } from '../wave-bubble.js';
+import { WaveBubble } from '../builders/wave-bubble.js';
 import type { BubbleChartData, BubbleChartOptions } from '../types/index.js';
 
 // Mock DOM elements for testing

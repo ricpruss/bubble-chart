@@ -17,7 +17,7 @@ export type {
   EconomicDataArray,
   DataAccessor,
   ExtractDataType
-} from './data.js';
+} from '../data/index.js';
 
 export {
   isFlatBubbleData,
@@ -28,7 +28,7 @@ export {
   isTimeSeriesDataArray,
   getNumericValue,
   getStringValue
-} from './data.js';
+} from '../data/index.js';
 
 // Event types
 export type { 
@@ -42,7 +42,7 @@ export type {
   D3EventHandlers,
   EventOptions,
   EventManager
-} from './events.js';
+} from '../events/index.js';
 
 export {
   BubbleEvent,
@@ -51,7 +51,7 @@ export {
   createEventPayload,
   debounceEventHandler,
   throttleEventHandler
-} from './events.js';
+} from '../events/index.js';
 
 // Configuration types
 export type {
@@ -82,7 +82,7 @@ export type {
   ExitAnimationOptions,
   UpdateAnimationOptions,
   StreamingUpdateResult
-} from './config.js';
+} from '../config/index.js';
 
 // D3 helper types
 export type { 
@@ -108,9 +108,8 @@ export type {
   ForceManyBody,
   NumericAccessor,
   StringAccessor,
-  ColorAccessor,
-  DataJoin
-} from './d3-helpers.js';
+  ColorAccessor
+} from '../d3/index.js';
 
 // Configuration validation and defaults
-export { validateConfig, createDefaultConfig, defaultStreamingOptions } from './config.js'; 
+export { validateConfig, createDefaultConfig, defaultStreamingOptions } from '../config/index.js';

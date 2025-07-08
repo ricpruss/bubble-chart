@@ -3,7 +3,7 @@
  * Provides type-safe event handling with D3.js integration
  */
 
-import type { BubbleChartData } from './data.js';
+import type { BubbleChartData } from '../data/index.js';
 
 /**
  * Supported event types in the bubble chart library

@@ -1,12 +1,12 @@
-import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions } from '../types/config.js';
-import { BubbleBuilder } from '../bubble-builder.js';
-import { TreeBuilder } from '../tree-builder.js';
-import { OrbitBuilder } from '../orbit-builder.js';
-import { MotionBubble } from '../motion-bubble.js';
-import { ListBuilder } from '../list-builder.js';
-import { WaveBubble } from '../wave-bubble.js';
-import { LiquidBubble } from '../liquid-bubble.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions } from '../config/index.js';
+import { BubbleBuilder } from './bubble-builder.js';
+import { TreeBuilder } from './tree-builder.js';
+import { OrbitBuilder } from './orbit-builder.js';
+import { MotionBubble } from './motion-bubble.js';
+import { ListBuilder } from './list-builder.js';
+import { WaveBubble } from './wave-bubble.js';
+import { LiquidBubble } from './liquid-bubble.js';
 
 /**
  * Factory for creating appropriate builder instances based on chart configuration

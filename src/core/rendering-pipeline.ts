@@ -4,10 +4,10 @@
  * Eliminates duplication across all chart builders
  */
 
-import type { BubbleChartData } from '../types/data.js';
-import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult } from '../types/config.js';
-import type { ProcessedDataPoint } from './data-processor.js';
-import { D3DataUtils } from '../utils/d3-data-utils.js';
+import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult } from '../config/index.js';
+import { type ProcessedDataPoint } from './data-processor.js';
+import { D3DataUtils } from '../d3/index.js';
 // import type { SVGElements } from './svg-manager.js';
 
 export interface RenderingContext {

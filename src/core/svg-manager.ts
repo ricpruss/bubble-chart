@@ -5,7 +5,7 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartOptions } from '../types/config.js';
+import type { BubbleChartOptions } from '../config/index.js';
 
 export interface SVGDimensions {
   width: number;
