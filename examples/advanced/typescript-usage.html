@@ -30,14 +30,15 @@
           { id: 'lang-3', label: 'Java', size: 18732432, count: 30.55, category: 'Enterprise' },
         ];
 
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#bubble-chart')
-          .withData(data)
+          .withData(data)            // ✨ Auto-renders here!
           .withLabel('label')
           .withSize('size')
           .withType('wave')
-          .withColor('category')  // Color by category for visual distinction
+          .withColor('category')     // Color by category for visual distinction
           .withPercentage((d) => d.count / 100)
-          .render();
+          .build();                  // Returns live chart (already rendered)
 
         // Event handlers with D3-native API
         chart.on('click', (d) => {

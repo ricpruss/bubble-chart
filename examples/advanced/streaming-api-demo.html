@@ -140,11 +140,12 @@
         .attr('class', 'tooltip')
         .style('opacity', 0);
 
-      // Create chart using D3-native API
+      // Create chart using D3-native streaming API
       const chart = BubbleChart.create('#chart')
         .withLabel('name')
         .withSize('displaySize')
         .withDimensions(1300, 700)
+        .withKey(d => d.id) // ✨ Key function for D3 data binding - prevents screen clearing!
         .withAnimations({
           enter: {
             duration: 1000,
@@ -161,7 +162,7 @@
           }
         })
         .withColor(d => colour(d.sector))
-        .build();
+        .build(); // Create empty chart for streaming
         
       // Attach D3-native event handlers
       chart.on('mouseover', (d, event) => {

@@ -260,10 +260,11 @@
       log('Initializing charts with D3-native fluent API...', 'info');
 
       try {
-        // Basic Bubble Chart
+        // Basic Bubble Chart - D3 Native API
         log('Creating basic bubble chart...', 'info');
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const basicChart = BubbleChart.createChart('#basic-chart')
-          .withData([])
+          .withData([])              // ✨ Auto-renders here!
           .withLabel('name')
           .withSize('value')
           .withColor(d => d.color)
@@ -284,15 +285,16 @@
               easing: 'ease-in'
             }
           })
-          .render();
+          .build();                  // Returns live chart (already rendered)
 
         activeCharts++;
         log('✅ Basic chart created successfully', 'success');
 
-        // Motion Chart
+        // Motion Chart - D3 Native API
         log('Creating motion bubble chart...', 'info');
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const motionChart = BubbleChart.createChart('#motion-chart')
-          .withData([])
+          .withData([])              // ✨ Auto-renders here!
           .withType('motion')
           .withLabel('name')
           .withSize('profits')
@@ -314,15 +316,16 @@
               easing: 'ease-in'
             }
           })
-          .render();
+          .build();                  // Returns live chart (already rendered)
 
         activeCharts++;
         log('✅ Motion chart created successfully', 'success');
 
-        // Wave Chart
+        // Wave Chart - D3 Native API
         log('Creating wave bubble chart...', 'info');
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const waveChart = BubbleChart.createChart('#wave-chart')
-          .withData([])
+          .withData([])              // ✨ Auto-renders here!
           .withType('wave')
           .withLabel('name')
           .withSize('employees')
@@ -345,7 +348,7 @@
               easing: 'ease-in'
             }
           })
-          .render();
+          .build();                  // Returns live chart (already rendered)
 
         activeCharts++;
         log('✅ Wave chart created successfully', 'success');

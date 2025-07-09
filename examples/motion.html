@@ -30,13 +30,14 @@
       size: d.profits
     }));
 
+    // 🚀 D3-Native: Chart renders automatically when data is bound!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)
+      .withData(data)          // ✨ Auto-renders here!
       .withLabel("label")
       .withSize("size")
       .withType("motion")
       .withColor('sector')
-      .render();
+      .build();                // Returns live chart (already rendered)
   </script>
 </body>
 </html>

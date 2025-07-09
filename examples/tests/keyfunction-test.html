@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Key Function Test</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
   <style>
     body { font-family: monospace; margin: 20px; }
     .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
@@ -58,6 +58,7 @@
               .withLabel('name')
               .withSize('value')
               .withColor('color')
+              .withKey((d) => d.customId) // Essential for proper data binding
               .withAnimations({
                 enter: { duration: 1000, stagger: 100, easing: 'ease-out' },
                 update: { duration: 800, easing: 'ease-in-out' },

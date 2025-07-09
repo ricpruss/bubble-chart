@@ -118,27 +118,7 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     return this;
   }
 
-  /**
-   * Render the chart
-   * @returns this for method chaining
-   */
-  render(): this {
-    // Initialize components if not already done (even with empty data)
-    if (!this.isInitialized) {
-      this.initialize();
-    } else {
-      // Clear previous content before re-rendering
-      this.clearChart();
-    }
-
-    // Only perform actual rendering if we have data
-    if (this.chartData.length) {
-      // Delegate to specialized render method
-      this.performRender();
-    }
-    
-    return this;
-  }
+  // render() method removed - D3-native approach uses update() only
 
   /**
    * Update chart with new data or configuration
@@ -149,7 +129,19 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     if (data) {
       this.data(data);
     }
-    this.render();
+    
+    // D3-native approach: only initialize if needed, then perform direct update
+    if (!this.isInitialized) {
+      this.initialize();
+    }
+    
+    // Direct performRender call - no clearing, pure D3 data joins
+    if (this.chartData.length) {
+      this.performRender();
+    } else {
+      this.clearChart();
+    }
+    
     return this;
   }
 

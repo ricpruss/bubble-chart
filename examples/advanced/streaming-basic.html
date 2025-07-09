@@ -190,6 +190,7 @@ chart.update(currentData);      <span class="comment">// D3-native update with a
             .withSize('Revenues_M')
             .withColor('Sector')  // Color by sector automatically
             .withDimensions(800, 480)
+            .withKey((d) => d.Company) // Use company name as key to avoid screen clearing
             .withAnimations('gentle')  // Smooth animations for data updates
             .build();
         

@@ -192,6 +192,8 @@ export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData>
   sort?: boolean;
   /** Percentage calculation function */
   percentage?: ((d: T) => number);
+  /** Key function for D3 data joins - enables proper enter/update/exit lifecycle */
+  keyFunction?: ((d: T) => string | number);
   
   // Color and styling
   /** 
@@ -299,8 +301,8 @@ export interface ChartHandle<T extends BubbleChartData = BubbleChartData> {
   /** Merge-update options */
   updateOptions(options: Partial<BubbleChartOptions<T>>): this;
   
-  /** Render the chart */
-  render(): this;
+  /** Update chart with new data (D3-native approach) */
+  update(data?: T[]): this;
   
   /** Destroy the chart and clean up resources */
   destroy(): void;

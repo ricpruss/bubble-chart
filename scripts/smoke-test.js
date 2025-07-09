@@ -84,13 +84,13 @@ async function runSmokeTests() {
     test('SVG rendering', () => {
       const builder = new BubbleBuilder(config);
       builder.data(testData);
-      const result = builder.render();
-      if (result !== builder) throw new Error('render() should return this for chaining');
+      const result = builder.update();
+      if (result !== builder) throw new Error('update() should return this for chaining');
     });
 
     test('Method chaining', () => {
       const builder = new BubbleBuilder(config);
-      const result = builder.data(testData).render();
+      const result = builder.data(testData).update();
       if (result !== builder) throw new Error('Method chaining failed');
     });
 
@@ -104,21 +104,22 @@ async function runSmokeTests() {
 
     test('Resource cleanup', () => {
       const builder = new BubbleBuilder(config);
-      builder.data(testData).render();
+      builder.data(testData).update();
       if (builder.destroy) {
         builder.destroy();
       }
       // If we get here without error, cleanup worked
     });
 
-    // Test modern fluent API (main user-facing API)
-    test('BubbleChart fluent API', () => {
+    // Test modern D3-native fluent API (main user-facing API)
+    test('BubbleChart D3-native fluent API', () => {
+      // 🚀 D3-Native: Chart renders automatically when data is bound!
       const chart = BubbleChart.create('#chart')
-        .withData(testData)
+        .withData(testData)    // ✨ Auto-renders here!
         .withLabel('name')
         .withSize('value')
-        .render();
-      if (!chart) throw new Error('BubbleChart fluent API failed');
+        .build();              // Returns live chart (already rendered)
+      if (!chart) throw new Error('BubbleChart D3-native fluent API failed');
     });
 
   } catch (error) {

@@ -25,12 +25,14 @@
                 category: d.sector  // Add sector for color categorization
             }));
 
+            // 🚀 D3-Native: Chart renders automatically when data is bound!
             const chart = BubbleChart.create('#test')
-                .withData(data)
+                .withData(data)            // ✨ Auto-renders here!
                 .withLabel('label')
                 .withSize('size')
-                .withColor('category')  // Color by sector
-                .render();
+                .withColor('category')   // Color by sector
+                .withAnimations('gentle') // ✨ Pure D3 staggered entrance animations!
+                .build();                // Returns live chart (already rendered)
 
             // DOM event handlers using D3-native API
             chart.on('mouseenter', (d) => {

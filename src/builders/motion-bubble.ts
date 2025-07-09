@@ -209,7 +209,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     
     // Re-render with new data
     this.stopSimulation();
-    this.render();
+    this.update();
   }
 
   /**

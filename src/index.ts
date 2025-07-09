@@ -54,6 +54,11 @@ class D3ChartWrapper {
     return this;
   }
   
+  withKey(keyFn: (d: any) => string | number) {
+    this.config.keyFunction = keyFn;
+    return this;
+  }
+  
   withAnimations(preset: string | any) {
     // Simple D3-native animation presets
     if (preset === 'gentle' || preset === 'smooth') {
@@ -90,34 +95,39 @@ class D3ChartWrapper {
       type: this.config.type || 'bubble',
       width: this.config.width,
       height: this.config.height,
-      percentage: this.config.percentage
+      percentage: this.config.percentage,
+      keyFunction: this.config.keyFunction, // 🔑 Pass key function to builder
+      animation: this.animationConfig ? {
+        enter: {
+          duration: this.animationConfig.duration,
+          stagger: this.animationConfig.staggerDelay
+        },
+        update: {
+          duration: this.animationConfig.duration * 0.8
+        },
+        exit: {
+          duration: this.animationConfig.duration * 0.5
+        }
+      } : undefined
     } as BubbleChartOptions;
     
     this.chartInstance = BuilderFactory.create(finalConfig);
     
     if (this.chartData) {
-      this.chartInstance.data(this.chartData).render();
+      this.chartInstance.data(this.chartData).update();
       
-      // Apply D3-native animations if configured
-      if (this.animationConfig) {
-        this.applyD3Animations();
-      }
-      
-      // Attach pure D3 events after rendering
+      // Attach pure D3 events after update
       this.attachEventsToD3Selection();
     }
     
-    // Return chart interface
-    return {
-      update: (newData: any) => {
-        this.chartInstance.data(newData).render();
-        // Apply animations if configured
-        if (this.animationConfig) {
-          this.applyD3Animations();
-        }
-        // Re-attach events after update
-        this.attachEventsToD3Selection();
-      },
+      // Return chart interface
+      return {
+        update: (newData: any) => {
+          // D3-native: just update data, no render() needed
+          this.chartInstance.data(newData).update();
+          // Re-attach events after update
+          this.attachEventsToD3Selection();
+        },
       
       on: (event: string, handler: Function) => {
         this.eventHandlers.set(event, handler);

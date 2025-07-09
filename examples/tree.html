@@ -60,14 +60,15 @@
       ]
     };
 
+    // 🚀 D3-Native: Chart renders automatically when data is bound!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)
+      .withData(data)            // ✨ Auto-renders here!
       .withLabel("label")
       .withSize("amount")
-      .withColor("category")         // Color by category to show grouping
+      .withColor("category")     // Color by category to show grouping
       .withType("tree")
-      .withAnimations("gentle")      // Pure D3 staggered entrance animations
-      .render();
+      .withAnimations("gentle")  // Pure D3 staggered entrance animations
+      .build();                  // Returns live chart (already rendered)
   </script>
 </body>
 </html>

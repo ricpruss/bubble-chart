@@ -53,15 +53,16 @@
     function update(){
       const sectorData = allData.filter(d=>d.sector===currentSector).slice(0, 15); // Limit to 15 for readability
       
-      // Create or update chart with fluent API
+      // Create or update chart with D3-native API
       if (!chart) {
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         chart = BubbleChart.create('#orbit-container')
-          .withData(sectorData)
+          .withData(sectorData)      // ✨ Auto-renders here!
           .withLabel('label')
           .withSize('size')
-          .withColor('sector')  // Color by sector
+          .withColor('sector')       // Color by sector
           .withType('orbit')
-          .render();
+          .build();                  // Returns live chart (already rendered)
       } else {
         // Update existing chart with D3-native update
         chart.update(sectorData);

@@ -29,15 +29,16 @@ const data: LanguageDatum[] = [
   { id: 'lang-3', label: 'Java', size: 48130171902, count: 65, category: 'Enterprise' },
 ];
 
-// Create chart using fluent API - automatic field detection
+// Create chart using D3-native fluent API - automatic field detection
+// 🚀 D3-Native: Chart renders automatically when data is bound!
 const chart = BubbleChart.create('#bubble-chart')
-  .withData(data as BubbleChartData[])
+  .withData(data as BubbleChartData[])    // ✨ Auto-renders here!
   .withLabel('label')
   .withSize('size')
   .withType('wave')
   .withColor('category')  // Color by category for visual distinction
   .withPercentage((d: BubbleChartData) => (d as unknown as LanguageDatum).count / 100)
-  .render();
+  .build();                               // Returns live chart (already rendered)
 
 // Example of adding event handlers for DOM interactions
 // Note: Event handling simplified for D3-native API

@@ -60,13 +60,42 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
         this.config.bubble?.padding || 5
       );
 
-      // Create bubble groups using D3's native data binding
+      // Create key function for D3 data joins - enables proper enter/update/exit lifecycle
+      const keyFunction = this.config.keyFunction 
+        ? (d: any) => {
+            // The data structure is nested: d.data.data contains the original data
+            const originalData = d.data.data || d.data;
+            return this.config.keyFunction!(originalData);
+          }
+        : undefined;
+
+      // Create bubble groups using D3's native data binding with key function
       const bubbleGroups = svg.selectAll('.bubble')
-        .data(layoutNodes)
-        .join('g')
-        .attr('class', 'bubble-chart bubble')
-        .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`)
-        .style('cursor', 'pointer');
+        .data(layoutNodes, keyFunction)
+        .join(
+          // ENTER: New bubbles
+          (enter: any) => {
+            return enter.append('g')
+              .attr('class', 'bubble-chart bubble')
+              .style('cursor', 'pointer')
+              .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+          },
+          // UPDATE: Existing bubbles
+          (update: any) => {
+            return update
+              .transition()
+              .duration(this.config.animation?.update?.duration || 800)
+              .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
+          },
+          // EXIT: Bubbles to remove
+          (exit: any) => {
+            return exit
+              .transition()
+              .duration(this.config.animation?.exit?.duration || 400)
+              .style('opacity', 0)
+              .remove();
+          }
+        );
 
       // Create color scale using D3DataUtils
       const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
@@ -83,51 +112,97 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
       const radiusExtent = d3.extent(layoutNodes, (d: any) => d.r) as [number, number];
       const fontScale = D3DataUtils.createFontScale(radiusExtent, [10, 18]);
 
-      // Create circles
-      bubbleGroups.append('circle')
-        .attr('r', (d: any) => d.r)
-        .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
-        .attr('opacity', 0.8);
+      // Handle circles with proper enter/update/exit
+      bubbleGroups.selectAll('circle')
+        .data((d: any) => [d]) // One circle per bubble group
+        .join(
+          (enter: any) => {
+            return enter.append('circle')
+              .attr('r', 0)
+              .style('opacity', 0)
+              .attr('fill', (d: any) => {
+                const color = d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4');
+                return color;
+              })
+              .attr('stroke', '#fff')
+              .attr('stroke-width', 2);
+          },
+          (update: any) => update
+            .transition()
+            .duration(this.config.animation?.update?.duration || 800)
+            .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
+            .attr('r', (d: any) => d.r)
+            .style('opacity', 0.8),
+          (exit: any) => exit
+            .transition()
+            .duration(this.config.animation?.exit?.duration || 400)
+            .attr('r', 0)
+            .style('opacity', 0)
+            .remove()
+        );
 
-      // Create labels
-      bubbleGroups.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .style('font-size', (d: any) => fontScale(d.r))
-        .style('font-weight', 'bold')
-        .style('fill', '#333')
-        .style('pointer-events', 'none')
-        .text((d: any) => {
-          const label = d.data.label;
-          return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
-        });
+      // Handle labels with proper enter/update/exit
+      bubbleGroups.selectAll('text')
+        .data((d: any) => [d]) // One label per bubble group
+        .join(
+          (enter: any) => enter.append('text')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .style('font-size', (d: any) => fontScale(d.r))
+            .style('font-weight', 'bold')
+            .style('fill', '#333')
+            .style('pointer-events', 'none')
+            .style('opacity', 0)
+            .text((d: any) => {
+              const label = d.data.label;
+              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+            }),
+          (update: any) => update
+            .transition()
+            .duration(this.config.animation?.update?.duration || 800)
+            .style('font-size', (d: any) => fontScale(d.r))
+            .style('opacity', 1)
+            .text((d: any) => {
+              const label = d.data.label;
+              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+            }),
+          (exit: any) => exit
+            .transition()
+            .duration(this.config.animation?.exit?.duration || 400)
+            .style('opacity', 0)
+            .remove()
+        );
 
       // Attach event handling
       this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
 
-      // Apply entrance animations using D3 transitions
+      // Apply entrance animations to newly entered elements
       if (this.config.animation) {
         const duration = this.config.animation?.enter?.duration || 800;
         const staggerDelay = this.config.animation?.enter?.stagger || 0;
         
-        // Animate circles
-        bubbleGroups.select('circle')
-          .attr('r', 0)
-          .style('opacity', 0)
+        // Animate all circles (they start with r=0 and opacity=0)
+        bubbleGroups.selectAll('circle')
           .transition()
           .delay((_d: any, i: number) => i * staggerDelay)
           .duration(duration)
           .attr('r', (d: any) => d.r)
           .style('opacity', 0.8);
 
-        // Animate labels
-        bubbleGroups.select('text')
-          .style('opacity', 0)
+        // Animate all labels (they start with opacity=0)
+        bubbleGroups.selectAll('text')
           .transition()
           .delay((_d: any, i: number) => i * staggerDelay + (staggerDelay > 0 ? 200 : 0))
           .duration(duration / 2)
+          .style('opacity', 1);
+      } else {
+        // No animations - set final values immediately
+        
+        bubbleGroups.selectAll('circle')
+          .attr('r', (d: any) => d.r)
+          .style('opacity', 0.8);
+        
+        bubbleGroups.selectAll('text')
           .style('opacity', 1);
       }
     } catch (error) {

@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <title>Event Handling Test</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
-  <script src="../../dist/bubble-chart.min.js?v=20250703100100"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
   <style>
     body { font-family: monospace; margin: 20px; }
     .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
@@ -78,14 +78,15 @@
         log('=== EVENT HANDLING TEST START ===');
         log(`Test data: ${testData.length} items`);
 
-        log('Step 1: Creating chart with event handlers');
+        log('Step 1: Creating chart with D3-native API');
+        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#chart')
           .withLabel('name')
           .withSize('value')
           .withDimensions(600, 400)
           .withColor(d3.scaleOrdinal(d3.schemeTableau10))
-          .withData(testData)
-          .render();
+          .withData(testData)    // ✨ Auto-renders here!
+          .build();              // Returns live chart (already rendered)
 
         log('Step 2: Setting up event handlers');
         

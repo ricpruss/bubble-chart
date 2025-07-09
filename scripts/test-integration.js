@@ -246,16 +246,16 @@ class TestRunner {
       // Set data
       builder.data(testData);
       
-      // Test rendering
+      // Test rendering with D3-native approach
       try {
-        const renderResult = builder.render();
+        const renderResult = builder.update();
         
-        this.addTest('Render Method Execution', true, 'Builder rendered without errors');
+        this.addTest('Rendering Execution', true, 'Builder rendered without errors');
         
         // Test render method chaining
-        this.addTest('Render Method Chaining',
+        this.addTest('Rendering Method Chaining',
           renderResult === builder,
-          'Builder returns this after render'
+          'Builder returns this after update'
         );
         
         // Test DOM structure (Note: JSDOM has limitations with D3 SVG rendering)
@@ -291,17 +291,17 @@ class TestRunner {
       const builder = new BubbleBuilder(testConfig);
       
       // Test core methods availability
-      const coreMethods = ['data', 'render', 'on', 'update', 'getConfig'];
+      const coreMethods = ['data', 'on', 'update', 'getConfig'];
       const availableMethods = coreMethods.filter(method => typeof builder[method] === 'function');
       
       this.addTest('Core Methods Available',
-        availableMethods.length >= 3, // At least data, render, and one other
+        availableMethods.length >= 3, // At least data, update, and one other
         `Available methods: ${availableMethods.join(', ')}`
       );
       
       // Test method chaining
       builder.data(testData);
-      const chainResult = builder.data(testData).render();
+      const chainResult = builder.data(testData).update();
       
       this.addTest('Method Chaining',
         chainResult === builder,
@@ -361,11 +361,11 @@ class TestRunner {
   async testErrorHandling(BubbleBuilder) {
     
     try {
-      // Test invalid container - should throw error when render() is called
+      // Test invalid container - should throw error when update() is called
       try {
         const builder = new BubbleBuilder({ container: '#nonexistent' });
         builder.data(testData);  // This should work
-        builder.render();        // This should throw container error
+        builder.update();        // This should throw container error
         
         // If we get here, the error was handled gracefully
         this.addTest('Invalid Container Handling',
@@ -448,7 +448,7 @@ async function runPerformanceTest() {
     const start = performance.now();
     const builder = new BubbleBuilder(config);
     builder.data(performanceData);
-    builder.render();
+    builder.update();
     const end = performance.now();
     
     const time = end - start;

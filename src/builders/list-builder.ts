@@ -239,7 +239,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
    * Update data and re-render
    */
   updateData(newData: T[]): void {
-    this.data(newData).render();
+    this.data(newData).update();
   }
 
   /**
@@ -257,6 +257,6 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       this.config.listBubble = { minRadius: 5, maxRadius: 25, padding: 10, textWidth: 200 };
     }
     Object.assign(this.config.listBubble, config);
-    if (this.chartData.length > 0) this.render();
+    if (this.chartData.length > 0) this.update();
   }
 } 
