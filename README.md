@@ -8,8 +8,10 @@ The goal was to move a code base to a different style of API in  a different lan
 
 ## Install
 
+This package is not yet on `npm`. To install from the official git repository:
+
 ```bash
-npm install bubble-chart
+npm install git+https://github.com/ric/bubble-chart.git
 ```
 
 ## Overview
