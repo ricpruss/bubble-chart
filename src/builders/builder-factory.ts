@@ -1,4 +1,4 @@
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import { BubbleBuilder } from './bubble-builder.js';
 import { TreeBuilder } from './tree-builder.js';

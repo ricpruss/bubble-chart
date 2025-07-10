@@ -4,7 +4,7 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 
 /**
  * Chart type options available in the library

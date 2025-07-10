@@ -3,32 +3,9 @@
  * Entry point for all type exports
  */
 
-// Data types
-export type { 
-  BubbleDataPoint,
-  FlatBubbleData,
-  HierarchicalBubbleData,
-  TimeSeriesValue,
-  TimeSeriesBubbleData,
-  EconomicTimeSeriesData,
-  BubbleChartData,
-  FlatDataArray,
-  TimeSeriesDataArray,
-  EconomicDataArray,
-  DataAccessor,
-  ExtractDataType
-} from '../data/index.js';
-
-export {
-  isFlatBubbleData,
-  isHierarchicalBubbleData,
-  isTimeSeriesBubbleData,
-  isFlatDataArray,
-  isHierarchicalData,
-  isTimeSeriesDataArray,
-  getNumericValue,
-  getStringValue
-} from '../data/index.js';
+// Minimal data constraint for D3-native approach
+// Any object with indexable properties that D3 can work with
+export type BubbleChartData = Record<string, any>;
 
 // Event types
 export type { 

@@ -1,4 +1,4 @@
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';

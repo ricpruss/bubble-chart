@@ -6,24 +6,11 @@
 // SVG Management
 export { SVGManager, type SVGElements, type SVGDimensions } from './svg-manager.js';
 
-// Data Processing
-export { 
-  DataProcessor, 
-  type ProcessedDataPoint 
-} from './data-processor.js';
-
 // Interaction Management
 export { 
   InteractionManager, 
   type TooltipManager 
 } from './interaction-manager.js';
-
-// Rendering Pipeline
-export { 
-  RenderingPipeline, 
-  type RenderingContext, 
-  type LayoutNode 
-} from './rendering-pipeline.js';
 
 
 /**
@@ -32,13 +19,12 @@ export {
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import type { BubbleEventHandlers } from '../events/index.js';
 import { SVGManager } from './svg-manager.js';
-import { DataProcessor } from './data-processor.js';
 import { InteractionManager } from './interaction-manager.js';
-import { RenderingPipeline } from './rendering-pipeline.js';
+import { D3DataUtils } from '../d3/index.js';
 
 /**
  * Base chart builder with core functionality
@@ -53,8 +39,6 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
   
   // Building blocks - initialized on first use
   protected svgManager!: SVGManager;
-  protected dataProcessor!: DataProcessor<T>;
-  protected renderingPipeline!: RenderingPipeline<T>;
   protected interactionManager!: InteractionManager<T>;
 
   constructor(config: BubbleChartOptions) {
@@ -62,7 +46,6 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     
     // Initialize core building blocks immediately
     this.svgManager = new SVGManager();
-    this.dataProcessor = new DataProcessor<T>(config);
   }
 
   /**
@@ -87,7 +70,7 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     }
 
     this.chartData = data;
-    this.processedData = this.dataProcessor.process(data);
+    this.processedData = D3DataUtils.processForVisualization(data, this.config.label || 'label', this.config.size || 'size', undefined);
     return this;
   }
 
@@ -150,16 +133,8 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
    */
   private initialize(): void {
     // Initialize SVG (svgManager already created in constructor)
-    const svgElements = this.svgManager.initialize(this.config);
+    this.svgManager.initialize(this.config);
     
-    // Initialize rendering pipeline
-    this.renderingPipeline = new RenderingPipeline<T>({
-      svg: svgElements.svg,
-      width: svgElements.dimensions.width,
-      height: svgElements.dimensions.height,
-      config: this.config
-    });
-
     // Initialize interaction manager
     this.initializeInteractionManager();
 
@@ -211,22 +186,14 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
   updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
-    // Update building blocks with new config
-    if (this.dataProcessor) {
-      this.dataProcessor = new DataProcessor<T>(this.config);
-      if (this.chartData.length) {
-        this.processedData = this.dataProcessor.process(this.chartData);
-      }
-    }
-    
-    // Update rendering pipeline context if it exists
-    if (this.renderingPipeline) {
-      this.renderingPipeline = new RenderingPipeline<T>({
-        svg: this.svgManager.getElements()?.svg,
-        width: this.svgManager.getElements()?.dimensions.width || this.config.width || 500,
-        height: this.svgManager.getElements()?.dimensions.height || this.config.height || 500,
-        config: this.config
-      });
+    // Re-process data if we have any
+    if (this.chartData.length) {
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData, 
+        this.config.label || 'label', 
+        this.config.size || 'size', 
+        undefined
+      );
     }
     
     return this;

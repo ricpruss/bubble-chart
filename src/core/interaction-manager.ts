@@ -5,11 +5,10 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions, TooltipItem } from '../config/index.js';
 import type { BubbleEventHandlers, DataEventHandler } from '../events/index.js';
 // import { createD3EventHandler } from '../config/events.js';
-import type { ProcessedDataPoint } from './data-processor.js';
 
 export interface TooltipManager {
   show(event: MouseEvent, data: any, items: TooltipItem[]): void;
@@ -47,7 +46,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
    * @param bubbles - D3 selection of bubble groups
    * @param data - Processed data points
    */
-  attachBubbleEvents(bubbles: any, data: ProcessedDataPoint<T>[]): void {
+  attachBubbleEvents(bubbles: any, data: any[]): void {
     // Mouse events
     if (this.eventHandlers.click) {
       bubbles.on('click', this.createEventHandler('click', data));
@@ -86,7 +85,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
    */
   private createEventHandler(
     eventType: keyof BubbleEventHandlers<T>,
-    _data: ProcessedDataPoint<T>[]
+    _data: any[]
   ): (event: MouseEvent, d: any, _i: number) => void {
     const handler = this.eventHandlers[eventType] as DataEventHandler<T>;
     
@@ -117,7 +116,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
    * @param bubbles - D3 selection of bubble groups
    * @param data - Processed data points
    */
-  private attachTooltipEvents(bubbles: any, data: ProcessedDataPoint<T>[]): void {
+  private attachTooltipEvents(bubbles: any, data: any[]): void {
     if (!this.tooltip) return;
 
     const extractDataItem = (d: any, i: number): T => {
@@ -303,7 +302,7 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
    * @param bubbles - D3 selection of bubble groups
    * @param data - Processed data points
    */
-  addKeyboardNavigation(bubbles: any, data: ProcessedDataPoint<T>[]): void {
+  addKeyboardNavigation(bubbles: any, data: any[]): void {
     // Make bubbles focusable
     bubbles.attr('tabindex', 0);
 

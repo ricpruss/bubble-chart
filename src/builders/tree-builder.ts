@@ -1,4 +1,4 @@
-import type { BubbleChartData, HierarchicalBubbleData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';
@@ -14,7 +14,7 @@ import * as d3 from 'd3';
  * 
  * @template T - The data type, must extend BubbleChartData
  */
-export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> extends BaseChartBuilder<T> implements ChartHandle<T> {
+export class TreeBuilder<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> implements ChartHandle<T> {
   /**
    * D3.js pack layout instance for hierarchical positioning
    */

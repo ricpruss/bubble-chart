@@ -1,68 +1,9 @@
-import type { BubbleChartData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
+import { D3DataUtils } from '../d3/index.js';
 import * as d3 from 'd3';
 
-/**
- * D3-native data processing utilities
- * Leverages d3-array, d3-scale, and d3-format for cleaner data handling
- */
-class D3DataUtils {
-  /**
-   * Extract values using D3's native accessor pattern
-   */
-  static createAccessor<T>(accessor: string | ((d: T) => any)): (d: T) => any {
-    return typeof accessor === 'function' ? accessor : (d: T) => (d as any)[accessor];
-  }
-
-  /**
-   * Create scale using D3's native scale patterns
-   */
-  static createRadiusScale(data: any[], sizeAccessor: (d: any) => number, range: [number, number] = [5, 50]) {
-    const extent = d3.extent(data, sizeAccessor) as [number, number];
-    return d3.scaleSqrt().domain(extent).range(range);
-  }
-
-  /**
-   * Process data using D3's native patterns - much simpler than our custom processor
-   * Enhanced to handle color extraction
-   */
-  static processForVisualization<T extends BubbleChartData>(
-    data: T[], 
-    labelAccessor: string | string[] | ((d: T) => string),
-    sizeAccessor: string | string[] | ((d: T) => number),
-    colorAccessor?: string | string[] | ((d: T) => string)
-  ): Array<{ data: T; label: string; size: number; colorValue?: string }> {
-    // Handle array accessors by taking the first valid one, with fallbacks
-    const finalLabelAccessor = Array.isArray(labelAccessor) 
-      ? labelAccessor[0] || 'label' 
-      : labelAccessor || 'label';
-    const finalSizeAccessor = Array.isArray(sizeAccessor) 
-      ? sizeAccessor[0] || 'size' 
-      : sizeAccessor || 'size';
-    const finalColorAccessor = colorAccessor 
-      ? (Array.isArray(colorAccessor) ? colorAccessor[0] : colorAccessor)
-      : null;
-    
-    const getLabelValue = this.createAccessor(finalLabelAccessor);
-    const getSizeValue = this.createAccessor(finalSizeAccessor);
-    const getColorValue = finalColorAccessor ? this.createAccessor(finalColorAccessor) : null;
-    
-    return data.map(d => {
-      const result: { data: T; label: string; size: number; colorValue?: string } = {
-        data: d,
-        label: String(getLabelValue(d) || 'Unknown'),
-        size: Number(getSizeValue(d) || 1)
-      };
-      
-      if (getColorValue) {
-        result.colorValue = String(getColorValue(d) || 'default');
-      }
-      
-      return result;
-    });
-  }
-}
 
 /**
  * Interface for orbital node data with physics properties
@@ -320,9 +261,19 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
   override updateOptions(newConfig: Partial<BubbleChartOptions<T>>): this {
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
-    // Update building blocks with new config if needed
-    if (this.dataProcessor && this.chartData.length) {
-      this.processedData = this.dataProcessor.process(this.chartData);
+    // Re-process data if we have any
+    if (this.chartData.length) {
+      const colorConfig = this.config.color;
+      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
+        ? colorConfig as (string | ((d: BubbleChartData) => string))
+        : undefined;
+      
+      this.processedData = D3DataUtils.processForVisualization(
+        this.chartData,
+        this.config.label || 'label',
+        this.config.size || 'size',
+        colorAccessor
+      );
     }
     
     return this;

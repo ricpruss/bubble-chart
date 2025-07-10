@@ -241,16 +241,11 @@ export { BuilderFactory } from './builders/builder-factory.js';
 // Export core building blocks for advanced usage
 export {
   SVGManager,
-  DataProcessor,
   InteractionManager,
-  RenderingPipeline,
   BaseChartBuilder,
   type SVGElements,
   type SVGDimensions,
-  type ProcessedDataPoint,
-  type TooltipManager,
-  type RenderingContext,
-  type LayoutNode
+  type TooltipManager
 } from './core/index.js';
 
 // Re-export individual builders for advanced usage

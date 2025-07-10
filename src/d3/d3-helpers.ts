@@ -4,7 +4,7 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData, HierarchicalBubbleData } from '../data/index.js';
+import type { BubbleChartData } from '../types/index.js';
 
 /**
  * Common D3.js selection types for SVG elements
@@ -35,8 +35,8 @@ export type BandScale = d3.ScaleBand<string>;
  * D3.js layout types for different chart configurations
  */
 export type PackLayout<T = BubbleChartData> = d3.PackLayout<T>;
-export type HierarchyNode<T = HierarchicalBubbleData> = d3.HierarchyNode<T>;
-export type PackHierarchyNode<T = HierarchicalBubbleData> = d3.HierarchyCircularNode<T>;
+export type HierarchyNode<T = BubbleChartData> = d3.HierarchyNode<T>;
+export type PackHierarchyNode<T = BubbleChartData> = d3.HierarchyCircularNode<T>;
 
 /**
  * D3.js transition types
