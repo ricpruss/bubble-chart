@@ -36,14 +36,16 @@
   <script>
     try {
       // Dataset provided as global `companiesFlat` from companies.js
-      // 🚀 D3-Native: Chart renders automatically when data is bound!
+      // 🚀 D3-Native: Create list chart and update with data
       const chart = BubbleChart.create('#list-container')
-        .withData(window.companiesFlat)  // ✨ Auto-renders here!
         .withLabel('name')
         .withSize('size')
         .withType('list')
         .withDimensions(700, undefined)
-        .build();                        // Returns live chart (already rendered)
+        .build();
+      
+      // Update chart with data
+      chart.update(window.companiesFlat);
       
       document.getElementById('status').innerHTML = '✅ Chart rendered successfully!';
       document.getElementById('status').style.background = '#e7f6e7';

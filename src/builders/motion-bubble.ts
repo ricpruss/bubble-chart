@@ -142,8 +142,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
           return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
         });
 
-      // Use InteractionManager for event handling
-      this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
+      // Attach events using centralized InteractionManager
+      this.attachEvents(bubbleGroups);
 
       // Start force simulation for continuous motion
       this.startForceSimulation(motionNodes, bubbleGroups, dimensions);
@@ -188,29 +188,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     }
   }
 
-  /**
-   * Update with new data
-   * @param data - New data to display
-   */
-  updateData(data: T[]): void {
-    this.chartData = data;
-    // Process data using D3DataUtils instead of DataProcessor
-    const colorConfig = this.config.color;
-    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-      ? colorConfig as (string | ((d: BubbleChartData) => string))
-      : undefined;
-    
-    this.processedData = D3DataUtils.processForVisualization(
-      data,
-      this.config.label || 'label',
-      this.config.size || 'size',
-      colorAccessor
-    );
-    
-    // Re-render with new data
-    this.stopSimulation();
-    this.update();
-  }
 
   /**
    * Get current motion configuration
@@ -252,6 +229,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     return this;
   }
 
+
   /**
    * Clean up resources and stop simulation
    */
@@ -259,4 +237,4 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     this.stopSimulation();
     super.destroy();
   }
-} 
+}

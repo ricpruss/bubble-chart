@@ -53,24 +53,25 @@
         log(`Test data: ${testData.length} items`);
 
         log('Step 1: Creating BubbleChart with D3-native fluent interface');
-        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#chart')
           .withLabel('name')
           .withSize('value')
           .withDimensions(600, 400)
-          .withColor(d3.scaleOrdinal(d3.schemeCategory10))
-          .withData(testData)    // ✨ Auto-renders here!
-          .build();              // Returns live chart (already rendered)
+          .withColor('category')
+          .withAnimations('gentle')
+          .build();
 
-        log('Step 2: Chart created and rendered');
-        // Access chart options through the builder instance
-        const builder = chart.getBuilder();
-        log(`Chart options: ${JSON.stringify(builder.options(), null, 2)}`);
+        log('Step 2: Updating chart with data');
+        chart.update(testData);
+        
+        log('Step 3: Chart rendered');
+        const chartOptions = chart.options();
+        log(`Chart options: ${JSON.stringify(chartOptions, null, 2)}`);
 
         // Wait for rendering to complete
         await new Promise(resolve => setTimeout(resolve, 1000));
 
-        log('Step 3: Verifying DOM elements');
+        log('Step 4: Verifying DOM elements');
         const svg = document.querySelector('#chart svg');
         const circles = document.querySelectorAll('#chart circle');
         
@@ -100,7 +101,7 @@
           }
         });
 
-        log('Step 4: Checking text labels');
+        log('Step 5: Checking text labels');
         const labels = document.querySelectorAll('#chart text');
         log(`Text labels: ${labels.length} found`);
         

@@ -83,13 +83,15 @@
       ];
 
       log('=== STEP 1: Creating BubbleChart with D3-native API ===');
-      // 🚀 D3-Native: Chart renders automatically when data is bound!
       const chart = BubbleChart.create("#chart")
         .withLabel("label")
         .withSize("size")
         .withDimensions(400, 200)
-        .withData(data)    // ✨ Auto-renders here!
-        .build();          // Returns live chart (already rendered)
+        .withAnimations('gentle')
+        .build();
+      
+      // Initial data update
+      chart.update(data);
 
       log('=== STEP 2: Checking Initial Config ===');
       const builder = chart.getBuilder();
@@ -110,12 +112,14 @@
       log(`Fluent interface creation completed in ${(renderEnd - renderStart).toFixed(1)}ms`);
       
       log('=== STEP 6: Checking Final Config ===');
+      log(`Validating animations on data update...`);
+      chart.update(data);  // Reinvoke update to monitor transitions
       const config3 = builder.options();
       log(`Final animation config: ${JSON.stringify(config3.animation)}`);
 
       log('=== STEP 7: Checking Data ===');
       // D3-native API doesn't expose store, data is managed via update() method
-      log(`Data was set via .withData() - 3 items: A, B, C`);
+      log(`Data was set via .update() - 3 items: A, B, C`);
       log('D3-native API uses direct data binding, no exposed store');
       
 

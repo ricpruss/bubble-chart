@@ -29,15 +29,17 @@
       { "label": "Helium", "size": 70, "count": 70 }
     ];
 
-    // 🚀 D3-Native: Liquid animations render automatically on data binding
+    // 🚀 D3-Native: Create liquid bubble chart and update with data
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)                        // ✨ Auto-renders liquid bubbles!
       .withLabel("label")
       .withSize("size")
       .withColor("label")
       .withType("liquid")                    // Liquid gauge animations
       .withPercentage((d) => d.count / 100)  // Fill level calculation
-      .build();                              // Returns live animated chart
+      .build();
+    
+    // Update chart with data
+    chart.update(data);
   </script>
 
 </body>

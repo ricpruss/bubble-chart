@@ -35,14 +35,16 @@
     ];
     let currentKey = 'size';
 
-    // 🚀 D3-Native: Chart renders automatically when data is bound
+    // 🚀 D3-Native: Create chart and update with data
     let chart = BubbleChart.create('#toggle-container')
-      .withData(dataset)        // ✨ Auto-renders immediately!
       .withLabel('label')
       .withSize(currentKey)
       .withColor('sector')      // Color by sector for better visualization
       .withAnimations('smooth')
-      .build();                 // Returns live chart (already rendered)
+      .build();
+    
+    // Update chart with data
+    chart.update(dataset);
 
     // Create toggle buttons
     const controls = d3.select('#controls');
@@ -74,12 +76,14 @@
       
       // Create new chart with updated size metric
       chart = BubbleChart.create('#toggle-container')
-        .withData(dataset)
         .withLabel('label')
         .withSize(currentKey)      // Use the updated size key
         .withColor('sector')
         .withAnimations('smooth')
         .build();
+      
+      // Update chart with data
+      chart.update(dataset);
     }
   </script>
 </body>

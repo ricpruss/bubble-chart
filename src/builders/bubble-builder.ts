@@ -173,8 +173,8 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
             .remove()
         );
 
-      // Attach event handling
-      this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
+      // Attach events using centralized InteractionManager
+      this.attachEvents(bubbleGroups);
 
       // Apply entrance animations to newly entered elements
       if (this.config.animation) {
@@ -227,4 +227,5 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     return this;
   }
-} 
+
+}

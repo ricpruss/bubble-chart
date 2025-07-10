@@ -58,7 +58,13 @@
             .withAnimations('gentle') // Add animations for visibility
             .build();
           
-          currentChart.update(testData);
+currentChart.on('click', (dataItem, event, target) => {
+            console.log('Clicked:', dataItem);
+          }).on('mouseover', (dataItem, event, target) => {
+            console.log('Mouseover:', dataItem);
+          }).on('mouseout', (dataItem, event, target) => {
+            console.log('Mouseout:', dataItem);
+          }).update(testData);
           setStatus('✅ D3-native API: Basic chart created successfully');
         } else {
           setStatus('❌ BubbleChart API not available');
@@ -93,7 +99,13 @@
           const addNext = () => {
             if (index < testData.length) {
               currentData.push(testData[index]);
-              currentChart.update(currentData);
+currentChart.on('click', (dataItem, event, target) => {
+                console.log('Clicked:', dataItem);
+              }).on('mouseover', (dataItem, event, target) => {
+                console.log('Mouseover:', dataItem);
+              }).on('mouseout', (dataItem, event, target) => {
+                console.log('Mouseout:', dataItem);
+              }).update(currentData);
               setStatus(`Added ${testData[index].name} (${index + 1}/${testData.length})`);
               index++;
               setTimeout(addNext, 1000);
@@ -126,7 +138,13 @@
             .withAnimations('gentle') // Add animations for visibility
             .build();
           
-          currentChart.update(testData);
+currentChart.on('click', (dataItem, event, target) => {
+            console.log('Clicked:', dataItem);
+          }).on('mouseover', (dataItem, event, target) => {
+            console.log('Mouseover:', dataItem);
+          }).on('mouseout', (dataItem, event, target) => {
+            console.log('Mouseout:', dataItem);
+          }).update(testData);
           setStatus('✅ D3-native API: Motion chart created successfully');
         } else {
           setStatus('❌ BubbleChart API not available');

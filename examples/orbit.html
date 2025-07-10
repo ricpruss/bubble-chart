@@ -31,17 +31,21 @@
       { "label": "Saturn", "size": 35 }
     ];
 
-    // 🚀 D3-Native: Chart renders automatically when data is bound!
+    // 🚀 D3-Native: Create orbit chart and update with data
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)          // ✨ Auto-renders here!
       .withLabel("label")
       .withSize("size")
       .withColor("label")
       .withType("orbit")
-      .build();                // Returns live chart (already rendered)
+      .build();
+    
+    // Update chart with data
+    chart.update(data);
 
     // Increase orbit speed for clearer motion (1.0 = normal speed)
-    chart.setSpeedMultiplier(1.0);
+    if (chart.setSpeedMultiplier) {
+      chart.setSpeedMultiplier(1.0);
+    }
   </script>
 </body>
 </html> 

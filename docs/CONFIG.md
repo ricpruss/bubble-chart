@@ -5,30 +5,34 @@
 ## Quick Start
 
 ```typescript
-import { BubbleChart } from 'bubble-chart';
+import BubbleChart from 'bubble-chart';
 
-// 🚀 D3-Native: Auto-renders when data is bound
+// Create chart and update with data
 const chart = BubbleChart.create('#chart')
-  .withData(companies)  // ✨ Chart renders automatically!
-  .build();             // Returns live chart
+  .build();
+
+// Update with data to render the chart
+chart.update(companies);
 
 // Enhanced: Override specific fields and add interactions
 const chart = BubbleChart.create('#chart')
-  .withData(companies)   // ✨ Auto-renders immediately
   .withSize('revenue')
   .withColor('sector')
   .withAnimations('gentle')
   .withDimensions(800, 600)
-  .build()               // Returns live chart instance
+  .build();
+
+// Update with data to render and add event handlers
+chart.update(companies)
   .on('click', (data) => console.log(`Clicked: ${data.name}`));
 ```
 
 ## 🚀 D3-Native Philosophy
 
-This library embraces D3's core principle: **data drives the DOM**. Charts render automatically when data is bound, using D3's native enter/update/exit patterns.
+This library embraces D3's core principle: **data drives the DOM**. Charts render when you call `update()` with your data, using D3's native enter/update/exit patterns.
 
 ### Key D3-Native Concepts:
-- **Automatic Rendering**: Charts render when `.withData()` is called
+- **Explicit Rendering**: Charts render when `.update()` is called
 - **Streaming Updates**: Use `.update()` for smooth data transitions
 - **Key Functions**: Essential for proper D3 data binding
 - **Enter/Update/Exit**: D3's natural data lifecycle
@@ -37,9 +41,11 @@ This library embraces D3's core principle: **data drives the DOM**. Charts rende
 ```typescript
 // ✅ D3-Native Pattern (Recommended)
 const chart = BubbleChart.create('#chart')
-  .withData(companies)  // ✨ Auto-renders here!
   .withKey(d => d.id)   // ✨ Key function for data binding
-  .build();             // Returns live chart
+  .build();
+
+// Render the chart with data
+chart.update(companies);
 
 // For streaming updates:
 let currentData = [];
@@ -52,11 +58,9 @@ chart.update(currentData);  // ✨ D3-native streaming
 ### Core Methods - D3-Native Patterns
 ```typescript
 BubbleChart.create(container: string)      // Create chart builder
-  .withData(data: T[])                     // Bind data (triggers auto-render)
   .build()                                 // Returns live chart instance
 
-// 🚀 D3-Native: Charts render automatically when data is bound!
-// For streaming updates, use chart.update(newData)
+// For rendering and streaming updates, use chart.update(newData)
 ```
 
 ### Data Mapping (Override Auto-Detection)
@@ -91,10 +95,12 @@ BubbleChart.create(container: string)      // Create chart builder
 
 ### Basic Visualization - D3-Native Data Binding
 ```typescript
-// Minimal configuration - intelligent defaults with auto-rendering
+// Minimal configuration - intelligent defaults
 const chart = BubbleChart.create('#chart')
-  .withData(companies)  // 🚀 Data binding triggers immediate render
-  .build();             // Returns live chart (already rendered)
+  .build();
+
+// Update with data to render
+chart.update(companies);
 
 // D3-native auto-detection:
 // ✓ size: largest numeric field (e.g., 'revenue')  
@@ -102,22 +108,21 @@ const chart = BubbleChart.create('#chart')
 // ✓ color: categorical field (e.g., 'sector')
 // ✓ animations: optimized for data size
 // ✓ tooltips: key fields automatically
-// ✓ rendering: automatic on data binding (D3 pattern)
 ```
 
 ### Custom Configuration - D3-Native Fluent API
 ```typescript
 const chart = BubbleChart.create('#chart')
-  .withData(companies)                     // 🚀 Auto-renders on data binding
   .withSize('marketCap')                   // Use market cap for sizing
   .withLabel(d => `${d.company} (${d.ceo})`) // Custom label function
   .withColor('sector')                     // Color by sector  
   .withAnimations('bouncy')                // Playful spring effects
   .withDimensions(1000, 700)               // Custom dimensions
   .withTooltips(['company', 'sector', 'marketCap', 'ceo'])
-  .build();                                // Returns rendered chart instance
+  .build();
 
-// 🚀 D3-Native: No manual .render() needed - data binding triggers rendering!
+// Update with data to render
+chart.update(companies);
 ```
 
 ### D3-Native Streaming Updates
@@ -164,52 +169,62 @@ chart.on('change', (stats) => {
 ### Motion Charts - D3-Native Physics Simulation
 ```typescript
 const chart = BubbleChart.create('#chart')
-  .withData(companies)                     // 🚀 Auto-renders motion chart
   .withType('motion')                      // Motion chart with physics
   .withSize('revenue')
   .withColor('sector')
   .withAnimations('smooth')
-  .build();                                // Returns live animated chart
+  .build();
+
+// Update with data to render
+chart.update(companies);
 ```
 
 ### Wave and Liquid Charts - D3-Native Fluid Animations
 ```typescript
-// Wave bubbles with custom percentage calculation - auto-renders
+// Wave bubbles with custom percentage calculation
 const waveChart = BubbleChart.create('#wave-chart')
-  .withData(elements)                      // 🚀 Auto-renders wave animations
   .withType('wave')
   .withPercentage(d => d.completion / 100) // Fill level based on completion
-  .build();                                // Returns live wave chart
+  .build();
 
-// Liquid gauge with profit margin calculation - auto-renders
+// Update with data to render
+waveChart.update(elements);
+
+// Liquid gauge with profit margin calculation
 const liquidChart = BubbleChart.create('#liquid-chart')
-  .withData(companies)                     // 🚀 Auto-renders liquid gauge
   .withType('liquid')
   .withPercentage(d => d.profits / d.revenue) // Profit margin as fill level
-  .build();                                // Returns live liquid gauge
+  .build();
+
+// Update with data to render
+liquidChart.update(companies);
 ```
 
 ### Hierarchical Data - Tree Charts
 ```typescript
 const treeChart = BubbleChart.create('#tree-chart')
-  .withData(hierarchicalData)              // 🚀 Auto-renders tree structure
   .withType('tree')
   .withLabel('label')
   .withSize('amount')
   .withColor('category')
   .withAnimations('gentle')
-  .build();                                // Returns live tree chart
+  .build();
+
+// Update with data to render
+treeChart.update(hierarchicalData);
 ```
 
 ### Orbit Charts - Planetary Motion
 ```typescript
 const orbitChart = BubbleChart.create('#orbit-chart')
-  .withData(planets)                       // 🚀 Auto-renders orbital motion
   .withType('orbit')
   .withLabel('name')
   .withSize('mass')
   .withColor('type')
-  .build();                                // Returns live orbit chart
+  .build();
+
+// Update with data to render
+orbitChart.update(planets);
 ```
 
 ## Runtime Control
@@ -252,27 +267,7 @@ chart.destroy();                                 // Clean up and remove chart
 The library automatically analyzes your data to provide intelligent defaults:
 
 ```typescript
-// Inspect what the library detected
-const insights = chart.inspectData();
-console.log(insights);
-
-// Example output:
-// {
-//   suggested: {
-//     size: 'Revenue',        // Best numeric field for sizing
-//     label: 'Company',       // Best text field for labels
-//     color: 'Sector'         // Best categorical field for colors
-//   },
-//   fields: {
-//     numeric: ['Revenue', 'MarketCap', 'Employees'],
-//     categorical: ['Sector', 'Country'],
-//     text: ['Company', 'CEO']
-//   },
-//   quality: {
-//     score: 85,              // Data quality score (0-100)
-//     issues: ['12 missing values in Revenue']
-//   }
-// }
+// This feature is not yet available in the D3-native version
 ```
 
 ## Animation Presets
@@ -309,8 +304,10 @@ Use `.on()` for mouse and click events on individual bubbles:
 
 ```typescript
 const chart = BubbleChart.create('#chart')
-  .withData(data)
   .build();
+
+// Update with data to render
+chart.update(data);
 
 // D3-native event handlers
 chart.on('click', (data, event, element) => {
@@ -319,23 +316,15 @@ chart.on('click', (data, event, element) => {
   console.log('SVG Element:', element);
 });
 
-chart.on('mouseenter', (data, event, element) => {
+chart.on('mouseover', (data, event, element) => {
   console.log(`Hovering: ${data.company}`);
   element.style.strokeWidth = '2px';
   element.style.stroke = '#333';
 });
 
-chart.on('mouseleave', (data, event, element) => {
+chart.on('mouseout', (data, event, element) => {
   console.log(`Left: ${data.company}`);
   element.style.stroke = 'none';
-});
-
-chart.on('mouseover', (data, event, element) => {
-  console.log(`Mouse over: ${data.company}`);
-});
-
-chart.on('mouseout', (data, event, element) => {
-  console.log(`Mouse out: ${data.company}`);
 });
 ```
 
@@ -358,12 +347,12 @@ chart.on('destroy', () => {
 
 ### Event Handler Signatures
 
-**DOM Events (`onBubble`)**:
+**DOM Events**:
 ```typescript
 handler: (data: T, event: MouseEvent, element: SVGElement) => void
 ```
 
-**Lifecycle Events (`on`)**:
+**Lifecycle Events**:
 ```typescript
 handler: (payload: any) => void
 ```
@@ -374,10 +363,9 @@ handler: (payload: any) => void
 ```typescript
 let selectedBubble = null;
 
-const chart = BubbleChart.create('#chart')
-  .withData(companies)
-  .render()
-  .onBubble('click', (data, event, element) => {
+const chart = BubbleChart.create('#chart').build();
+chart.update(companies)
+  .on('click', (data, event, element) => {
     // Toggle selection
     if (selectedBubble === data.id) {
       selectedBubble = null;
@@ -397,13 +385,13 @@ const tooltip = d3.select('body').append('div')
   .style('opacity', 0);
 
 chart
-  .onBubble('mouseover', (data, event) => {
+  .on('mouseover', (data, event) => {
     tooltip.transition().duration(200).style('opacity', 0.9);
     tooltip.html(`<strong>${data.company}</strong><br/>Revenue: $${data.revenue}M`)
       .style('left', (event.pageX + 10) + 'px')
       .style('top', (event.pageY - 28) + 'px');
   })
-  .onBubble('mouseout', () => {
+  .on('mouseout', () => {
     tooltip.transition().duration(500).style('opacity', 0);
   });
 ```
@@ -414,33 +402,28 @@ The library uses a centralized configuration system with intelligent defaults:
 
 ```typescript
 // Minimal - relies on intelligent field detection
-const chart = BubbleChart.create('#chart')
-  .withData(dataset)  // Auto-detects optimal label, size, and color fields
-  .render();
+const chart = BubbleChart.create('#chart').build();
+
+// Update with data to render
+chart.update(dataset);
 
 // Progressive enhancement - override specific aspects  
 const chart = BubbleChart.create('#chart')
-  .withData(dataset)
   .withLabel('customName')           // Override auto-detected label
   .withSize('customValue')           // Override auto-detected size
   .withAnimations('energetic')       // Add custom animation preset
-  .render();
+  .build();
 
-// Advanced - full customization
-const chart = BubbleChart.create('#chart')
-  .withData(dataset)
-  .withCustomConfig({                // Direct config object for edge cases
-    tooltip: { mode: 'detailed', maxFields: 8 },
-    streaming: { bufferSize: 1000 },
-    performance: { useWebGL: true }
-  })
-  .render();
+// Update with data to render
+chart.update(dataset);
+
+// Advanced - full customization is done via the fluent API
 ```
 
 ## Complete Example
 
 ```typescript
-import { BubbleChart } from 'bubble-chart';
+import BubbleChart from 'bubble-chart';
 
 // Fortune 1000 companies data
 const companies = [
@@ -451,37 +434,24 @@ const companies = [
 
 // Create intelligent chart with minimal configuration and events
 const chart = BubbleChart.create('#chart')
-  .withData(companies)              // Auto-detects: label=company, size=revenue, color=sector
   .withAnimations('gentle')         // Smooth animations
   .withTooltips(['company', 'sector', 'revenue', 'ceo'])
-  .render()
-  .onBubble('click', (data) => {
-    alert(`${data.company}: $${data.revenue}M revenue`);
+  .build();
+
+// Update with data to render
+chart.update(companies)
+  .on('click', (data) => {
+    showToast(`${data.company}: $${data.revenue}M revenue`);
   })
-  .onBubble('mouseenter', (data, event, element) => {
+  .on('mouseover', (data, event, element) => {
     element.style.strokeWidth = '2px';
     element.style.stroke = '#333';
   })
-  .onBubble('mouseleave', (data, event, element) => {
+  .on('mouseout', (data, event, element) => {
     element.style.stroke = 'none';
-  })
-  .on('change', (stats) => {
-    console.log(`Data updated: ${stats.total} total companies`);
   });
 
-// Dynamic updates
-document.getElementById('revenue-btn').onclick = () => {
-  chart.setSize('revenue');
-};
-
-document.getElementById('add-company').onclick = () => {
-  chart.store.add({ 
-    company: "NewCorp", 
-    revenue: 50000, 
-    sector: "Technology", 
-    ceo: "Jane Doe" 
-  });
-};
+// Dynamic updates are done by managing your data array and calling chart.update()
 ```
 
 ## Testing and Debugging
@@ -496,9 +466,11 @@ const chart = BubbleChart.create('#chart')
   .withLabel('name')
   .withSize('value')
   .withDimensions(600, 400)
-  .withColor(d3.scaleOrdinal(d3.schemeCategory10))
-  .withData(testData)
-  .render();
+  .withColor('category')
+  .build();
+
+// Update with data to render
+chart.update(testData);
 
 // Verify rendering
 setTimeout(() => {
@@ -516,18 +488,22 @@ setTimeout(() => {
 ### Data Update Testing
 
 ```typescript
-// Test reactive store updates
+// Test reactive updates
 const chart = BubbleChart.create('#chart')
-  .withData(initialData)
-  .withStreaming({
-    keyFunction: d => d.id,
-    enterAnimation: { duration: 800, stagger: 50 }
-  })
-  .render();
+  .withKey(d => d.id)
+  .withAnimations({ enter: { duration: 800, stagger: 50 } })
+  .build();
+
+// Initial render
+chart.update(initialData);
 
 // Test data manipulation
-chart.store.clear();
-chart.store.addMany(newData);
+let currentData = [...initialData];
+currentData = []; // Clear data
+chart.update(currentData);
+
+currentData.push(...newData); // Add new data
+chart.update(currentData);
 
 // Verify update
 setTimeout(() => {
@@ -540,18 +516,18 @@ setTimeout(() => {
 
 ```typescript
 // Test event handling
-const chart = BubbleChart.create('#chart')
-  .withData(testData)
-  .render()
-  .onBubble('click', (data, event, element) => {
+const chart = BubbleChart.create('#chart').build();
+
+chart.update(testData)
+  .on('click', (data, event, element) => {
     console.log(`Clicked: ${data.name} at (${event.clientX}, ${event.clientY})`);
     console.log(`Element radius: ${element.getAttribute('r')}`);
   })
-  .onBubble('mouseover', (data, event, element) => {
+  .on('mouseover', (data, event, element) => {
     element.style.opacity = '0.7';
     console.log(`Hovering: ${data.name}`);
   })
-  .onBubble('mouseout', (data, event, element) => {
+  .on('mouseout', (data, event, element) => {
     element.style.opacity = '1.0';
     console.log(`Left: ${data.name}`);
   });
@@ -580,13 +556,15 @@ d3.selection.prototype.transition = function() {
 
 // Create chart with animation monitoring
 const chart = BubbleChart.create('#chart')
-  .withData(testData)
   .withAnimations({
     enter: { duration: 800, stagger: 50, easing: 'ease-out' },
     update: { duration: 600, easing: 'ease-in-out' },
     exit: { duration: 400, easing: 'ease-in' }
   })
-  .render();
+  .build();
+
+// Update with data to trigger animations
+chart.update(testData);
 
 console.log(`Chart configuration:`, chart.options());
 console.log(`Total transitions called: ${transitionCount}`);

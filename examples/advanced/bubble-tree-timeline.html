@@ -112,15 +112,17 @@
       
       // Create or update chart with D3-native API
       if (!chart) {
-        // 🚀 D3-Native: Chart renders automatically when data is bound!
+        // 🚀 D3-Native: Create chart and update with data
         chart = BubbleChart.create('#tree-tl-container')
-          .withData(filtered)        // ✨ Auto-renders here!
           .withLabel('label')
           .withSize('amount')
           .withColor('name')         // Color by module/category name
           .withType('tree')
           .withAnimations('gentle')
-          .build();                  // Returns live chart (already rendered)
+          .build();
+        
+        // Update chart with initial data
+        chart.update(filtered);
       } else {
         // D3-native update: simply call update with new data
         chart.update(filtered);

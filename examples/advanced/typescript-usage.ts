@@ -30,15 +30,17 @@ const data: LanguageDatum[] = [
 ];
 
 // Create chart using D3-native fluent API - automatic field detection
-// 🚀 D3-Native: Chart renders automatically when data is bound!
+// 🚀 D3-Native: Create chart and update with data
 const chart = BubbleChart.create('#bubble-chart')
-  .withData(data as BubbleChartData[])    // ✨ Auto-renders here!
   .withLabel('label')
   .withSize('size')
   .withType('wave')
   .withColor('category')  // Color by category for visual distinction
   .withPercentage((d: BubbleChartData) => (d as unknown as LanguageDatum).count / 100)
-  .build();                               // Returns live chart (already rendered)
+  .build();
+
+// Update chart with data
+chart.update(data as BubbleChartData[]);
 
 // Example of adding event handlers for DOM interactions
 // Note: Event handling simplified for D3-native API

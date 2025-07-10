@@ -7,28 +7,21 @@
 // Any object with indexable properties that D3 can work with
 export type BubbleChartData = Record<string, any>;
 
-// Event types
-export type { 
-  BubbleEventType,
-  DataEventHandler,
-  TimeEventHandler,
-  LifecycleEventHandler,
-  EventHandler,
-  BubbleEventHandlers,
-  BubbleEventPayload,
-  D3EventHandlers,
-  EventOptions,
-  EventManager
-} from '../events/index.js';
+// D3-native event handler types
+export type DataEventHandler<T extends BubbleChartData = BubbleChartData> = (
+  data: T,
+  event: MouseEvent | KeyboardEvent,
+  target: SVGElement
+) => void;
 
-export {
-  BubbleEvent,
-  createD3EventHandler,
-  isValidEventType,
-  createEventPayload,
-  debounceEventHandler,
-  throttleEventHandler
-} from '../events/index.js';
+export interface BubbleEventHandlers<T extends BubbleChartData = BubbleChartData> {
+  click?: DataEventHandler<T>;
+  mouseover?: DataEventHandler<T>;
+  mouseout?: DataEventHandler<T>;
+  mouseenter?: DataEventHandler<T>;
+  mouseleave?: DataEventHandler<T>;
+}
+
 
 // Configuration types
 export type {

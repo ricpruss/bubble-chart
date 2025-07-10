@@ -7,10 +7,7 @@
 export { SVGManager, type SVGElements, type SVGDimensions } from './svg-manager.js';
 
 // Interaction Management
-export { 
-  InteractionManager, 
-  type TooltipManager 
-} from './interaction-manager.js';
+export { InteractionManager } from './interaction-manager.js';
 
 
 /**
@@ -19,9 +16,8 @@ export {
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../types/index.js';
+import type { BubbleChartData, BubbleEventHandlers } from '../types/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
-import type { BubbleEventHandlers } from '../events/index.js';
 import { SVGManager } from './svg-manager.js';
 import { InteractionManager } from './interaction-manager.js';
 import { D3DataUtils } from '../d3/index.js';
@@ -75,30 +71,31 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
   }
 
   /**
-   * Register event handlers
-   * @param eventType - Type of event
-   * @param handler - Event handler function
-   * @returns this for method chaining
+   * Register event handlers and return current instance for chaining
+   * Now uses simplified D3-native InteractionManager
    */
   on<K extends keyof BubbleEventHandlers<T>>(
     eventType: K,
     handler: BubbleEventHandlers<T>[K]
   ): this {
-    // Ensure we have an interaction manager
-    if (!this.interactionManager) {
-      // Initialize components if needed for event registration
-      if (!this.isInitialized) {
-        this.initialize();
-      } else {
-        this.initializeInteractionManager();
-      }
+    // Store event handlers for use during rendering
+    if (!this.eventHandlers) {
+      this.eventHandlers = {};
     }
-    
-    this.interactionManager.registerEventHandlers({
-      [eventType]: handler
-    } as Partial<BubbleEventHandlers<T>>);
-    
+    this.eventHandlers[eventType] = handler;
     return this;
+  }
+
+  private eventHandlers: Partial<BubbleEventHandlers<T>> = {};
+  
+  /**
+   * Attach events to bubbles using the centralized InteractionManager
+   * @param bubbles - D3 selection of bubble elements
+   */
+  protected attachEvents(bubbles: any): void {
+    if (this.interactionManager) {
+      this.interactionManager.attachEvents(bubbles, this.eventHandlers);
+    }
   }
 
   // render() method removed - D3-native approach uses update() only
@@ -137,21 +134,15 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     
     // Initialize interaction manager
     this.initializeInteractionManager();
-
+    
     this.isInitialized = true;
   }
-
+  
   /**
    * Initialize interaction manager
    */
   private initializeInteractionManager(): void {
-    const svgElements = this.svgManager.getElements();
-    if (svgElements) {
-      this.interactionManager = new InteractionManager<T>(
-        this.config,
-        svgElements.svg
-      );
-    }
+    this.interactionManager = new InteractionManager<T>(this.config);
   }
 
   /**

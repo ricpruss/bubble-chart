@@ -18,7 +18,12 @@ class D3ChartWrapper {
     this.config.container = container;
   }
   
-  withData(data: BubbleChartData[] | any) {
+  /**
+   * Set data for the chart
+   * @param data - Chart data array
+   * @returns this for method chaining
+   */
+  data(data: BubbleChartData[] | any): this {
     this.chartData = data;
     return this;
   }
@@ -83,10 +88,6 @@ class D3ChartWrapper {
    * Build/render the chart using pure D3 patterns
    */
   build(): any {
-    return this.render();
-  }
-  
-  render(): any {
     const finalConfig = {
       container: this.config.container!,
       label: this.config.label || 'name',
@@ -245,7 +246,6 @@ export {
   BaseChartBuilder,
   type SVGElements,
   type SVGDimensions,
-  type TooltipManager
 } from './core/index.js';
 
 // Re-export individual builders for advanced usage
@@ -262,7 +262,6 @@ export type {
   BubbleChartData,
   BubbleChartOptions,
   ChartType,
-  BubbleEventType,
   BubbleEventHandlers
 } from './types/index.js';
 

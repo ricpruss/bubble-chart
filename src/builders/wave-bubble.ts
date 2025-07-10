@@ -120,7 +120,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
       this.createWaveElements(bubbleGroups, processedData);
 
       // Attach events and start animation
-      this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
+this.attachEvents(bubbleGroups);
       this.startWaveAnimation(bubbleGroups, processedData);
 
     } catch (error) {

@@ -113,12 +113,14 @@ async function runSmokeTests() {
 
     // Test modern D3-native fluent API (main user-facing API)
     test('BubbleChart D3-native fluent API', () => {
-      // 🚀 D3-Native: Chart renders automatically when data is bound!
+      // 🚀 D3-Native: Create chart and update with data
       const chart = BubbleChart.create('#chart')
-        .withData(testData)    // ✨ Auto-renders here!
         .withLabel('name')
         .withSize('value')
-        .build();              // Returns live chart (already rendered)
+        .build();
+      
+      // Update with data to render
+      chart.update(testData);
       if (!chart) throw new Error('BubbleChart D3-native fluent API failed');
     });
 

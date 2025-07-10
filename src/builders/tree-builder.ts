@@ -192,7 +192,7 @@ export class TreeBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
     
     // Attach interactions only to leaf nodes
     const leafBubbles = bubbleGroups.filter((_d: any, i: number) => !hierarchyNodes[i]?.children);
-    this.interactionManager.attachBubbleEvents(leafBubbles, this.processedData);
+this.attachEvents(leafBubbles);
   }
 
 

@@ -127,7 +127,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       }
 
       // Use interaction manager for events
-      this.interactionManager.attachBubbleEvents(rows, this.processedData);
+this.attachEvents(rows);
 
       // Apply animations if configured
       if (this.config.animation) {

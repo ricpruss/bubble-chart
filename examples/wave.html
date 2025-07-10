@@ -29,15 +29,17 @@
       { "label": "Helium", "size": 70, "count": 10 }
     ];
 
-    // 🚀 D3-Native: Wave animations render automatically on data binding
+    // 🚀 D3-Native: Create wave bubble chart and update with data
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)                        // ✨ Auto-renders wave animations!
       .withLabel("label")
       .withSize("size")
       .withColor("label")
       .withType("wave")                      // Fluid wave animations
       .withPercentage((d) => d.count / d.size)  // Wave fill calculation
-      .build();                              // Returns live animated chart
+      .build();
+    
+    // Update chart with data
+    chart.update(data);
   </script>
 
 </body>

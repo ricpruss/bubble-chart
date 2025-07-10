@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Event Handling Test</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chart { border: 1px solid #ccc; margin: 20px 0; }
+    .controls { margin: 10px 0; }
+    .controls button { margin-right: 10px; padding: 8px 16px; }
+    .log { background: #f5f5f5; padding: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; }
+    .event-count { margin: 10px 0; font-weight: bold; }
+  </style>
+</head>
+<body>
+  <h1>Event Handling Test</h1>
+  
+  <div class="controls">
+    <button onclick="testEventHandling()">Test Event Handling</button>
+    <button onclick="clearLog()">Clear Log</button>
+    <button onclick="clearChart()">Clear Chart</button>
+  </div>
+
+  <div class="event-count">
+    Click events: <span id="clickCount">0</span> | 
+    Hover events: <span id="hoverCount">0</span>
+  </div>
+  
+  <div id="chart"></div>
+  <div class="log" id="eventLog"></div>
+
+  <script>
+    // Test data
+    const testData = [
+      { id: 1, name: 'Apple', size: 100, sector: 'Technology' },
+      { id: 2, name: 'Microsoft', size: 90, sector: 'Technology' },
+      { id: 3, name: 'Amazon', size: 80, sector: 'E-commerce' },
+      { id: 4, name: 'Google', size: 85, sector: 'Technology' },
+      { id: 5, name: 'Tesla', size: 70, sector: 'Automotive' }
+    ];
+
+    let currentChart = null;
+    let clickCount = 0;
+    let hoverCount = 0;
+    
+    function log(message) {
+      const logEl = document.getElementById('eventLog');
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    function updateCounts() {
+      document.getElementById('clickCount').textContent = clickCount;
+      document.getElementById('hoverCount').textContent = hoverCount;
+    }
+
+    function clearLog() {
+      document.getElementById('eventLog').innerHTML = '';
+      clickCount = 0;
+      hoverCount = 0;
+      updateCounts();
+    }
+
+    function clearChart() {
+      const chartEl = document.getElementById('chart');
+      chartEl.innerHTML = '';
+      
+      if (currentChart && currentChart.destroy) {
+        currentChart.destroy();
+      }
+      currentChart = null;
+      log('Chart cleared');
+    }
+
+    function testEventHandling() {
+      try {
+        clearChart();
+        clearLog();
+        
+        log('=== EVENT HANDLING TEST START ===');
+        log(`Test data: ${testData.length} items`);
+        
+        log('Step 1: Creating chart with D3-native API');
+        if (typeof BubbleChart !== 'undefined') {
+          currentChart = BubbleChart.create('#chart')
+            .withLabel('name')
+            .withSize('size')
+            .withColor('sector')
+            .withDimensions(600, 400)
+            .withAnimations('gentle')
+            .build();
+          
+          log('Step 2: Setting up event handlers');
+          currentChart
+            .on('click', (dataItem, event, target) => {
+              clickCount++;
+              updateCounts();
+              log(`✅ Click event: ${dataItem.name} (${dataItem.sector})`);
+            })
+            .on('mouseover', (dataItem, event, target) => {
+              hoverCount++;
+              updateCounts();
+              log(`↗️ Mouseover: ${dataItem.name}`);
+            })
+            .on('mouseout', (dataItem, event, target) => {
+              log(`↙️ Mouseout: ${dataItem.name}`);
+            });
+          
+          log('Step 3: Updating chart with data');
+          currentChart.update(testData);
+          
+          setTimeout(() => {
+            log('Step 4: Chart rendered, try clicking and hovering over bubbles');
+            log('=== TEST READY - INTERACT WITH BUBBLES ===');
+          }, 1000);
+          
+        } else {
+          log('❌ BubbleChart API not available');
+        }
+      } catch (error) {
+        log(`❌ Error: ${error.message}`);
+        console.error(error);
+      }
+    }
+
+    // Auto-run test on load
+    window.onload = () => {
+      log('Event handling test page loaded');
+      testEventHandling();
+    };
+  </script>
+</body>
+</html>

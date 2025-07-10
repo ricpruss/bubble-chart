@@ -54,7 +54,6 @@
 
             log('Step 1: Creating chart with D3-native API');
             const chart = BubbleChart.create('#chart')
-              .withData(initialData)
               .withLabel('name')
               .withSize('value')
               .withColor('color')
@@ -68,6 +67,9 @@
               
             // Track current data for D3-native updates
             let currentData = [...initialData];
+            
+            // Initial data update
+            chart.update(currentData);
 
             log('Step 2: Verifying initial render');
             await new Promise(resolve => setTimeout(resolve, 1200));

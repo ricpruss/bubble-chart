@@ -60,22 +60,19 @@
         log(`Initial data: ${initialData.length} items`);
         log(`Update data: ${updateData.length} items`);
 
-        log('Step 1: Creating chart with initial data using D3-native API');
-        // 🚀 D3-Native: Chart renders automatically when data is bound!
+        log('Step 1: Creating chart using D3-native API');
         const chart = BubbleChart.create('#chart')
           .withLabel('name')
           .withSize('value')
           .withDimensions(600, 400)
-          .withColor((d) => {
-            const scale = d3.scaleOrdinal(d3.schemeSet2);
-            const allCategories = [...new Set([...initialData, ...updateData].map(item => item.category))];
-            scale.domain(allCategories);
-            return scale(d.category);
-          })
-          .withData(initialData)    // ✨ Auto-renders here!
-          .build();                 // Returns live chart (already rendered)
+          .withColor('category')
+          .withAnimations('gentle')
+          .build();
+        
+        log('Step 2: Initial data update');
+        chart.update(initialData);
 
-        log('Step 2: Verifying initial render');
+        log('Step 3: Verifying initial render');
         await new Promise(resolve => setTimeout(resolve, 1200));
         
         let circles = document.querySelectorAll('#chart circle');
@@ -90,13 +87,13 @@
           log(`Initial bubble ${i}: ${initialData[i].name}, radius=${r}`);
         });
 
-        log('Step 3: Updating data via D3-native update');
+        log('Step 4: Updating data via D3-native update');
         chart.update(updateData);
 
-        log('Step 4: Waiting for update to complete');
+        log('Step 5: Waiting for update to complete');
         await new Promise(resolve => setTimeout(resolve, 1200));
 
-        log('Step 5: Verifying updated render');
+        log('Step 6: Verifying updated render');
         circles = document.querySelectorAll('#chart circle');
         log(`Updated render: ${circles.length} circles (expected: ${updateData.length})`);
         
@@ -109,7 +106,7 @@
           log(`Updated bubble ${i}: ${updateData[i].name}, radius=${r}`);
         });
 
-        log('Step 6: Testing second update (back to original)');
+        log('Step 7: Testing second update (back to original)');
         chart.update(initialData);
 
         await new Promise(resolve => setTimeout(resolve, 1200));

@@ -105,7 +105,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     this.createLiquidElements(bubbleGroups, layoutNodes, processedData);
 
     // Hook up mouse / touch interactions
-    this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
+this.attachEvents(bubbleGroups);
   }
 
   /**

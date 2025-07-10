@@ -79,14 +79,13 @@
         log(`Test data: ${testData.length} items`);
 
         log('Step 1: Creating chart with D3-native API');
-        // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#chart')
           .withLabel('name')
           .withSize('value')
           .withDimensions(600, 400)
-          .withColor(d3.scaleOrdinal(d3.schemeTableau10))
-          .withData(testData)    // ✨ Auto-renders here!
-          .build();              // Returns live chart (already rendered)
+          .withColor('category')
+          .withAnimations('gentle')
+          .build();
 
         log('Step 2: Setting up event handlers');
         
@@ -96,10 +95,10 @@
         let mouseoutHandlerSet = false;
 
         try {
-          chart.onBubble('click', (data, event, element) => {
-            logEvent(`Click on "${data.name}" (value: ${data.value})`);
+          chart.on('click', (dataItem, event, target) => {
+            logEvent(`Click on "${dataItem.name}" (value: ${dataItem.value})`);
             logEvent(`Click position: (${event.clientX}, ${event.clientY})`);
-            logEvent(`Element: ${element.tagName}, radius: ${element.getAttribute('r')}`);
+            logEvent(`Element: ${target.tagName}`);
           });
           clickHandlerSet = true;
           log('✓ Click handler attached');
@@ -108,10 +107,10 @@
         }
 
         try {
-          chart.onBubble('mouseover', (data, event, element) => {
-            logEvent(`Hover start on "${data.name}"`);
+          chart.on('mouseover', (dataItem, event, target) => {
+            logEvent(`Hover start on "${dataItem.name}"`);
             // Change bubble opacity for visual feedback
-            element.style.opacity = '0.7';
+            d3.select(target.parentNode).select('circle').style('opacity', 0.7);
           });
           mouseoverHandlerSet = true;
           log('✓ Mouseover handler attached');
@@ -120,10 +119,10 @@
         }
 
         try {
-          chart.onBubble('mouseout', (data, event, element) => {
-            logEvent(`Hover end on "${data.name}"`);
+          chart.on('mouseout', (dataItem, event, target) => {
+            logEvent(`Hover end on "${dataItem.name}"`);
             // Restore bubble opacity
-            element.style.opacity = '1.0';
+            d3.select(target.parentNode).select('circle').style('opacity', 0.8);
           });
           mouseoutHandlerSet = true;
           log('✓ Mouseout handler attached');
@@ -131,6 +130,9 @@
           log(`✗ Mouseout handler failed: ${error.message}`);
         }
 
+        // Update chart with data
+        chart.update(testData);
+        
         // Wait for rendering to complete
         await new Promise(resolve => setTimeout(resolve, 1000));
 
