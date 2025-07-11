@@ -145,3 +145,6 @@ Thumbs.db
 # Legacy/project specific
 .sass-cache/
 src/vendors/
+
+# Static assets that should be tracked
+!static/

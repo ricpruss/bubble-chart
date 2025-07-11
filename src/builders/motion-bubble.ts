@@ -20,6 +20,8 @@ interface MotionConfig {
   alphaMin?: number;
   /** Steady-state energy level (0-1) */
   alphaTarget?: number;
+  /** Initial velocity range for entering bubbles */
+  initialVelocity?: number;
 }
 
 /**
@@ -45,6 +47,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       centerStrength: 0.05,
       alphaMin: 0.00001,
       alphaTarget: 0.02,
+      initialVelocity: 30,
       ...(this.config.animation as MotionConfig || {})
     };
   }
@@ -92,55 +95,120 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         [8, Math.min(dimensions.width, dimensions.height) / 12]
       );
       
-      // Create motion nodes with random initial positions
+      // Create motion nodes with random initial positions and velocity
+      const { initialVelocity } = this.motionConfig;
       const motionNodes = this.processedData.map((d) => ({
         data: d,
         r: radiusScale(d.size),
         x: Math.random() * dimensions.width,
-        y: Math.random() * dimensions.height
+        y: Math.random() * dimensions.height,
+        // Add initial velocity for dynamic entry
+        vx: (Math.random() - 0.5) * initialVelocity,
+        vy: (Math.random() - 0.5) * initialVelocity
       }));
 
-      // Create bubble groups and elements
-      const bubbleGroups = svg.selectAll('g.bubble')
-        .data(motionNodes)
-        .enter()
-        .append('g')
-        .attr('class', 'bubble-chart bubble');
+      // Create key function for D3 data joins - enables proper enter/update/exit lifecycle
+      const keyFunction = this.config.keyFunction 
+        ? (d: any) => {
+            // The data structure is: d.data contains the processed data with original data in d.data.data
+            const originalData = d.data.data || d.data;
+            return this.config.keyFunction!(originalData);
+          }
+        : (d: any) => d.data.label || JSON.stringify(d.data);
 
-      // Create color scale for bubbles using vibrant palette
+      // Create bubble groups using D3's native data binding with key function
+      const bubbleGroups = svg.selectAll('.bubble')
+        .data(motionNodes, keyFunction)
+        .join(
+          // ENTER: New bubbles
+          (enter: any) => {
+            return enter.append('g')
+              .attr('class', 'bubble')
+              .style('cursor', 'pointer');
+          },
+          // UPDATE: Existing bubbles - update their simulation nodes
+          (update: any) => {
+            // Update the simulation nodes with new data
+            update.each((d: any, i: number) => {
+              if (this.simulation) {
+                const nodes = this.simulation.nodes();
+                if (nodes[i]) {
+                  // Update the existing node with new data while preserving position
+                  Object.assign(nodes[i], {
+                    data: d.data,
+                    r: d.r
+                    // Keep existing x, y, vx, vy for smooth transitions
+                  });
+                }
+              }
+            });
+            return update;
+          },
+          // EXIT: Bubbles to remove
+          (exit: any) => {
+            return exit.remove();
+          }
+        );
+
+      // Create color scale for bubbles using professional palette
       const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
       const colorScale = colorValues.length > 0 ? 
         d3.scaleOrdinal()
           .domain(colorValues)
           .range([
-            '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-            '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
+            '#D32F2F', '#1976D2', '#00796B', '#F57C00', '#388E3C', '#7B1FA2',
+            '#5D4037', '#455A64', '#C2185B', '#303F9F', '#689F38', '#E64A19', '#512DA8'
           ]) :
-        () => this.config.defaultColor || '#1f77b4';
+        () => this.config.defaultColor || '#1976D2';
 
-      // Create font scale based on radius
-      const fontScale = D3DataUtils.createFontScale([8, Math.min(dimensions.width, dimensions.height) / 12], [10, 20]);
+      // Handle circles with proper enter/update/exit
+      bubbleGroups.selectAll('circle')
+        .data((d: any) => [d]) // One circle per bubble group
+        .join(
+          (enter: any) => {
+            return enter.append('circle')
+              .attr('r', (d: any) => d.r)
+              .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1976D2'))
+              .attr('stroke', '#fff')
+              .attr('stroke-width', 1.5)
+              .attr('opacity', 0.9)
+              .style('cursor', 'pointer');
+          },
+          (update: any) => update
+            .attr('r', (d: any) => d.r)
+            .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1976D2')),
+          (exit: any) => exit.remove()
+        );
 
-      // Create circles with motion-specific styling
-      bubbleGroups.append('circle')
-        .attr('r', (d: any) => d.r)
-        .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5)
-        .attr('opacity', 0.85)
-        .style('cursor', 'pointer');
-
-      // Add text labels
-      bubbleGroups.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .style('fill', '#333')
-        .style('font-size', (d: any) => fontScale(d.r))
-        .style('pointer-events', 'none')
-        .text((d: any) => {
-          const label = d.data.label;
-          return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
-        });
+      // Handle labels with proper enter/update/exit
+      bubbleGroups.selectAll('text')
+        .data((d: any) => [d]) // One label per bubble group
+        .join(
+          (enter: any) => enter.append('text')
+            .attr('class', 'bubble')
+            .attr('text-anchor', 'middle')
+            .attr('dominant-baseline', 'central')
+            .style('font-size', (d: any) => {
+              const label = d.data.label;
+              const formattedLabel = this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+              return `${D3DataUtils.calculateOptimalFontSize(formattedLabel, d.r)}px`;
+            })
+            .text((d: any) => {
+              const label = d.data.label;
+              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+            }),
+          (update: any) => update
+            .style('font-size', (d: any) => {
+              const label = d.data.label;
+              const formattedLabel = this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+              return `${D3DataUtils.calculateOptimalFontSize(formattedLabel, d.r)}px`;
+            })
+            .text((d: any) => {
+              const label = d.data.label;
+              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
+            }),
+          (exit: any) => exit.remove()
+        );
 
       // Attach events using centralized InteractionManager
       this.attachEvents(bubbleGroups);
@@ -174,6 +242,23 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))))
       .on('tick', () => {
+        // Apply boundary wrapping for bubbles that leave the screen
+        nodes.forEach((d: any) => {
+          // Wrap horizontally
+          if (d.x + d.r < 0) {
+            d.x = dimensions.width + d.r;
+          } else if (d.x - d.r > dimensions.width) {
+            d.x = -d.r;
+          }
+          
+          // Wrap vertically
+          if (d.y + d.r < 0) {
+            d.y = dimensions.height + d.r;
+          } else if (d.y - d.r > dimensions.height) {
+            d.y = -d.r;
+          }
+        });
+        
         bubbleGroups.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
       });
   }
@@ -207,7 +292,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     
     // Update existing simulation if running
     if (this.simulation) {
-      const { repulseStrength, decay, collidePadding, centerStrength, alphaMin, alphaTarget } = this.motionConfig;
+      const { repulseStrength, decay, collidePadding, centerStrength, alphaMin, alphaTarget, initialVelocity } = this.motionConfig;
       
       this.simulation
         .velocityDecay(decay)
@@ -223,6 +308,16 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
           .force('collision', d3.forceCollide()
             .radius((d: any) => d.r + collidePadding)
             .strength(Math.max(0, Math.min(1, repulseStrength))));
+      }
+      
+      // If initialVelocity was updated, apply to existing nodes
+      if (newConfig.initialVelocity !== undefined) {
+        const nodes = this.simulation.nodes();
+        nodes.forEach(node => {
+          node.vx = (node.vx || 0) + (Math.random() - 0.5) * initialVelocity * 0.3;
+          node.vy = (node.vy || 0) + (Math.random() - 0.5) * initialVelocity * 0.3;
+        });
+        this.simulation.alpha(0.3).restart();
       }
     }
     

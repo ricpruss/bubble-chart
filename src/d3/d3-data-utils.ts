@@ -76,18 +76,55 @@ export class D3DataUtils {
 
   /**
    * Create font size scale based on radius using D3's linear scale
+   * Enhanced with better scaling algorithm and text fitting
    * @param radiusRange - Range of radius values [min, max]
    * @param fontRange - Desired font size range [min, max]
    * @returns D3 linear scale for font sizing
    */
   static createFontScale(
     radiusRange: [number, number],
-    fontRange: [number, number] = [10, 20]
+    fontRange: [number, number] = [10, 18]
   ): d3.ScaleLinear<number, number> {
     return d3.scaleLinear()
       .domain(radiusRange)
       .range(fontRange)
       .clamp(true);
+  }
+
+  /**
+   * Calculate optimal font size for text to fit within a circle
+   * @param text - Text to fit
+   * @param radius - Circle radius
+   * @param maxFontSize - Maximum font size (default: 18)
+   * @param minFontSize - Minimum font size (default: 10)
+   * @returns Optimal font size in pixels
+   */
+  static calculateOptimalFontSize(
+    text: string,
+    radius: number,
+    maxFontSize: number = 18,
+    minFontSize: number = 10
+  ): number {
+    // Target width should be about 70% of circle diameter for good visual balance
+    const targetWidth = radius * 2 * 0.7;
+    
+    // Calculate font size needed to fit target width
+    // Average character width is approximately 0.6 * font size
+    const calculatedFontSize = targetWidth / (text.length * 0.6);
+    
+    // Clamp to min/max range
+    return Math.max(minFontSize, Math.min(maxFontSize, calculatedFontSize));
+  }
+
+  /**
+   * Get CSS class name for text size based on radius
+   * @param radius - Circle radius
+   * @returns CSS class name for text styling
+   */
+  static getTextSizeClass(radius: number): string {
+    if (radius < 20) return 'bubble-text-small';
+    if (radius < 35) return 'bubble-text-medium';
+    return 'bubble-text-large';
   }
 
   /**

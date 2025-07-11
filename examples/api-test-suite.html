@@ -6,7 +6,8 @@
   <title>Test D3-Native Fluent API</title>
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
-  <style>
+  <link rel="stylesheet" href="../dist/css/bubble-chart.css">
+    <style>
     body { font-family: sans-serif; margin: 20px; }
     #chart { border: 1px solid #ccc; margin: 20px 0; }
     .controls { margin: 10px 0; }
@@ -129,23 +130,46 @@ currentChart.on('click', (dataItem, event, target) => {
         clearChart();
         
         if (typeof BubbleChart !== 'undefined') {
+          // Test motion chart with custom physics configuration
           currentChart = BubbleChart.create('#chart')
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
             .withType('motion')
             .withDimensions(600, 400)
-            .withAnimations('gentle') // Add animations for visibility
+            .withAnimations({
+              repulseStrength: 0.5,    // Moderate repulsion
+              decay: 0.02,             // Slow motion
+              centerStrength: 0.03,    // Light center attraction
+              collidePadding: 3,       // Some spacing
+              alphaTarget: 0.01,       // Low energy for calm motion
+              initialVelocity: 80      // Initial scatter velocity
+            })
             .build();
           
-currentChart.on('click', (dataItem, event, target) => {
+          currentChart.on('click', (dataItem, event, target) => {
             console.log('Clicked:', dataItem);
           }).on('mouseover', (dataItem, event, target) => {
             console.log('Mouseover:', dataItem);
           }).on('mouseout', (dataItem, event, target) => {
             console.log('Mouseout:', dataItem);
           }).update(testData);
-          setStatus('✅ D3-native API: Motion chart created successfully');
+          
+          // Test motion configuration access
+          const motionInstance = currentChart.getBuilder();
+          if (motionInstance && motionInstance.getMotionConfig) {
+            const config = motionInstance.getMotionConfig();
+            console.log('✅ Motion Config Test:', config);
+            
+            // Verify initialVelocity parameter
+            if (config.initialVelocity === 80) {
+              setStatus('✅ Motion chart with initialVelocity created successfully');
+            } else {
+              setStatus('⚠️ Motion chart created but initialVelocity not set correctly');
+            }
+          } else {
+            setStatus('✅ Motion chart created (config access not available)');
+          }
         } else {
           setStatus('❌ BubbleChart API not available');
         }

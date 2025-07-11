@@ -172,11 +172,42 @@ const chart = BubbleChart.create('#chart')
   .withType('motion')                      // Motion chart with physics
   .withSize('revenue')
   .withColor('sector')
-  .withAnimations('smooth')
+  .withKey(d => d.id)                      // Key function for D3 data binding
   .build();
 
 // Update with data to render
 chart.update(companies);
+
+// Configure physics simulation through motion config
+const motionInstance = chart.getBuilder();
+if (motionInstance && motionInstance.setMotionConfig) {
+  motionInstance.setMotionConfig({
+    repulseStrength: 0.7,    // Collision separation strength (0-1)
+    decay: 0.05,             // Velocity decay (lower = more motion)
+    centerStrength: 0.05,    // Center attraction strength
+    collidePadding: 2,       // Extra radius for collision padding
+    alphaTarget: 0.02,       // Steady-state energy level (0-1)
+    alphaMin: 0.00001,       // Minimum alpha before simulation stops
+    initialVelocity: 30      // Initial velocity for dynamic entry
+  });
+}
+
+// Alternative: Pass motion config during creation
+const motionChart = BubbleChart.create('#chart')
+  .withType('motion')
+  .withSize('revenue')
+  .withColor('sector')
+  .withAnimations({
+    repulseStrength: 0.3,    // Gentle repulsion
+    decay: 0.01,             // Very slow motion
+    centerStrength: 0,       // No center attraction
+    collidePadding: 4,       // More spacing
+    alphaTarget: 0.001,      // Low energy for calm motion
+    initialVelocity: 150     // Strong initial scatter
+  })
+  .build();
+
+motionChart.update(companies);
 ```
 
 ### Wave and Liquid Charts - D3-Native Fluid Animations
@@ -225,6 +256,11 @@ const orbitChart = BubbleChart.create('#orbit-chart')
 
 // Update with data to render
 orbitChart.update(planets);
+
+// Optional: Control orbit speed
+if (orbitChart.setSpeedMultiplier) {
+  orbitChart.setSpeedMultiplier(1.5); // 1.5x speed
+}
 ```
 
 ## Runtime Control
@@ -400,6 +436,8 @@ chart
 
 The library uses a centralized configuration system with intelligent defaults:
 
+For CSS styling details, please refer to the [CSS Styling Guide](./CSS_STYLING.md).
+
 ```typescript
 // Minimal - relies on intelligent field detection
 const chart = BubbleChart.create('#chart').build();
@@ -418,7 +456,6 @@ const chart = BubbleChart.create('#chart')
 chart.update(dataset);
 
 // Advanced - full customization is done via the fluent API
-```
 
 ## Complete Example
 

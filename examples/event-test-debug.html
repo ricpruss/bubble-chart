@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Event Debug Test</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <link rel="stylesheet" href="../dist/css/bubble-chart.css">
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    #chart { border: 1px solid #ccc; margin: 20px 0; }
+    .log { background: #f5f5f5; padding: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; border: 1px solid #ddd; }
+  </style>
+</head>
+<body>
+  <h1>Event Debug Test</h1>
+  <div class="log" id="eventLog"></div>
+  <div id="chart" style="width: 600px; height: 400px;"></div>
+
+  <script>
+    // Simple test data
+    const testData = [
+      { name: 'Apple', value: 100, category: 'Technology' },
+      { name: 'Microsoft', value: 90, category: 'Technology' },
+      { name: 'Amazon', value: 80, category: 'E-commerce' }
+    ];
+
+    function log(message) {
+      const logEl = document.getElementById('eventLog');
+      const timestamp = new Date().toLocaleTimeString();
+      logEl.innerHTML += `<div>[${timestamp}] ${message}</div>`;
+      logEl.scrollTop = logEl.scrollHeight;
+      console.log(message);
+    }
+
+    try {
+      log('=== EVENT DEBUG TEST START ===');
+      log(`Test data: ${testData.length} items`);
+
+      log('Step 1: Creating chart with D3-native API');
+      const chart = BubbleChart.create('#chart')
+        .withLabel('name')
+        .withSize('value')
+        .withColor('category')
+        .withDimensions(600, 400)
+        .build();
+
+      log('Step 2: Updating chart with data');
+      chart.update(testData);
+
+      log('Step 3: Setting up event handlers');
+      chart.on('click', (dataItem, event, target) => {
+        log(`✅ Click event: ${dataItem.name} (${dataItem.category})`);
+      });
+
+      chart.on('mouseover', (dataItem, event, target) => {
+        log(`➡️ Mouseover: ${dataItem.name}`);
+      });
+
+      chart.on('mouseout', (dataItem, event, target) => {
+        log(`⬅️ Mouseout: ${dataItem.name}`);
+      });
+
+      log('=== TEST READY - TRY CLICKING/HOVERING BUBBLES ===');
+
+    } catch (error) {
+      log(`❌ Error: ${error.message}`);
+      console.error(error);
+    }
+  </script>
+</body>
+</html>

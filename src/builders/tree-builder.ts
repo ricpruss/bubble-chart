@@ -136,7 +136,7 @@ export class TreeBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       .data(layoutNodes)
       .enter()
       .append('g')
-      .attr('class', 'bubble')
+        .attr('class', 'bubble')
       .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
     // Create circles with tree-specific styling
@@ -162,15 +162,19 @@ export class TreeBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       .attr('stroke-width', 1.5)
       .style('cursor', 'pointer');
 
-    // Add labels only to leaf nodes
+    // Add labels only to leaf nodes with dynamic font sizing
     bubbleGroups
       .filter((_d: any, i: number) => !hierarchyNodes[i]?.children)
       .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .style('fill', '#333')
-      .style('font-size', (d: any) => Math.max(10, d.r / 3))
-      .style('pointer-events', 'none')
+        .attr('class', 'bubble')
+        .attr('text-anchor', 'middle')
+        .attr('dominant-baseline', 'central')
+        .style('font-size', (d: any) => {
+          // For leaf nodes, find corresponding processed data for label
+          const leafData = this.processedData.find(pd => pd.data === d.data);
+          const label = leafData ? leafData.label : '';
+          return `${D3DataUtils.calculateOptimalFontSize(label, d.r)}px`;
+        })
       .text((d: any) => {
         // For leaf nodes, find corresponding processed data for label
         const leafData = this.processedData.find(pd => pd.data === d.data);

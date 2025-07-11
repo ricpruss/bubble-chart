@@ -94,15 +94,14 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       .attr('stroke-width', 2)
       .style('cursor', 'pointer'); // Make it clear these are interactive
 
-    // Add labels
+    // Add labels with dynamic font sizing
     bubbleGroups.selectAll('text')
       .data((d: any) => [d])
       .join('text')
+      .attr('class', 'bubble')
       .attr('text-anchor', 'middle')
       .attr('dy', '0.3em')
-      .style('font-size', (d: any) => `${Math.min(d.r / 3, 14)}px`)
-      .style('fill', '#333')
-      .style('pointer-events', 'none')
+      .style('font-size', (d: any) => `${D3DataUtils.calculateOptimalFontSize(d.label, d.r)}px`)
       .text((d: any) => d.label);
     
     // Start orbital animation

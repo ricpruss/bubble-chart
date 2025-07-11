@@ -76,16 +76,6 @@ export class InteractionManager<T extends BubbleChartData = BubbleChartData> {
         .select("body")
         .append("div")
         .attr("class", "bubble-chart-tooltip")
-        .style("position", "absolute")
-        .style("padding", "10px")
-        .style("background", "rgba(0, 0, 0, 0.8)")
-        .style("color", "white")
-        .style("border-radius", "5px")
-        .style("font-size", "12px")
-        .style("font-family", "Arial, sans-serif")
-        .style("pointer-events", "none")
-        .style("opacity", 0)
-        .style("z-index", "1000");
     }
 
     const content = items

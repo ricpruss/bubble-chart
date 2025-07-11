@@ -85,15 +85,13 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .attr('stroke-width', 2)
         .style('opacity', 0.8);
 
-      // Add labels using D3DataUtils formatting
+      // Add labels using D3DataUtils formatting with dynamic font sizing
       const labels = rows.append('text')
+        .attr('class', 'bubble bubble-list')
         .attr('x', maxRadius * 2 + padding)
         .attr('y', 0)
         .attr('dy', '0.35em')
-        .style('font-size', '14px')
-        .style('font-family', 'sans-serif')
-        .style('fill', '#333')
-        .style('pointer-events', 'none')
+        .style('font-size', (d: any) => `${D3DataUtils.calculateOptimalFontSize(d.label, this.radiusScale!(d.size || 0))}px`)
         .text((d: any) => {
           const label = this.config.format?.text ? this.config.format.text(d.label) : d.label;
           return D3DataUtils.formatLabel(label, 30);
@@ -103,26 +101,18 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       // Add optional size values using D3DataUtils formatting
       if (this.config.format?.number) {
         rows.append('text')
+          .attr('class', 'bubble bubble-small bubble-list')
           .attr('x', maxRadius * 2 + padding)
           .attr('y', 0)
           .attr('dy', '1.5em')
-          .style('font-size', '12px')
-          .style('font-family', 'sans-serif')
-          .style('fill', '#666')
-          .style('opacity', 0.7)
-          .style('pointer-events', 'none')
           .text((d: any) => this.config.format!.number!(d.size || 0));
       } else {
         // Default number formatting using D3DataUtils
         rows.append('text')
+          .attr('class', 'bubble bubble-small bubble-list')
           .attr('x', maxRadius * 2 + padding)
           .attr('y', 0)
           .attr('dy', '1.5em')
-          .style('font-size', '12px')
-          .style('font-family', 'sans-serif')
-          .style('fill', '#666')
-          .style('opacity', 0.7)
-          .style('pointer-events', 'none')
           .text((d: any) => D3DataUtils.formatNumber(d.size || 0));
       }
 

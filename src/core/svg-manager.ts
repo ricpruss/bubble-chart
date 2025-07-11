@@ -43,14 +43,15 @@ export class SVGManager {
     // Calculate responsive dimensions
     const dimensions = this.calculateDimensions(container, config);
 
-    // Create SVG with proper attributes
+    // Create SVG with proper attributes and professional background
     const svg = container
       .append('svg')
       .attr('width', dimensions.width)
       .attr('height', dimensions.height)
       .attr('viewBox', `0 0 ${dimensions.width} ${dimensions.height}`)
-      .style('background', 'transparent')
-      .style('overflow', 'visible');
+      .style('background', 'var(--bubble-canvas-background, #2c3e50)')
+      .style('overflow', 'visible')
+      .style('border-radius', 'var(--bubble-canvas-border-radius, 8px)');
 
     // Create main group for transformations
     const mainGroup = svg

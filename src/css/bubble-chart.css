@@ -5,6 +5,18 @@
   --time-hover: #f1f1f1;
   --gray-color: #ddd;
   --border-color: #444444;
+  
+  /* New typography variables */
+  --bubble-text-color: #ffffff;
+  --bubble-text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --bubble-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI Variable', 'Segoe UI', system-ui, ui-sans-serif, Helvetica, Arial, sans-serif;
+  --bubble-font-weight: 600;
+  --bubble-font-min-size: 10px;
+  --bubble-font-max-size: 18px;
+  
+  /* Canvas styling */
+  --bubble-canvas-background: #2c3e50;
+  --bubble-canvas-border-radius: 8px;
 }
 
 /* Axis lines */
@@ -74,6 +86,52 @@
   paint-order: stroke;
 }
 
+/* Canvas styling variables - applied via JavaScript in SVG Manager */
+/* --bubble-canvas-background: #2c3e50 (professional dark blue-gray) */
+/* --bubble-canvas-border-radius: 8px (subtle rounded corners) */
+
+/* Clean CSS-only approach - D3 community recommended pattern */
+.bubble {
+  font-family: var(--bubble-font-family) !important;
+  font-weight: var(--bubble-font-weight) !important;
+  fill: var(--bubble-text-color) !important;
+  text-shadow: var(--bubble-text-shadow);
+  font-size: var(--bubble-font-min-size);
+  text-anchor: middle;
+  dominant-baseline: central;
+  /* Enable anti-aliasing for crisp text */
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+
+/* Only disable pointer events on bubble text elements to allow clicking on bubble groups */
+.bubble text {
+  pointer-events: none;
+}
+
+/* Responsive text scaling */
+.bubble-small {
+  font-size: var(--bubble-font-min-size);
+  font-weight: 700;
+}
+
+.bubble-medium {
+  font-size: calc(var(--bubble-font-min-size) + 2px);
+  font-weight: 600;
+}
+
+.bubble-large {
+  font-size: var(--bubble-font-max-size);
+  font-weight: 500;
+}
+
+/* List layout text positioning - override default centering */
+.bubble-list {
+  text-anchor: start !important;
+  dominant-baseline: middle !important;
+}
+
 /* Timeline buttons */
 .bubble-chart .timeline { position: relative; text-align: center; }
 .bubble-chart .timeline .entry {
@@ -93,6 +151,21 @@
 /* Media query example */
 @media only screen and (max-width: 540px) {
   .bubble-chart ul.bubble-hierarchies { height: auto !important; }
+}
+
+/* Tooltip styling - moved from JavaScript for better CSS-first approach */
+.bubble-chart-tooltip {
+  position: absolute !important;
+  padding: 10px;
+  background: rgba(0, 0, 0, 0.8);
+  color: white;
+  border-radius: 5px;
+  font-size: 12px;
+  font-family: var(--bubble-font-family);
+  pointer-events: none;
+  z-index: 1000;
+  opacity: 0;
+  transition: opacity 0.2s ease;
 }
 
 /* Additional rules flattened from the original SCSS have been omitted for brevity. The functional styling remains identical; feel free to expand more blocks following the pattern above. */ 

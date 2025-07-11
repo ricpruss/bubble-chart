@@ -76,7 +76,7 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
           // ENTER: New bubbles
           (enter: any) => {
             return enter.append('g')
-              .attr('class', 'bubble-chart bubble')
+              .attr('class', 'bubble')
               .style('cursor', 'pointer')
               .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`);
           },
@@ -108,9 +108,10 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
           ]) :
         () => this.config.defaultColor || '#1f77b4';
 
-      // Create font scale
+      // Create font scale for dynamic sizing
       const radiusExtent = d3.extent(layoutNodes, (d: any) => d.r) as [number, number];
       const fontScale = D3DataUtils.createFontScale(radiusExtent, [10, 18]);
+
 
       // Handle circles with proper enter/update/exit
       bubbleGroups.selectAll('circle')
@@ -119,7 +120,6 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
           (enter: any) => {
             return enter.append('circle')
               .attr('r', 0)
-              .style('opacity', 0)
               .attr('fill', (d: any) => {
                 const color = d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4');
                 return color;
@@ -146,12 +146,10 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
         .data((d: any) => [d]) // One label per bubble group
         .join(
           (enter: any) => enter.append('text')
+            .attr('class', 'bubble')
             .attr('text-anchor', 'middle')
             .attr('dominant-baseline', 'central')
-            .style('font-size', (d: any) => fontScale(d.r))
-            .style('font-weight', 'bold')
-            .style('fill', '#333')
-            .style('pointer-events', 'none')
+            .style('font-size', (d: any) => `${fontScale(d.r)}px`)
             .style('opacity', 0)
             .text((d: any) => {
               const label = d.data.label;
@@ -160,7 +158,7 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
           (update: any) => update
             .transition()
             .duration(this.config.animation?.update?.duration || 800)
-            .style('font-size', (d: any) => fontScale(d.r))
+            .style('font-size', (d: any) => `${fontScale(d.r)}px`)
             .style('opacity', 1)
             .text((d: any) => {
               const label = d.data.label;

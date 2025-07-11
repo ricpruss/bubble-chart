@@ -94,7 +94,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
       const bubbleGroups = svg.selectAll('g.bubble')
         .data(layoutNodes)
         .join('g')
-        .attr('class', 'bubble-chart bubble')
+        .attr('class', 'bubble')
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
       // Create bubble circles
@@ -106,14 +106,13 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         .attr('stroke-width', 1.5)
         .style('cursor', 'pointer');
 
-      // Add labels
+      // Add labels with dynamic font sizing
       bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
       bubbleGroups.append('text')
+        .attr('class', 'bubble')
         .attr('text-anchor', 'middle')
         .attr('dominant-baseline', 'central')
-        .style('fill', '#333')
-        .style('font-size', (d: any) => Math.max(10, d.r / 3))
-        .style('pointer-events', 'none')
+        .style('font-size', (d: any) => `${D3DataUtils.calculateOptimalFontSize(d.data.label, d.r)}px`)
         .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
 
       // Add wave-specific elements

@@ -121,14 +121,15 @@ class D3ChartWrapper {
       this.attachEventsToD3Selection();
     }
     
-      // Return chart interface
-      return {
-        update: (newData: any) => {
-          // D3-native: just update data, no render() needed
-          this.chartInstance.data(newData).update();
-          // Re-attach events after update
-          this.attachEventsToD3Selection();
-        },
+    // Create consistent chart interface
+    const chartInterface = {
+      update: (newData: any) => {
+        // D3-native: just update data, no render() needed
+        this.chartInstance.data(newData).update();
+        // Re-attach events after update
+        this.attachEventsToD3Selection();
+        return chartInterface; // Return self for chaining
+      },
       
       on: (event: string, handler: Function) => {
         this.eventHandlers.set(event, handler);
@@ -136,11 +137,13 @@ class D3ChartWrapper {
         if (this.chartInstance) {
           this.attachEventsToD3Selection();
         }
-        return this;
+        return chartInterface; // Return self for chaining
       },
       
       getBuilder: () => this.chartInstance
     };
+    
+    return chartInterface;
   }
   
   /**
@@ -188,44 +191,20 @@ class D3ChartWrapper {
   }
   
   /**
-   * Pure D3 event attachment - no InteractionManager complexity
+   * Simplified event delegation to builder's InteractionManager
    */
   private attachEventsToD3Selection(): void {
-    if (!this.chartInstance || this.eventHandlers.size === 0) return;
-    
-    // Find the SVG container and select all bubble groups
-    const container = this.config.container;
-    if (!container) return;
-    
-    const svg = d3.select(container).select('svg');
-    const bubbleGroups = svg.selectAll('.bubble');
-    
-    if (bubbleGroups.empty()) {
-      // Retry after a short delay if bubbles aren't ready yet
-      setTimeout(() => this.attachEventsToD3Selection(), 50);
+    if (!this.chartInstance || this.eventHandlers.size === 0) {
       return;
     }
     
-    // Attach each registered event handler directly to D3 selection
-    this.eventHandlers.forEach((handler, eventName) => {
-      bubbleGroups.on(eventName, (event: any, d: any) => {
-        // Handle different data structures from different chart types
-        let eventData = d;
-        
-        // For pack layout (bubble, wave, tree charts), data is in d.data
-        if (d && d.data) {
-          eventData = d.data;
-          
-          // If the processed data has a nested 'data' property with original fields, use that
-          if (eventData.data && typeof eventData.data === 'object') {
-            eventData = eventData.data;
-          }
-        }
-        
-        // Call handler with the correct data structure
-        handler(eventData, event, event.target);
+    // Simply delegate all events to the builder's InteractionManager
+    // The builder handles the D3 selection and event attachment properly
+    if (typeof this.chartInstance.on === 'function') {
+      this.eventHandlers.forEach((handler, eventName) => {
+        this.chartInstance.on(eventName, handler);
       });
-    });
+    }
   }
 }
 

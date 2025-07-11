@@ -78,7 +78,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     const bubbleGroups = svg.selectAll('.bubble')
       .data(layoutNodes)
       .join('g')
-      .attr('class', 'bubble-chart bubble')
+        .attr('class', 'bubble')
       .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`)
       .style('cursor', 'pointer');
 
@@ -91,15 +91,14 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       .attr('stroke-width', 2)
       .style('opacity', 0.8);
 
-    // Add labels
+    // Add labels with dynamic font sizing
     bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
     bubbleGroups.append('text')
+      .attr('class', 'bubble')
       .attr('text-anchor', 'middle')
       .attr('dominant-baseline', 'central')
-      .style('fill', '#333')
-      .style('font-size', (d: any) => Math.max(10, d.r / 3))
-      .style('pointer-events', 'none')
-      .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
+      .style('font-size', (d: any) => `${D3DataUtils.calculateOptimalFontSize(d.data.label, d.r)}px`)
+    .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
 
     // Add the flat liquid surface
     this.createLiquidElements(bubbleGroups, layoutNodes, processedData);

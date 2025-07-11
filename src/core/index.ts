@@ -83,6 +83,19 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
       this.eventHandlers = {};
     }
     this.eventHandlers[eventType] = handler;
+    
+    // If chart is already rendered, immediately attach the new event handler
+    if (this.isInitialized && this.interactionManager) {
+      const svgElements = this.svgManager.getElements();
+      if (svgElements) {
+        const bubbles = svgElements.svg.selectAll('.bubble');
+        if (!bubbles.empty()) {
+          // Attach just this new event handler to existing bubbles
+          this.interactionManager.attachEvents(bubbles, { [eventType]: handler });
+        }
+      }
+    }
+    
     return this;
   }
 

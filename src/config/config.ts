@@ -361,10 +361,38 @@ export function validateConfig(config: Partial<BubbleChartOptions> | null | unde
  * Creates default configuration with type safety
  */
 export function createDefaultConfig(): BubbleChartOptions {
+  // Professional color palette optimized for white text overlay
+  // Category 1: Duration-based (warm tones)
+  const durationColors = [
+    '#D32F2F', // Deep Red
+    '#F57C00', // Deep Orange  
+    '#FF6B35', // Vibrant Orange
+  ];
+  
+  // Category 2: Type-based (cool tones)
+  const typeColors = [
+    '#1976D2', // Deep Blue
+    '#388E3C', // Forest Green
+    '#7B1FA2', // Deep Purple
+  ];
+  
+  // Category 3: Engagement-based (rich tones)
+  const engagementColors = [
+    '#00796B', // Teal
+    '#5D4037', // Brown
+    '#455A64', // Blue Grey
+  ];
+  
+  // Combined professional palette with high contrast for white text
   const colorPalette = [
-    '#FF6384', '#4BC0C0', '#FFCE56', '#c2b9d6', '#36A2EB',
-    '#8161c7', '#196998', '#8bc4eb', '#4b36eb', '#ffe197',
-    '#ffa4b7', '#98e6e6', '#c2b9d6', '#36eb7c'
+    ...durationColors,
+    ...typeColors, 
+    ...engagementColors,
+    '#C2185B', // Deep Pink
+    '#303F9F', // Indigo
+    '#689F38', // Light Green
+    '#E64A19', // Deep Orange Red
+    '#512DA8'  // Deep Purple
   ];
 
   return {
