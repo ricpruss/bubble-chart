@@ -3,6 +3,7 @@ import { BaseChartBuilder } from '../core/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import type { BubbleChartData } from '../data/index.js';
 import { D3DataUtils } from '../d3/index.js';
+import { ChartPipeline } from './shared/index.js';
 
 /**
  * Motion configuration for force simulation
@@ -59,17 +60,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         return;
       }
 
-      // Process data with color accessor using D3DataUtils
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      this.processedData = D3DataUtils.processForVisualization(
+      // Process data using the shared ChartPipeline
+      this.processedData = ChartPipeline.processData(
         this.chartData,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
+        this.config
       );
       
 
@@ -85,12 +79,22 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
 
       const { svg, dimensions } = svgElements;
 
-      // Create scales using D3DataUtils
+      // Create scales using the shared ChartPipeline
       const radiusScale = D3DataUtils.createRadiusScale(
         this.processedData,
         (d) => d.size,
         [8, Math.min(dimensions.width, dimensions.height) / 12]
       );
+      
+      const { colorScale, theme } = ChartPipeline.createColorScale(
+        this.processedData,
+        this.config
+      );
+
+      // Apply theme background color if available
+      if (theme?.background) {
+        svgElements.svg.style('background', theme.background);
+      }
       
       // Create motion nodes with random initial positions
       const motionNodes = this.processedData.map((d) => ({
@@ -99,6 +103,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         x: Math.random() * dimensions.width,
         y: Math.random() * dimensions.height
       }));
+      
 
       // Create bubble groups and elements
       const bubbleGroups = svg.selectAll('g.bubble')
@@ -106,20 +111,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .enter()
         .append('g')
         .attr('class', 'bubble-chart bubble');
-
-      // Create color scale for bubbles using vibrant palette
-      const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
-      const colorScale = colorValues.length > 0 ? 
-        d3.scaleOrdinal()
-          .domain(colorValues)
-          .range([
-            '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-            '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
-          ]) :
-        () => this.config.defaultColor || '#1f77b4';
-
-      // Create font scale based on radius
-      const fontScale = D3DataUtils.createFontScale([8, Math.min(dimensions.width, dimensions.height) / 12], [10, 20]);
 
       // Create circles with motion-specific styling
       bubbleGroups.append('circle')
@@ -130,17 +121,14 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .attr('opacity', 0.85)
         .style('cursor', 'pointer');
 
-      // Add text labels
-      bubbleGroups.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .style('fill', '#333')
-        .style('font-size', (d: any) => fontScale(d.r))
-        .style('pointer-events', 'none')
-        .text((d: any) => {
-          const label = d.data.label;
-          return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
-        });
+      // Add text labels using centralized rendering
+      ChartPipeline.renderLabels(bubbleGroups, {
+        radiusAccessor: (d: any) => d.r,
+        labelAccessor: (d: any) => d.data?.label || d.label || '',
+        textColor: this.getTextColor(),
+        formatFunction: this.config.format?.text ? this.config.format.text : undefined,
+        initialOpacity: 1 // Motion bubbles don't use entrance animations
+      });
 
       // Use InteractionManager for event handling
       this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
@@ -194,17 +182,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
    */
   updateData(data: T[]): void {
     this.chartData = data;
-    // Process data using D3DataUtils instead of DataProcessor
-    const colorConfig = this.config.color;
-    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-      ? colorConfig as (string | ((d: BubbleChartData) => string))
-      : undefined;
-    
-    this.processedData = D3DataUtils.processForVisualization(
+    // Process data using the shared ChartPipeline
+    this.processedData = ChartPipeline.processData(
       data,
-      this.config.label || 'label',
-      this.config.size || 'size',
-      colorAccessor
+      this.config
     );
     
     // Re-render with new data

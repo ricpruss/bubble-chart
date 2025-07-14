@@ -2,6 +2,7 @@ import type { BubbleChartData } from '../data/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';
+import { ChartPipeline } from './shared/index.js';
 import * as d3 from 'd3';
 
 /**
@@ -58,11 +59,13 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         newHeight
       );
 
-      // Create color scale using D3DataUtils
-      const colorValues = D3DataUtils.getUniqueValues(sortedData, 'colorValue');
-      const colorScale = colorValues.length > 0 ? 
-        D3DataUtils.createColorScale(colorValues) : 
-        () => this.config.defaultColor || '#2196F3';
+      // Create color scale using ChartPipeline for theme support
+      const { colorScale, theme } = ChartPipeline.createColorScale(sortedData, this.config);
+
+      // Apply theme background color if available
+      if (theme?.background) {
+        svgElements.svg.style('background', theme.background);
+      }
 
       // Clear existing list rows first
       svg.selectAll('g.list-row').remove();
@@ -92,7 +95,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .attr('dy', '0.35em')
         .style('font-size', '14px')
         .style('font-family', 'sans-serif')
-        .style('fill', '#333')
+        .style('fill', this.getTextColor())
         .style('pointer-events', 'none')
         .text((d: any) => {
           const label = this.config.format?.text ? this.config.format.text(d.label) : d.label;
@@ -108,7 +111,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .attr('dy', '1.5em')
           .style('font-size', '12px')
           .style('font-family', 'sans-serif')
-          .style('fill', '#666')
+          .style('fill', this.getTextColor())
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
           .text((d: any) => this.config.format!.number!(d.size || 0));
@@ -120,7 +123,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .attr('dy', '1.5em')
           .style('font-size', '12px')
           .style('font-family', 'sans-serif')
-          .style('fill', '#666')
+          .style('fill', this.getTextColor())
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
           .text((d: any) => D3DataUtils.formatNumber(d.size || 0));

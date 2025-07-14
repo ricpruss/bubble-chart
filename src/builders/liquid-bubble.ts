@@ -3,6 +3,7 @@ import type { BubbleChartData } from '../data/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';
+import { ChartPipeline } from './shared/index.js';
 
 /**
  * Interface describing the generated wave SVG path data
@@ -61,10 +62,18 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       colorAccessor
     );
 
+    // Use shared pipeline for color scale creation with theme support
+    const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
+
     const svgElements = this.svgManager.getElements();
     if (!svgElements) return;
 
     const { svg, dimensions } = svgElements;
+
+    // Apply theme background color if available
+    if (theme?.background) {
+      svgElements.svg.style('background', theme.background);
+    }
 
     // Create layout nodes using D3DataUtils
     const layoutNodes = D3DataUtils.createPackLayout(
@@ -82,27 +91,25 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`)
       .style('cursor', 'pointer');
 
-    // Create circles (background for liquid fill)
+    // Create circles (background for liquid fill) with themed background
     bubbleGroups.selectAll('circle').remove(); // Clear existing to avoid duplicates
     bubbleGroups.append('circle')
       .attr('r', (d: any) => d.r)
-      .attr('fill', '#f0f0f0')
-      .attr('stroke', '#fff')
+      .attr('fill', theme?.liquidBackground || '#e6f3ff') // Use theme liquid background
+      .attr('stroke', theme?.strokeColor || '#fff')
       .attr('stroke-width', 2)
       .style('opacity', 0.8);
 
-    // Add labels
-    bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
-    bubbleGroups.append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .style('fill', '#333')
-      .style('font-size', (d: any) => Math.max(10, d.r / 3))
-      .style('pointer-events', 'none')
-      .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
+    // Add labels using centralized rendering
+    ChartPipeline.renderLabels(bubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      labelAccessor: (d: any) => d.data?.label || d.label || '',
+      textColor: this.getTextColor(),
+      initialOpacity: 1 // Liquid bubbles render text immediately
+    });
 
-    // Add the flat liquid surface
-    this.createLiquidElements(bubbleGroups, layoutNodes, processedData);
+    // Add the flat liquid surface with theme
+    this.createLiquidElements(bubbleGroups, layoutNodes, processedData, colorScale, theme);
 
     // Hook up mouse / touch interactions
     this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
@@ -111,7 +118,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
   /**
    * Appends clip-paths and wave paths for each bubble group.
    */
-  private createLiquidElements(bubbleGroups: any, layoutNodes: any[], processedData: any[]): void {
+  private createLiquidElements(bubbleGroups: any, layoutNodes: any[], processedData: any[], colorScale: any, theme: any): void {
     // Clear existing elements to avoid duplicates
     bubbleGroups.selectAll('defs').remove();
     bubbleGroups.selectAll('g[clip-path]').remove();
@@ -131,20 +138,10 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     const paths = waveGroups.append('path')
       .attr('class', 'wave')
       .attr('fill', (_d: any, i: number) => {
-        const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
-        const colorScale = colorValues.length > 0 ? 
-          d3.scaleOrdinal()
-            .domain(colorValues)
-            .range([
-              '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-              '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
-            ]) :
-          () => this.config.defaultColor || '#2196F3';
-        
         const item = processedData[i];
         return item?.colorValue ? colorScale(item.colorValue) : (this.config.defaultColor || '#2196F3');
       })
-      .style('opacity', 0.6)
+      .style('opacity', theme?.overlayOpacity || 0.8) // Use theme overlay opacity
       .attr('stroke', 'none')
       // Initial state: empty (0% filled)
       .each((_d: any, i: number, nodes: any[]) => {

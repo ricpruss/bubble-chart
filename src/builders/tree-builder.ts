@@ -2,6 +2,7 @@ import type { BubbleChartData, HierarchicalBubbleData } from '../data/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';
+import { ChartPipeline } from './shared/index.js';
 import * as d3 from 'd3';
 
 /**
@@ -121,11 +122,13 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
       5
     );
     
-    // Create color scale for tree nodes
-    const colorValues = D3DataUtils.getUniqueValues(this.processedData, 'colorValue');
-    const colorScale = colorValues.length > 0 ? 
-      D3DataUtils.createColorScale(colorValues) : 
-      () => this.config.defaultColor || '#1f77b4';
+    // Create color scale for tree nodes using ChartPipeline for theme support
+    const { colorScale, theme } = ChartPipeline.createColorScale(this.processedData, this.config);
+
+    // Apply theme background color if available
+    if (theme?.background) {
+      svgElements.svg.style('background', theme.background);
+    }
 
     // Create D3.js hierarchy for node information (parents vs children)
     const root = d3.hierarchy(rootDatum);
@@ -162,20 +165,18 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
       .attr('stroke-width', 1.5)
       .style('cursor', 'pointer');
 
-    // Add labels only to leaf nodes
-    bubbleGroups
-      .filter((_d: any, i: number) => !hierarchyNodes[i]?.children)
-      .append('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .style('fill', '#333')
-      .style('font-size', (d: any) => Math.max(10, d.r / 3))
-      .style('pointer-events', 'none')
-      .text((d: any) => {
+    // Add labels only to leaf nodes using centralized rendering
+    const leafBubbleGroups = bubbleGroups.filter((_d: any, i: number) => !hierarchyNodes[i]?.children);
+    ChartPipeline.renderLabels(leafBubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      labelAccessor: (d: any) => {
         // For leaf nodes, find corresponding processed data for label
         const leafData = this.processedData.find(pd => pd.data === d.data);
-        return leafData ? D3DataUtils.formatLabel(leafData.label, 15) : '';
-      });
+        return leafData?.label || d.data?.label || d.label || '';
+      },
+      textColor: this.getTextColor(),
+      initialOpacity: 0 // Tree bubbles use entrance animations
+    });
     
     // Apply entrance animations if configured
     if (this.config.animation) {
@@ -187,6 +188,13 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
         .transition()
         .duration(animDuration)
         .delay((_d: any, i: number) => i * staggerDelay)
+        .style('opacity', 1);
+      
+      // Also animate text opacity for leaf nodes
+      leafBubbleGroups.selectAll('text')
+        .transition()
+        .delay((_d: any, i: number) => i * staggerDelay + 200)
+        .duration(animDuration / 2)
         .style('opacity', 1);
     }
     

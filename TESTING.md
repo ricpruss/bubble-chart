@@ -12,15 +12,11 @@ This document outlines the comprehensive, unified testing approach for the bubbl
 ## 🏃‍♂️ Quick Start
 
 ```bash
-# one command does it all
-npm test   # alias for npm run test:all
+# Simple - one command runs all tests
+npm test
 ```
 
-This single runner performs:
-
-1. Smoke sanity check
-2. Jest unit suites
-3. Integration script (Node-based)
+This is the only way to run tests. The command runs all test suites automatically.
 
 Runtime ≈ 45 s.
 
@@ -36,21 +32,16 @@ Browser and visual tests remain manual (`npm run dev` → navigate to test files
 
 ## 🛠️ Developer Workflow
 
-• During dev: `npm test` for full sweep (≈45 s).  Most IDEs can re-run Jest only for faster feedback.
-
-• Pre-commit / CI: `npm test` plus `npm run build`.
+• Development: `npm test` for full test suite (≈45 s)
+• Pre-commit: `npm test` plus `npm run build`
 
 ## 📋 Test Commands Summary
 
 | Command | Purpose | Runtime | Usage |
 |---------|---------|---------|-------|
-| `npm run test:smoke` | Quick verification | 5s | After builds, debugging |
-| `npm run test:unit` | Core components | 15s | Development, CI/CD |
-| `npm run test:integration` | Real scenarios (Node.js) | 30s | Pre-commit, CI/CD |
+| `npm test` | All tests (smoke + unit + integration) | 45s | Development, CI/CD |
 | `npm run dev` + navigate to `tests/integration-test.html` | Real scenarios (Browser) | Manual | Debugging integration issues |
 | `npm run dev` + navigate to `tests/browser-test.html` | Visual verification | Manual | Final validation |
-| `npm run test:all` | Unit + Integration | 45s | Comprehensive check |
-| `npm run test:quick` | Alias for smoke | 5s | Quick alias |
 
 ## 📊 Test Coverage Areas
 
@@ -186,16 +177,14 @@ npm run dev  # Navigate to tests/integration-test.html
 
 ### Test Debugging Steps
 
-1. **Start with smoke tests** - `npm run test:smoke`
+1. **Run all tests** - `npm test`
 2. **Check the build** - `npm run build`
-3. **Run unit tests** - `npm run test:unit`
-4. **Try browser tests** for visual debugging - `npm run dev` → navigate to `tests/browser-test.html`
-5. **Check integration tests** - `npm run test:integration`
+3. **Try browser tests** for visual debugging - `npm run dev` → navigate to `tests/browser-test.html`
 
 ### Getting Help
 
 **For Users:**
-- Run `npm run test:smoke` for quick issue identification
+- Run `npm test` for comprehensive test results
 - Use `npm run dev` → navigate to `tests/browser-test.html` for visual problem diagnosis
 - Check the console output for specific error messages
 
@@ -265,34 +254,5 @@ Pass Rate: 100.0%
 - Visual charts render as expected
 - Performance test completes in reasonable time
 
-## 🔄 Continuous Integration
-
-### GitHub Actions Example
-```yaml
-name: Test Suite
-on: [push, pull_request]
-jobs:
-  test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18'
-      - run: npm install
-      - run: npm run build
-      - run: npm run test:all
-```
-
-### Pre-commit Hook
-```json
-{
-  "husky": {
-    "hooks": {
-      "pre-commit": "npm run test:smoke && npm run build"
-    }
-  }
-}
-```
 
 This testing strategy ensures comprehensive coverage while maintaining simplicity and avoiding duplication. Each test level serves a specific purpose and provides clear feedback for different use cases. 

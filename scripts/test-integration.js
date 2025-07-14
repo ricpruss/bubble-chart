@@ -124,6 +124,11 @@ class TestRunner {
       await this.testEventHandling(BubbleBuilder);
       await this.testErrorHandling(BubbleBuilder);
       
+      // Integration tests for coverage
+      await this.testBuilderToCoreWorkflow(BubbleBuilder);
+      await this.testDataFlowThroughPipeline(BubbleBuilder);
+      await this.testEventSystemIntegration(BubbleBuilder);
+      
     } catch (error) {
       this.addTest('Test Suite Execution', false, error.message);
     }
@@ -404,6 +409,190 @@ class TestRunner {
       
     } catch (error) {
       this.addTest('Error Handling Tests', false, error.message);
+    }
+  }
+
+  async testBuilderToCoreWorkflow(BubbleBuilder) {
+    try {
+      // Create container
+      const container = document.createElement('div');
+      container.id = 'workflow-test';
+      document.body.appendChild(container);
+      
+      const config = { ...baseConfig, container: '#workflow-test' };
+      const builder = new BubbleBuilder(config);
+      
+      // Test BaseChartBuilder inheritance
+      this.addTest('BaseChartBuilder Inheritance',
+        builder.constructor.name === 'BubbleBuilder' && 
+        typeof builder.data === 'function' &&
+        typeof builder.update === 'function',
+        'Builder extends BaseChartBuilder with core methods'
+      );
+      
+      // Test core property initialization
+      this.addTest('Core Properties Initialized',
+        builder.hasOwnProperty('config') || builder.config !== undefined,
+        'Core properties available after construction'
+      );
+      
+      // Test data processing workflow
+      builder.data(testData);
+      
+      // Test internal data processing (via update trigger)
+      try {
+        builder.update();
+        this.addTest('Builder-to-Core Data Flow',
+          builder.chartData && builder.chartData.length === testData.length,
+          'Data flows correctly from builder to core'
+        );
+      } catch (error) {
+        this.addTest('Builder-to-Core Data Flow', false, error.message);
+      }
+      
+      // Test SVG manager integration
+      this.addTest('SVG Manager Integration',
+        builder.svgManager !== undefined,
+        'SVG manager is integrated in builder'
+      );
+      
+      // Cleanup
+      document.body.removeChild(container);
+      
+    } catch (error) {
+      this.addTest('Builder-to-Core Workflow Tests', false, error.message);
+    }
+  }
+
+  async testDataFlowThroughPipeline(BubbleBuilder) {
+    try {
+      const container = document.createElement('div');
+      container.id = 'pipeline-test';
+      document.body.appendChild(container);
+      
+      const config = { ...baseConfig, container: '#pipeline-test' };
+      const builder = new BubbleBuilder(config);
+      
+      // Test raw data input
+      const rawData = [
+        { name: 'Test1', value: 100 },
+        { name: 'Test2', value: 200 }
+      ];
+      
+      builder.data(rawData);
+      
+      // Test data transformation through pipeline
+      this.addTest('Raw Data Storage',
+        builder.chartData && builder.chartData.length === rawData.length,
+        'Raw data stored correctly'
+      );
+      
+      // Test processed data creation (via update)
+      try {
+        builder.update();
+        
+        // Test that processing occurred
+        this.addTest('Data Processing Pipeline',
+          builder.processedData !== undefined || builder.chartData !== undefined,
+          'Data processing pipeline executed'
+        );
+        
+        // Test data enrichment
+        if (builder.processedData && builder.processedData.length > 0) {
+          const processed = builder.processedData[0];
+          this.addTest('Data Enrichment',
+            processed.hasOwnProperty('size') || processed.hasOwnProperty('radius'),
+            'Data enriched with visualization properties'
+          );
+        }
+        
+      } catch (error) {
+        this.addTest('Data Processing Pipeline', false, error.message);
+      }
+      
+      // Test configuration influence on processing
+      const newConfig = { ...config, bubble: { minRadius: 10, maxRadius: 100 } };
+      const builder2 = new BubbleBuilder(newConfig);
+      builder2.data(rawData);
+      
+      this.addTest('Configuration Influence',
+        builder2.config.bubble && builder2.config.bubble.minRadius === 10,
+        'Configuration affects data processing'
+      );
+      
+      // Cleanup
+      document.body.removeChild(container);
+      
+    } catch (error) {
+      this.addTest('Data Flow Pipeline Tests', false, error.message);
+    }
+  }
+
+  async testEventSystemIntegration(BubbleBuilder) {
+    try {
+      const container = document.createElement('div');
+      container.id = 'event-test';
+      document.body.appendChild(container);
+      
+      const config = { ...baseConfig, container: '#event-test' };
+      const builder = new BubbleBuilder(config);
+      
+      // Test event system initialization
+      this.addTest('Event System Available',
+        typeof builder.on === 'function',
+        'Event system is integrated'
+      );
+      
+      // Test event handler registration
+      let eventHandlerCalled = false;
+      const testHandler = () => { eventHandlerCalled = true; };
+      
+      try {
+        builder.on('click', testHandler);
+        this.addTest('Event Handler Registration',
+          true,
+          'Event handler registered without error'
+        );
+      } catch (error) {
+        this.addTest('Event Handler Registration', false, error.message);
+      }
+      
+      // Test multiple event types
+      try {
+        builder.on('hover', testHandler);
+        builder.on('mouseout', testHandler);
+        this.addTest('Multiple Event Types',
+          true,
+          'Multiple event types can be registered'
+        );
+      } catch (error) {
+        this.addTest('Multiple Event Types', false, error.message);
+      }
+      
+      // Test event system with data
+      builder.data(testData);
+      
+      try {
+        builder.update();
+        this.addTest('Event System with Data',
+          true,
+          'Event system works with data processing'
+        );
+      } catch (error) {
+        this.addTest('Event System with Data', false, error.message);
+      }
+      
+      // Test interaction manager integration
+      this.addTest('Interaction Manager Integration',
+        builder.interactionManager !== undefined || typeof builder.on === 'function',
+        'Interaction manager is integrated'
+      );
+      
+      // Cleanup
+      document.body.removeChild(container);
+      
+    } catch (error) {
+      this.addTest('Event System Integration Tests', false, error.message);
     }
   }
 

@@ -1,8 +1,7 @@
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import type { BubbleChartData } from '../data/index.js';
 import { BaseChartBuilder } from '../core/index.js';
-import { D3DataUtils } from '../d3/index.js';
-import * as d3 from 'd3';
+import { ChartPipeline } from './shared/index.js';
 
 /**
  * Basic bubble chart builder with TypeScript generics for data flexibility
@@ -30,18 +29,8 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
     }
 
     try {
-      // Process data with color accessor using D3DataUtils
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      const processedData = D3DataUtils.processForVisualization(
-        this.chartData,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
-      );
+      // Use shared pipeline for data processing
+      const processedData = ChartPipeline.processData(this.chartData, this.config);
 
       // Get SVG elements from building blocks
       const svgElements = this.svgManager.getElements();
@@ -52,8 +41,8 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
 
       const { svg, dimensions } = svgElements;
 
-      // Create layout nodes using D3DataUtils
-      const layoutNodes = D3DataUtils.createPackLayout(
+      // Use shared pipeline for layout creation
+      const layoutNodes = ChartPipeline.createBubbleLayout(
         processedData,
         dimensions.width,
         dimensions.height,
@@ -97,20 +86,15 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
           }
         );
 
-      // Create color scale using D3DataUtils
-      const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
-      const colorScale = colorValues.length > 0 ? 
-        d3.scaleOrdinal()
-          .domain(colorValues)
-          .range([
-            '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-            '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
-          ]) :
-        () => this.config.defaultColor || '#1f77b4';
+      // Use shared pipeline for color scale creation
+      const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
 
-      // Create font scale
-      const radiusExtent = d3.extent(layoutNodes, (d: any) => d.r) as [number, number];
-      const fontScale = D3DataUtils.createFontScale(radiusExtent, [10, 18]);
+      // Apply theme background color if available
+      if (theme?.background) {
+        svgElements.svg.style('background', theme.background);
+      }
+
+      // Use shared pipeline for font scale creation
 
       // Handle circles with proper enter/update/exit
       bubbleGroups.selectAll('circle')
@@ -141,70 +125,19 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
             .remove()
         );
 
-      // Handle labels with proper enter/update/exit
-      bubbleGroups.selectAll('text')
-        .data((d: any) => [d]) // One label per bubble group
-        .join(
-          (enter: any) => enter.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central')
-            .style('font-size', (d: any) => fontScale(d.r))
-            .style('font-weight', 'bold')
-            .style('fill', '#333')
-            .style('pointer-events', 'none')
-            .style('opacity', 0)
-            .text((d: any) => {
-              const label = d.data.label;
-              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
-            }),
-          (update: any) => update
-            .transition()
-            .duration(this.config.animation?.update?.duration || 800)
-            .style('font-size', (d: any) => fontScale(d.r))
-            .style('opacity', 1)
-            .text((d: any) => {
-              const label = d.data.label;
-              return this.config.format?.text ? this.config.format.text(label) : D3DataUtils.formatLabel(label, 15);
-            }),
-          (exit: any) => exit
-            .transition()
-            .duration(this.config.animation?.exit?.duration || 400)
-            .style('opacity', 0)
-            .remove()
-        );
+      // Handle labels using centralized text rendering
+      ChartPipeline.renderLabels(bubbleGroups, {
+        radiusAccessor: (d: any) => d.r,
+        labelAccessor: (d: any) => d.data?.label || d.label || '',
+        textColor: this.getTextColor(),
+        formatFunction: this.config.format?.text ? this.config.format.text : undefined
+      });
 
       // Attach event handling
       this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
 
-      // Apply entrance animations to newly entered elements
-      if (this.config.animation) {
-        const duration = this.config.animation?.enter?.duration || 800;
-        const staggerDelay = this.config.animation?.enter?.stagger || 0;
-        
-        // Animate all circles (they start with r=0 and opacity=0)
-        bubbleGroups.selectAll('circle')
-          .transition()
-          .delay((_d: any, i: number) => i * staggerDelay)
-          .duration(duration)
-          .attr('r', (d: any) => d.r)
-          .style('opacity', 0.8);
-
-        // Animate all labels (they start with opacity=0)
-        bubbleGroups.selectAll('text')
-          .transition()
-          .delay((_d: any, i: number) => i * staggerDelay + (staggerDelay > 0 ? 200 : 0))
-          .duration(duration / 2)
-          .style('opacity', 1);
-      } else {
-        // No animations - set final values immediately
-        
-        bubbleGroups.selectAll('circle')
-          .attr('r', (d: any) => d.r)
-          .style('opacity', 0.8);
-        
-        bubbleGroups.selectAll('text')
-          .style('opacity', 1);
-      }
+      // Use shared pipeline for entrance animations
+      ChartPipeline.applyEntranceAnimations(bubbleGroups, this.config);
     } catch (error) {
       console.error('BubbleBuilder: Error during rendering:', error);
     }

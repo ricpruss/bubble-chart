@@ -75,9 +75,19 @@ describe('D3DataUtils', () => {
       expect(scale('E-commerce')).toBeTruthy();
     });
 
-    it('should use Category10 scheme by default', () => {
+    it('should use vibrant palette by default', () => {
       const scale = D3DataUtils.createColorScale(['A', 'B']);
-      expect(scale('A')).toBe('#1f77b4'); // First color in Category10
+      expect(scale('A')).toBe('#E74C3C'); // First color in vibrant palette
+    });
+    
+    it('should support different palette types', () => {
+      const vibrantScale = D3DataUtils.createColorScale(['A', 'B'], 'vibrant');
+      const sophisticatedScale = D3DataUtils.createColorScale(['A', 'B'], 'sophisticated');
+      const pastelScale = D3DataUtils.createColorScale(['A', 'B'], 'pastel');
+      
+      expect(vibrantScale('A')).toBe('#E74C3C');
+      expect(sophisticatedScale('A')).toBe('#D63384');
+      expect(pastelScale('A')).toBe('#FFB3BA');
     });
   });
 
@@ -294,6 +304,7 @@ describe('D3DataUtils', () => {
       expect(leafNodes.length).toBeGreaterThan(0);
     });
   });
+
 
   describe('formatting functions', () => {
     it('should format labels with truncation', () => {

@@ -3,6 +3,7 @@
 import * as d3 from 'd3';
 import { BuilderFactory } from './builders/builder-factory.js';
 import type { BubbleChartData, BubbleChartOptions } from './types/index.js';
+import { D3DataUtils } from './d3/index.js';
 
 /**
  * Simple D3-native chart wrapper that adds events directly to D3 selections
@@ -59,6 +60,11 @@ class D3ChartWrapper {
     return this;
   }
   
+  withTheme(theme: 'corporate' | 'ocean' | 'sunset' | 'forest' | 'slate' | 'wave') {
+    this.config.theme = theme;
+    return this;
+  }
+  
   withAnimations(preset: string | any) {
     // Simple D3-native animation presets
     if (preset === 'gentle' || preset === 'smooth') {
@@ -96,6 +102,7 @@ class D3ChartWrapper {
       width: this.config.width,
       height: this.config.height,
       percentage: this.config.percentage,
+      theme: this.config.theme,
       keyFunction: this.config.keyFunction, // 🔑 Pass key function to builder
       animation: this.animationConfig ? {
         enter: {
@@ -270,6 +277,14 @@ export type {
   BubbleEventType,
   BubbleEventHandlers
 } from './types/index.js';
+
+// Export color palettes for custom styling
+export {
+  D3DataUtils
+} from './d3/index.js';
+
+// Export themed palettes for advanced usage
+export const THEMED_PALETTES = D3DataUtils.THEMED_PALETTES;
 
 // Make the D3-native API the default export
 export default BubbleChart;

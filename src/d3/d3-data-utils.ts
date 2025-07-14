@@ -60,19 +60,167 @@ export class D3DataUtils {
   }
 
   /**
-   * Create color scale using D3's native ordinal patterns
+   * Enhanced themed palettes with background colors and overlay support
+   * Each theme includes colors optimized for different chart types
+   */
+  static readonly THEMED_PALETTES = {
+    'corporate': {
+      colors: ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'],
+      background: '#f8fafc',
+      backgroundDark: '#e0e7ff',
+      waveBackground: '#e0e7ff', // Lighter blue for wave background
+      liquidBackground: '#dbeafe', // Very light blue for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.7
+    },
+    'ocean': {
+      colors: ['#0c4a6e', '#0369a1', '#0284c7', '#0ea5e9', '#38bdf8'],
+      background: '#f0f9ff',
+      backgroundDark: '#e0f2fe',
+      waveBackground: '#e0f2fe', // Light cyan for wave background
+      liquidBackground: '#cffafe', // Very light cyan for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.75
+    },
+    'sunset': {
+      colors: ['#dc2626', '#ea580c', '#f59e0b', '#eab308', '#84cc16'],
+      background: '#fef7ed',
+      backgroundDark: '#fed7aa',
+      waveBackground: '#fed7aa', // Light orange for wave background
+      liquidBackground: '#fef3c7', // Very light yellow for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.65
+    },
+    'forest': {
+      colors: ['#166534', '#16a34a', '#4ade80', '#86efac', '#bbf7d0'],
+      background: '#f0fdf4',
+      backgroundDark: '#dcfce7',
+      waveBackground: '#dcfce7', // Light green for wave background
+      liquidBackground: '#ecfccb', // Very light lime for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.7
+    },
+    'slate': {
+      colors: ['#0f172a', '#334155', '#64748b', '#94a3b8', '#cbd5e1'],
+      background: '#f8fafc',
+      backgroundDark: '#e2e8f0',
+      waveBackground: '#e2e8f0', // Light gray for wave background
+      liquidBackground: '#f1f5f9', // Very light gray for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.8
+    },
+    'wave': {
+      colors: ['#1e40af', '#3b82f6', '#06b6d4', '#10b981', '#84cc16'],
+      background: '#f0f9ff',
+      backgroundDark: '#dbeafe',
+      waveBackground: '#dbeafe', // Light blue for wave background
+      liquidBackground: '#e0f2fe', // Very light cyan for liquid background
+      textColor: '#ffffff',
+      strokeColor: '#ffffff',
+      overlayOpacity: 0.75
+    }
+  };
+
+  /**
+   * Legacy color palettes for backward compatibility
+   */
+  static readonly COLOR_PALETTES = {
+    'vibrant': [
+      '#E74C3C', '#F39C12', '#F1C40F', '#2ECC71', '#1ABC9C',
+      '#3498DB', '#9B59B6', '#E91E63', '#FF5722', '#00BCD4'
+    ],
+    'sophisticated': [
+      '#D63384', '#FD7E14', '#FFC107', '#198754', '#20C997',
+      '#0D6EFD', '#6F42C1', '#D63384', '#DC3545', '#6C757D'
+    ],
+    'pastel': [
+      '#FFB3BA', '#FFDFBA', '#FFFFBA', '#BAFFBA', '#BAE1FF',
+      '#E1BAFF', '#FFBADF', '#BFFFFF', '#FFE1BA', '#D4BAFF'
+    ],
+    'neon': [
+      '#FF073A', '#FF8C00', '#FFD700', '#39FF14', '#00FFFF',
+      '#1E90FF', '#DA70D6', '#FF1493', '#FF4500', '#7FFF00'
+    ],
+    'wave': [
+      '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD',
+      '#F8B500', '#FF6B6B', '#4DABF7', '#69DB7C', '#FFD93D'
+    ],
+    'liquid': [
+      '#FF4757', '#FF6348', '#FFA502', '#7ED321', '#50E3C2',
+      '#4A90E2', '#BD10E0', '#F5A623', '#D0021B', '#417505'
+    ]
+  };
+
+  /**
+   * Create color scale using D3's native ordinal patterns with unified API
    * @param colorValues - Array of unique color values from data
-   * @param colorScheme - D3 color scheme (default: Category10)
+   * @param paletteType - Palette type ('vibrant', 'sophisticated', 'pastel', 'neon', 'wave', 'liquid')
    * @returns D3 ordinal color scale
    */
   static createColorScale(
     colorValues: string[], 
-    colorScheme: readonly string[] = d3.schemeCategory10
+    paletteType: keyof typeof D3DataUtils.COLOR_PALETTES = 'vibrant'
   ): d3.ScaleOrdinal<string, string> {
+    const palette = D3DataUtils.COLOR_PALETTES[paletteType] || D3DataUtils.COLOR_PALETTES.vibrant;
     return d3.scaleOrdinal<string, string>()
       .domain(colorValues)
-      .range(colorScheme);
+      .range(palette);
   }
+
+  /**
+   * Create themed color scale with proper background/overlay support
+   * @param colorValues - Array of unique color values from data
+   * @param themeName - Theme name ('corporate', 'ocean', 'sunset', 'forest', 'slate', 'wave')
+   * @returns Themed color configuration
+   */
+  static createThemedPalette(
+    colorValues: string[],
+    themeName: keyof typeof D3DataUtils.THEMED_PALETTES = 'corporate'
+  ): {
+    colorScale: d3.ScaleOrdinal<string, string>;
+    theme: typeof D3DataUtils.THEMED_PALETTES[keyof typeof D3DataUtils.THEMED_PALETTES];
+  } {
+    const theme = D3DataUtils.THEMED_PALETTES[themeName] || D3DataUtils.THEMED_PALETTES.corporate;
+    const colorScale = d3.scaleOrdinal<string, string>()
+      .domain(colorValues)
+      .range(theme.colors);
+    
+    return { colorScale, theme };
+  }
+
+  /**
+   * Get theme by chart type with intelligent defaults
+   * @param chartType - Type of chart ('bubble', 'wave', 'liquid', etc.)
+   * @param explicitTheme - Explicitly requested theme
+   * @returns Theme name
+   */
+  static getThemeForChartType(
+    chartType: string,
+    explicitTheme?: string
+  ): keyof typeof D3DataUtils.THEMED_PALETTES {
+    if (explicitTheme && explicitTheme in D3DataUtils.THEMED_PALETTES) {
+      return explicitTheme as keyof typeof D3DataUtils.THEMED_PALETTES;
+    }
+    
+    // Default themes for specific chart types
+    const chartTypeThemes: Record<string, keyof typeof D3DataUtils.THEMED_PALETTES> = {
+      'wave': 'ocean',
+      'liquid': 'sunset',
+      'tree': 'forest',
+      'orbit': 'wave',
+      'motion': 'corporate',
+      'list': 'slate',
+      'bubble': 'corporate'
+    };
+    
+    return chartTypeThemes[chartType] || 'corporate';
+  }
+
 
   /**
    * Create font size scale based on radius using D3's linear scale
@@ -326,6 +474,10 @@ export class D3DataUtils {
    * @returns Formatted label
    */
   static formatLabel(label: string, maxLength?: number): string {
+    // Handle undefined or null labels
+    if (!label || typeof label !== 'string') {
+      return '';
+    }
     if (maxLength && label.length > maxLength) {
       return label.substring(0, maxLength - 1) + '…';
     }

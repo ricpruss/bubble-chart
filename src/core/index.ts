@@ -50,7 +50,7 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
   protected chartData: T[] = [];
   protected processedData: any[] = [];
   protected isInitialized = false;
-  
+  private textColor: string = 'white';  // Default text color
   // Building blocks - initialized on first use
   protected svgManager!: SVGManager;
   protected dataProcessor!: DataProcessor<T>;
@@ -259,6 +259,24 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
     }
     
     this.isInitialized = false;
+  }
+
+  /**
+   * Get the current text color
+   * @returns Current text color
+   */
+  getTextColor(): string {
+    return this.textColor;
+  }
+
+  /**
+   * Set the text color for labels
+   * @param color - Text color as a string
+   * @returns this for method chaining
+   */
+  setTextColor(color: string): this {
+    this.textColor = color;
+    return this;
   }
 
   /**

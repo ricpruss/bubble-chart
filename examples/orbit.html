@@ -38,10 +38,11 @@
       .withSize("size")
       .withColor("label")
       .withType("orbit")
+      .withTheme("slate")      // Modern neutral theme
       .build();                // Returns live chart (already rendered)
 
-    // Increase orbit speed for clearer motion (1.0 = normal speed)
-    chart.setSpeedMultiplier(1.0);
+    // Note: Speed multiplier can be adjusted via the underlying builder if needed
+    // For the fluent API, we use the default orbital speed which is already optimized
   </script>
 </body>
 </html> 

@@ -3,6 +3,7 @@ import type { BubbleChartData } from '../data/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
 import { D3DataUtils } from '../d3/index.js';
+import { ChartPipeline } from './shared/index.js';
 
 /**
  * Interface for wave animation data points
@@ -84,11 +85,13 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         2
       );
 
-      // Create color scale for waves
-      const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
-      const colorScale = colorValues.length > 0 ? 
-        D3DataUtils.createColorScale(colorValues) : 
-        () => this.config.defaultColor || '#2196F3';
+      // Use shared pipeline for color scale creation with theme support
+      const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
+
+      // Apply theme background color if available
+      if (theme?.background) {
+        svgElements.svg.style('background', theme.background);
+      }
 
       // Create bubble groups using D3's native .join() pattern
       const bubbleGroups = svg.selectAll('g.bubble')
@@ -97,27 +100,25 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         .attr('class', 'bubble-chart bubble')
         .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
-      // Create bubble circles
+      // Create bubble circles with themed background
       bubbleGroups.selectAll('circle').remove(); // Clear existing to avoid duplicates
       bubbleGroups.append('circle')
         .attr('r', (d: any) => d.r)
-        .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd'))
-        .attr('stroke', '#fff')
+        .attr('fill', theme?.waveBackground || '#e0e7ff') // Use theme wave background
+        .attr('stroke', theme?.strokeColor || '#fff')
         .attr('stroke-width', 1.5)
         .style('cursor', 'pointer');
 
-      // Add labels
-      bubbleGroups.selectAll('text').remove(); // Clear existing to avoid duplicates
-      bubbleGroups.append('text')
-        .attr('text-anchor', 'middle')
-        .attr('dominant-baseline', 'central')
-        .style('fill', '#333')
-        .style('font-size', (d: any) => Math.max(10, d.r / 3))
-        .style('pointer-events', 'none')
-        .text((d: any) => D3DataUtils.formatLabel(d.data.label, 15));
+      // Add labels using centralized rendering
+      ChartPipeline.renderLabels(bubbleGroups, {
+        radiusAccessor: (d: any) => d.r,
+        labelAccessor: (d: any) => d.data?.label || d.label || '',
+        textColor: this.getTextColor(),
+        initialOpacity: 1 // Wave bubbles render text immediately
+      });
 
-      // Add wave-specific elements
-      this.createWaveElements(bubbleGroups, processedData);
+      // Add wave-specific elements with theme
+      this.createWaveElements(bubbleGroups, processedData, colorScale, theme);
 
       // Attach events and start animation
       this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
@@ -131,12 +132,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
   /**
    * Creates wave-specific visual elements for each bubble
    */
-  private createWaveElements(bubbleGroups: any, processedData: any[]): void {
-    // Create color scale for waves
-    const colorValues = D3DataUtils.getUniqueValues(processedData, 'colorValue');
-    const colorScale = colorValues.length > 0 ? 
-      D3DataUtils.createColorScale(colorValues) : 
-      () => this.config.defaultColor || '#2196F3';
+  private createWaveElements(bubbleGroups: any, _processedData: any[], colorScale: any, theme: any): void {
 
     // Clear existing wave elements to avoid duplicates
     bubbleGroups.selectAll('defs').remove();
@@ -163,7 +159,7 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
     waveGroups.append('path')
       .attr('class', 'wave')
       .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#2196F3'))
-      .style('opacity', 0.6)
+      .style('opacity', theme?.overlayOpacity || 0.7) // Use theme overlay opacity
       .attr('stroke', 'none');
   }
 

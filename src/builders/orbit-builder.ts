@@ -1,6 +1,7 @@
 import type { BubbleChartData } from '../data/index.js';
 import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
+import { ChartPipeline } from './shared/index.js';
 import * as d3 from 'd3';
 
 /**
@@ -78,6 +79,7 @@ interface OrbitNode extends d3.SimulationNodeDatum {
   label: string; // Pre-computed for performance
   size: number;  // Pre-computed for performance
   colorValue?: string; // Pre-computed color value
+  color: string; // Pre-computed color for performance
 }
 
 /**
@@ -133,8 +135,16 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       [8, Math.min(dimensions.width, dimensions.height) / 12]
     );
 
+    // Create color scale using ChartPipeline for theme support
+    const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
+
+    // Apply theme background color if available
+    if (theme?.background) {
+      svgElements.svg.style('background', theme.background);
+    }
+
     // Create orbit nodes with simplified logic
-    this.orbitNodes = this.createSimplifiedOrbitNodes(processedData, radiusScale);
+    this.orbitNodes = this.createSimplifiedOrbitNodes(processedData, radiusScale, colorScale);
     
     // Create bubbles using D3's native data binding with proper CSS classes
     const bubbleGroups = svg.selectAll('.bubble')
@@ -148,21 +158,18 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       .data((d: any) => [d])
       .join('circle')
       .attr('r', (d: any) => d.r)
-      .attr('fill', this.getNodeColor.bind(this))
+      .attr('fill', (d: any) => d.color)
       .attr('stroke', '#fff')
       .attr('stroke-width', 2)
       .style('cursor', 'pointer'); // Make it clear these are interactive
 
-    // Add labels
-    bubbleGroups.selectAll('text')
-      .data((d: any) => [d])
-      .join('text')
-      .attr('text-anchor', 'middle')
-      .attr('dy', '0.3em')
-      .style('font-size', (d: any) => `${Math.min(d.r / 3, 14)}px`)
-      .style('fill', '#333')
-      .style('pointer-events', 'none')
-      .text((d: any) => d.label);
+    // Add labels using centralized rendering
+    ChartPipeline.renderLabels(bubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      labelAccessor: (d: any) => d.data?.label || d.label || '',
+      textColor: this.getTextColor(),
+      initialOpacity: 1 // Orbit bubbles render text immediately
+    });
     
     // Start orbital animation
     this.startOrbitAnimation(bubbleGroups);
@@ -177,7 +184,8 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
    */
   private createSimplifiedOrbitNodes(
     processedData: Array<{ data: BubbleChartData; label: string; size: number; colorValue?: string }>,
-    radiusScale: d3.ScalePower<number, number>
+    radiusScale: d3.ScalePower<number, number>,
+    colorScale: any
   ): OrbitNode[] {
     // Use D3's range for orbital positioning
     const orbitRadii = d3.range(processedData.length).map(i => 
@@ -194,7 +202,8 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
         r: radiusScale(item.size),
         orbitRadius: orbitRadii[i] || 60, // Provide fallback
         angle: (i / processedData.length) * Math.PI * 2, // Evenly distribute initially
-        speed: d3.randomUniform(0.008, 0.020)() // Use D3's random utilities
+        speed: d3.randomUniform(0.008, 0.020)(), // Use D3's random utilities
+        color: item.colorValue ? colorScale(item.colorValue) : (this.config.defaultColor || '#1f77b4')
       };
       
       if (item.colorValue) {
@@ -205,21 +214,6 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     });
   }
 
-  /**
-   * Get color for a node using simplified D3-native logic
-   */
-  private getNodeColor(d: OrbitNode): string {
-    // Use D3's native color scales - more sophisticated palette selection
-    const colorScale = d3.scaleOrdinal()
-      .range([
-        '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b',
-        '#e377c2', '#7f7f7f', '#bcbd22', '#17becf', '#1f77b4'
-      ]); // Use a more vibrant palette than Category10
-    
-    // Use pre-computed color value if available, otherwise fall back to label
-    const colorKey = d.colorValue || d.label;
-    return String(colorScale(colorKey));
-  }
 
   /**
    * Attach simplified event handling using D3's native patterns

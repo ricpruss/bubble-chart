@@ -221,6 +221,10 @@ export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData>
    * and extracts appropriate keys (sector → category → index) for scale input.
    */
   color?: d3.ScaleOrdinal<string, string> | ((data: T, index?: number) => string) | string;
+  /** Color palette type for automatic palette selection */
+  palette?: 'vibrant' | 'sophisticated' | 'pastel' | 'neon' | 'wave' | 'liquid';
+  /** Theme name for enhanced themed palettes with background support */
+  theme?: 'corporate' | 'ocean' | 'sunset' | 'forest' | 'slate' | 'wave';
   /** Property name for color grouping */
   colour?: string | boolean;
   

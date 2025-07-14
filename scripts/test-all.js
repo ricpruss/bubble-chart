@@ -44,7 +44,7 @@ function run(cmd, label) {
 
 const results = [
   run('node scripts/smoke-test.js', 'smoke'),
-  run('npx jest', 'unit'),
+  run('npx jest --forceExit --detectOpenHandles', 'unit'),
   run('node scripts/test-integration.js', 'integration')
 ];
 
