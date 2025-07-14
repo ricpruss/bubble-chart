@@ -11,6 +11,10 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <script src="../../dist/bubble-chart.min.js"></script>
     <script src="../js/companies.js"></script>
+    <script type="module">
+        import { showClickNotification } from '../js/notification-utils.js';
+        window.showClickNotification = showClickNotification;
+    </script>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
@@ -49,7 +53,10 @@
                 console.log('Bubble clicked:', d.label);
                 const dataCopy = { ...d };
                 delete dataCopy.parent;
-                alert(`Clicked: ${d.label}\n\nData: ${JSON.stringify(dataCopy, null, 2)}`);
+                console.log(`Clicked: ${d.label}\nData:`, dataCopy);
+                
+                // Non-blocking notification instead of alert
+                window.showClickNotification(d.label, dataCopy);
             });
 
             console.log('Chart created with D3-native event handling');

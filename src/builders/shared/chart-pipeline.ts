@@ -1,3 +1,5 @@
+import { D3DataUtils } from '../../d3/index.js';
+
 import type { BubbleChartOptions } from '../../config/index.js';
 import type { BubbleChartData } from '../../data/index.js';
 import { D3DataUtils } from '../../d3/index.js';
@@ -14,18 +16,18 @@ export const ChartPipeline = {
    * @param config - Chart configuration
    * @returns Processed data ready for visualization
    */
-  processData(data: BubbleChartData[], config: BubbleChartOptions): any[] {
+processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): D3DataUtils.D3ProcessedData<T>[] {
     const colorConfig = config.color;
     const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
       ? colorConfig as (string | ((d: BubbleChartData) => string))
       : undefined;
 
-    return D3DataUtils.processForVisualization(
+    return D3DataUtils.processForVisualization<T>(
       data,
       config.label || 'label',
       config.size || 'size',
       colorAccessor
-    );
+    ) as D3DataUtils.D3ProcessedData<T>[];
   },
 
   /**

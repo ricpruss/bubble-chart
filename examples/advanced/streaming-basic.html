@@ -7,6 +7,10 @@
     <script src="https://d3js.org/d3.v7.min.js"></script>
     <!-- no local dataset; will fetch Fortune-1000 CSV dynamically -->
     <script src="../../dist/bubble-chart.min.js"></script>
+    <script type="module">
+        import { showClickNotification } from '../js/notification-utils.js';
+        window.showClickNotification = showClickNotification;
+    </script>
     <style>
         body {
             font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
@@ -269,8 +273,15 @@ chart.update(currentData);      <span class="comment">// D3-native update with a
         // Add bubble interaction events using D3-native API
         chart.on('bubble:click', (data) => {
             const company = data.data;
-            const message = `🏢 ${company.Company}\n💰 Revenue: $${company.Revenues_M}M\n🏭 Sector: ${company.Sector}`;
-            alert(message);
+            const details = {
+                Company: company.Company,
+                Revenue: `$${company.Revenues_M}M`,
+                Sector: company.Sector,
+                Profits: `$${company.Profits_M}M`,
+                Rank: company.Rank
+            };
+            console.log('Company clicked:', details);
+            window.showClickNotification(`🏢 ${company.Company}`, details);
         });
         
         chart.on('bubble:mouseenter', (data, event) => {

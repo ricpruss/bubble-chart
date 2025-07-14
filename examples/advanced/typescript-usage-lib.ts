@@ -1,6 +1,8 @@
 // TypeScript Library for typescript-usage.html demo
 // This gets compiled to JavaScript and imported by the HTML file
 
+import { showClickNotification } from './notification-utils.js';
+
 export interface LanguageDatum {
   id: string;
   label: string;
@@ -31,7 +33,14 @@ export function setupEventHandlers(chart: any) {
   // Event handlers with D3-native API
   chart.on('click', (d: LanguageDatum) => {
     console.log(`Clicked ${d.label}: ${formatNumber(d.size)} repositories (${d.count}% developer adoption)`);
-    alert(`${d.label} (${d.category})\n\nGitHub Repositories: ${formatNumber(d.size)}\nDeveloper Usage: ${d.count}%`);
+    const details = {
+      Language: d.label,
+      Category: d.category,
+      'GitHub Repositories': formatNumber(d.size),
+      'Developer Usage': `${d.count}%`,
+      'Adoption Rank': d.count > 50 ? 'High' : d.count > 30 ? 'Medium' : 'Low'
+    };
+    showClickNotification(d.label, details);
   });
 
   chart.on('mouseenter', (d: LanguageDatum, _event: Event, element: any) => {
