@@ -15,7 +15,10 @@
     <p>Real data from GitHub repositories and Stack Overflow Developer Survey 2024. Uses the modern fluent API with TypeScript support and proper event handling.</p>
     <div id="bubble-chart" style="width: 600px; height: 600px;"></div>
 
-    <script>
+    <script type="module">
+        // Import TypeScript compiled modules
+        import { languageData, newLanguageData, setupEventHandlers } from '../js/typescript-usage-lib.js';
+
         // Real programming language adoption data (2024)
         // Repository counts: GitHub Search API (December 2024)
         // Developer usage %: Stack Overflow Developer Survey 2024
@@ -24,15 +27,10 @@
         // - Python: 21.5M repos, 49.28% developer usage  
         // - Java: 18.7M repos, 30.55% developer usage
         // - TypeScript: ~4.2M repos, 38.87% developer usage
-        const data = [
-          { id: 'lang-1', label: 'JavaScript', size: 37626887, count: 63.61, category: 'Frontend' },
-          { id: 'lang-2', label: 'Python', size: 21548185, count: 49.28, category: 'Backend' },
-          { id: 'lang-3', label: 'Java', size: 18732432, count: 30.55, category: 'Enterprise' },
-        ];
 
         // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#bubble-chart')
-          .withData(data)            // ✨ Auto-renders here!
+          .withData(languageData)    // ✨ Auto-renders here!
           .withLabel('label')
           .withSize('size')
           .withType('wave')
@@ -40,31 +38,12 @@
           .withPercentage((d) => d.count / 100)
           .build();                  // Returns live chart (already rendered)
 
-        // Event handlers with D3-native API
-        chart.on('click', (d) => {
-          console.log(`Clicked ${d.label}: ${new Intl.NumberFormat('en').format(d.size)} repositories (${d.count}% developer adoption)`);
-          alert(`${d.label} (${d.category})\n\nGitHub Repositories: ${new Intl.NumberFormat('en').format(d.size)}\nDeveloper Usage: ${d.count}%`);
-        });
-
-        chart.on('mouseenter', (d, event, element) => {
-          element.style.strokeWidth = '2px';
-          element.style.stroke = '#333';
-          console.log(`Mouse over ${d.label}: ${new Intl.NumberFormat('en').format(d.size)} repos (${d.count}% of devs use it)`);
-        });
-
-        chart.on('mouseleave', (d, event, element) => {
-          element.style.stroke = 'none';
-        });
+        // Setup event handlers from TypeScript module
+        setupEventHandlers(chart);
 
         // Demonstrate dynamic data updates with D3-native API
         setTimeout(() => {
-          const newData = [
-            { id: 'lang-1', label: 'JavaScript', size: 37626887, count: 63.61, category: 'Frontend' },
-            { id: 'lang-2', label: 'Python', size: 21548185, count: 49.28, category: 'Backend' },
-            { id: 'lang-3', label: 'Java', size: 18732432, count: 30.55, category: 'Enterprise' },
-            { id: 'lang-4', label: 'TypeScript', size: 4200000, count: 38.87, category: 'Modern' },
-          ];
-          chart.update(newData);
+          chart.update(newLanguageData);
           console.log('Data updated with TypeScript added (real 2024 adoption data)');
         }, 5000);
     </script>

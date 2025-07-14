@@ -1,0 +1,1403 @@
+{
+  "type": "scheduled",
+  "title": "Let's Vibe Code (But Not Call It That Cuz Ewww)",
+  "videoId": "-75xpgYP10Q",
+  "videoThumbnails": [
+    {
+      "quality": "maxres",
+      "url": "/vi/-75xpgYP10Q/maxres.jpg",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "quality": "maxresdefault",
+      "url": "/vi/-75xpgYP10Q/maxresdefault.jpg",
+      "width": 1280,
+      "height": 720
+    },
+    {
+      "quality": "sddefault",
+      "url": "/vi/-75xpgYP10Q/sddefault.jpg",
+      "width": 640,
+      "height": 480
+    },
+    {
+      "quality": "high",
+      "url": "/vi/-75xpgYP10Q/hqdefault.jpg",
+      "width": 480,
+      "height": 360
+    },
+    {
+      "quality": "medium",
+      "url": "/vi/-75xpgYP10Q/mqdefault.jpg",
+      "width": 320,
+      "height": 180
+    },
+    {
+      "quality": "default",
+      "url": "/vi/-75xpgYP10Q/default.jpg",
+      "width": 120,
+      "height": 90
+    },
+    {
+      "quality": "start",
+      "url": "/vi/-75xpgYP10Q/1.jpg",
+      "width": 120,
+      "height": 90
+    },
+    {
+      "quality": "middle",
+      "url": "/vi/-75xpgYP10Q/2.jpg",
+      "width": 120,
+      "height": 90
+    },
+    {
+      "quality": "end",
+      "url": "/vi/-75xpgYP10Q/3.jpg",
+      "width": 120,
+      "height": 90
+    }
+  ],
+  "storyboards": [
+    {
+      "url": "/api/v1/storyboards/-75xpgYP10Q?width=48&height=27",
+      "templateUrl": "https://i.ytimg.com/sb/-75xpgYP10Q/storyboard3_L0/default.jpg?sqp=-oaymwENSDfyq4qpAwVwAcABBqLzl_8DBgioiLjDBg%3D%3D&sigh=rs%24AOn4CLBwROucUrE9NzmYgoTmLfC6sGeK8g",
+      "width": 48,
+      "height": 27,
+      "count": 100,
+      "interval": 30000,
+      "storyboardWidth": 10,
+      "storyboardHeight": 10,
+      "storyboardCount": 1
+    },
+    {
+      "url": "/api/v1/storyboards/-75xpgYP10Q?width=80&height=45",
+      "templateUrl": "https://i.ytimg.com/sb/-75xpgYP10Q/storyboard3_L1/M$M.jpg?sqp=-oaymwENSDfyq4qpAwVwAcABBqLzl_8DBgioiLjDBg%3D%3D&sigh=rs%24AOn4CLBcQK3Twop44RafhPuaneHXSSm_tQ",
+      "width": 80,
+      "height": 45,
+      "count": 301,
+      "interval": 10000,
+      "storyboardWidth": 10,
+      "storyboardHeight": 10,
+      "storyboardCount": 4
+    },
+    {
+      "url": "/api/v1/storyboards/-75xpgYP10Q?width=160&height=90",
+      "templateUrl": "https://i.ytimg.com/sb/-75xpgYP10Q/storyboard3_L2/M$M.jpg?sqp=-oaymwENSDfyq4qpAwVwAcABBqLzl_8DBgioiLjDBg%3D%3D&sigh=rs%24AOn4CLD_ED2KF_DUIsAmg93ET6WjAGbjJQ",
+      "width": 160,
+      "height": 90,
+      "count": 301,
+      "interval": 10000,
+      "storyboardWidth": 5,
+      "storyboardHeight": 5,
+      "storyboardCount": 13
+    },
+    {
+      "url": "/api/v1/storyboards/-75xpgYP10Q?width=320&height=180",
+      "templateUrl": "https://i.ytimg.com/sb/-75xpgYP10Q/storyboard3_L3/M$M.jpg?sqp=-oaymwENSDfyq4qpAwVwAcABBqLzl_8DBgioiLjDBg%3D%3D&sigh=rs%24AOn4CLAC8yXTrtA0XQ-GnCgqeT_jkkcuMQ",
+      "width": 320,
+      "height": 180,
+      "count": 301,
+      "interval": 10000,
+      "storyboardWidth": 3,
+      "storyboardHeight": 3,
+      "storyboardCount": 34
+    }
+  ],
+  "description": "In this session, Raymond will take a few stabs at using ... sigh ... \"vibe coding\" and see how effective it is, what works, what doesn't, and try like hell to come up with a better name for this style of development.",
+  "descriptionHtml": "In this session, Raymond will take a few stabs at using ... sigh ... &quot;vibe coding&quot; and see how effective it is, what works, what doesn&#39;t, and try like hell to come up with a better name for this style of development.",
+  "published": 1751932800,
+  "publishedText": "2 days ago",
+  "keywords": [
+    "ai",
+    "artificial intelligence",
+    "llm",
+    "large language models",
+    "generative ai",
+    "vibe coding",
+    "coding assistant",
+    "cursor",
+    "github copilot",
+    "vscode"
+  ],
+  "viewCount": 183,
+  "likeCount": 3,
+  "dislikeCount": 0,
+  "paid": false,
+  "premium": false,
+  "isFamilyFriendly": true,
+  "allowedRegions": [
+    "AD",
+    "AE",
+    "AF",
+    "AG",
+    "AI",
+    "AL",
+    "AM",
+    "AO",
+    "AQ",
+    "AR",
+    "AS",
+    "AT",
+    "AU",
+    "AW",
+    "AX",
+    "AZ",
+    "BA",
+    "BB",
+    "BD",
+    "BE",
+    "BF",
+    "BG",
+    "BH",
+    "BI",
+    "BJ",
+    "BL",
+    "BM",
+    "BN",
+    "BO",
+    "BQ",
+    "BR",
+    "BS",
+    "BT",
+    "BV",
+    "BW",
+    "BY",
+    "BZ",
+    "CA",
+    "CC",
+    "CD",
+    "CF",
+    "CG",
+    "CH",
+    "CI",
+    "CK",
+    "CL",
+    "CM",
+    "CN",
+    "CO",
+    "CR",
+    "CU",
+    "CV",
+    "CW",
+    "CX",
+    "CY",
+    "CZ",
+    "DE",
+    "DJ",
+    "DK",
+    "DM",
+    "DO",
+    "DZ",
+    "EC",
+    "EE",
+    "EG",
+    "EH",
+    "ER",
+    "ES",
+    "ET",
+    "FI",
+    "FJ",
+    "FK",
+    "FM",
+    "FO",
+    "FR",
+    "GA",
+    "GB",
+    "GD",
+    "GE",
+    "GF",
+    "GG",
+    "GH",
+    "GI",
+    "GL",
+    "GM",
+    "GN",
+    "GP",
+    "GQ",
+    "GR",
+    "GS",
+    "GT",
+    "GU",
+    "GW",
+    "GY",
+    "HK",
+    "HM",
+    "HN",
+    "HR",
+    "HT",
+    "HU",
+    "ID",
+    "IE",
+    "IL",
+    "IM",
+    "IN",
+    "IO",
+    "IQ",
+    "IR",
+    "IS",
+    "IT",
+    "JE",
+    "JM",
+    "JO",
+    "JP",
+    "KE",
+    "KG",
+    "KH",
+    "KI",
+    "KM",
+    "KN",
+    "KP",
+    "KR",
+    "KW",
+    "KY",
+    "KZ",
+    "LA",
+    "LB",
+    "LC",
+    "LI",
+    "LK",
+    "LR",
+    "LS",
+    "LT",
+    "LU",
+    "LV",
+    "LY",
+    "MA",
+    "MC",
+    "MD",
+    "ME",
+    "MF",
+    "MG",
+    "MH",
+    "MK",
+    "ML",
+    "MM",
+    "MN",
+    "MO",
+    "MP",
+    "MQ",
+    "MR",
+    "MS",
+    "MT",
+    "MU",
+    "MV",
+    "MW",
+    "MX",
+    "MY",
+    "MZ",
+    "NA",
+    "NC",
+    "NE",
+    "NF",
+    "NG",
+    "NI",
+    "NL",
+    "NO",
+    "NP",
+    "NR",
+    "NU",
+    "NZ",
+    "OM",
+    "PA",
+    "PE",
+    "PF",
+    "PG",
+    "PH",
+    "PK",
+    "PL",
+    "PM",
+    "PN",
+    "PR",
+    "PS",
+    "PT",
+    "PW",
+    "PY",
+    "QA",
+    "RE",
+    "RO",
+    "RS",
+    "RU",
+    "RW",
+    "SA",
+    "SB",
+    "SC",
+    "SD",
+    "SE",
+    "SG",
+    "SH",
+    "SI",
+    "SJ",
+    "SK",
+    "SL",
+    "SM",
+    "SN",
+    "SO",
+    "SR",
+    "SS",
+    "ST",
+    "SV",
+    "SX",
+    "SY",
+    "SZ",
+    "TC",
+    "TD",
+    "TF",
+    "TG",
+    "TH",
+    "TJ",
+    "TK",
+    "TL",
+    "TM",
+    "TN",
+    "TO",
+    "TR",
+    "TT",
+    "TV",
+    "TW",
+    "TZ",
+    "UA",
+    "UG",
+    "UM",
+    "US",
+    "UY",
+    "UZ",
+    "VA",
+    "VC",
+    "VE",
+    "VG",
+    "VI",
+    "VN",
+    "VU",
+    "WF",
+    "WS",
+    "YE",
+    "YT",
+    "ZA",
+    "ZM",
+    "ZW"
+  ],
+  "genre": "Science & Technology",
+  "genreUrl": null,
+  "author": "Certified Fresh Events",
+  "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+  "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+  "authorVerified": false,
+  "authorThumbnails": [
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s32-c-k-c0x00ffffff-no-rj",
+      "width": 32,
+      "height": 32
+    },
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s48-c-k-c0x00ffffff-no-rj",
+      "width": 48,
+      "height": 48
+    },
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s76-c-k-c0x00ffffff-no-rj",
+      "width": 76,
+      "height": 76
+    },
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s100-c-k-c0x00ffffff-no-rj",
+      "width": 100,
+      "height": 100
+    },
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s176-c-k-c0x00ffffff-no-rj",
+      "width": 176,
+      "height": 176
+    },
+    {
+      "url": "https://yt3.ggpht.com/3oe5-WMkK0aOsvd-tCoDy91dBATE8qUDYzIZ9WrhKVRXS_mh1DcZq5xBj_w9UaMfAgxcFZDzdA=s512-c-k-c0x00ffffff-no-rj",
+      "width": 512,
+      "height": 512
+    }
+  ],
+  "subCountText": "124K",
+  "lengthSeconds": 3000,
+  "allowRatings": true,
+  "rating": 0,
+  "isListed": true,
+  "liveNow": false,
+  "isPostLiveDvr": false,
+  "isUpcoming": false,
+  "dashUrl": "/api/manifest/dash/id/-75xpgYP10Q",
+  "adaptiveFormats": [
+    {
+      "init": "0-722",
+      "index": "723-4366",
+      "bitrate": "133365",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=140&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=audio%2Fmp4&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=48543748&ratebypass=yes&dur=2999.460&lmt=1752040477839556&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7208224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIgMU0USjQA8k-q9iyDV9VTisbdNewDaohyobNUIgCtGKECIQDf_WJfcwiXttD38kDolXoMdv5o3hZrM9wUuQvU9UiRaQ%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "140",
+      "type": "audio/mp4; codecs=\"mp4a.40.2\"",
+      "clen": "48543748",
+      "lmt": "1752040477839556",
+      "projectionType": "RECTANGULAR",
+      "container": "m4a",
+      "encoding": "aac",
+      "audioQuality": "AUDIO_QUALITY_MEDIUM",
+      "audioSampleRate": 44100,
+      "audioChannels": 2
+    },
+    {
+      "init": "0-265",
+      "index": "266-5554",
+      "bitrate": "138445",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=251&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=audio%2Fwebm&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=45066638&ratebypass=yes&dur=2999.441&lmt=1752040457520999&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7208224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRAIgAT0YI3RBL1Ge8Un2nqBmTExryQxb3YQLYvBH1d2uIAICIGJ5YXu8rPp5u--m0By02MgfDGktqE_KKF4SVGK7CZ9h&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "251",
+      "type": "audio/webm; codecs=\"opus\"",
+      "clen": "45066638",
+      "lmt": "1752040457520999",
+      "projectionType": "RECTANGULAR",
+      "container": "webm",
+      "encoding": "opus",
+      "audioQuality": "AUDIO_QUALITY_MEDIUM",
+      "audioSampleRate": 48000,
+      "audioChannels": 2
+    },
+    {
+      "init": "0-738",
+      "index": "739-6770",
+      "bitrate": "108966",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=160&aitags=134%2C136%2C137%2C160%2C243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=14884458&ratebypass=yes&dur=2999.399&lmt=1752040417983237&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7209224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIhAJgcZcnlR12flCZ6cOuD702GcJ0RyBS0pysYWYZlOLzZAiBMpXjxOXg5ENojs7-aOGo617jCwBpsn9g7vRCiEUar-g%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "160",
+      "type": "video/mp4; codecs=\"avc1.4d400c\"",
+      "clen": "14884458",
+      "lmt": "1752040417983237",
+      "projectionType": "RECTANGULAR",
+      "fps": 30,
+      "size": "256x144",
+      "resolution": "144p",
+      "qualityLabel": "144p",
+      "container": "mp4",
+      "encoding": "h264"
+    },
+    {
+      "init": "0-740",
+      "index": "741-6772",
+      "bitrate": "522912",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=134&aitags=134%2C136%2C137%2C160%2C243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=59970871&ratebypass=yes&dur=2999.399&lmt=1752040418101917&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7209224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRAIgC1DuXP6Q4gwQ7QhfsKm51CIPoR3dj_S85WmJnkgcjXACIH45OUTYOph7VnYswK9AYFBNusbDpoEqLI8JgPNWm9YM&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "134",
+      "type": "video/mp4; codecs=\"avc1.4d401e\"",
+      "clen": "59970871",
+      "lmt": "1752040418101917",
+      "projectionType": "RECTANGULAR",
+      "fps": 30,
+      "size": "640x360",
+      "resolution": "360p",
+      "qualityLabel": "360p",
+      "container": "mp4",
+      "encoding": "h264"
+    },
+    {
+      "init": "0-219",
+      "index": "220-8943",
+      "bitrate": "298486",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=243&aitags=134%2C136%2C137%2C160%2C243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=video%2Fwebm&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=30983970&ratebypass=yes&dur=2999.400&lmt=1752040416043755&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7209224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRQIhAKoJ2EJX3hcFHeZyUBQEHEQu60ezfUANR21kSknKl3FtAiA8jxwbRWSHEIFDahYxI_0P8ShmMhR4gcQtkWlidrPs1g%3D%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "243",
+      "type": "video/webm; codecs=\"vp9\"",
+      "clen": "30983970",
+      "lmt": "1752040416043755",
+      "projectionType": "RECTANGULAR",
+      "fps": 30,
+      "size": "640x360",
+      "resolution": "360p",
+      "qualityLabel": "360p",
+      "container": "webm",
+      "encoding": "vp9",
+      "colorInfo": {
+        "primaries": "COLOR_PRIMARIES_BT709",
+        "transferCharacteristics": "COLOR_TRANSFER_CHARACTERISTICS_BT709",
+        "matrixCoefficients": "COLOR_MATRIX_COEFFICIENTS_BT709"
+      }
+    },
+    {
+      "init": "0-739",
+      "index": "740-6771",
+      "bitrate": "1891197",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=136&aitags=134%2C136%2C137%2C160%2C243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=189078864&ratebypass=yes&dur=2999.399&lmt=1752040437328750&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7209224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRgIhAM9R54M2KGPNoEJUzakNK0EKXrx50euoRVjoIqB0UjW4AiEApafXGvVi1X3gSC5aBei7kI80Q6owy0gs0l93exacv8s%3D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "136",
+      "type": "video/mp4; codecs=\"avc1.64001f\"",
+      "clen": "189078864",
+      "lmt": "1752040437328750",
+      "projectionType": "RECTANGULAR",
+      "fps": 30,
+      "size": "1280x720",
+      "resolution": "720p",
+      "qualityLabel": "720p",
+      "container": "mp4",
+      "encoding": "h264"
+    },
+    {
+      "init": "0-741",
+      "index": "742-6773",
+      "bitrate": "3614526",
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201527&ei=1yRwaJ-pI9CWsfIPj9LesQ4&ip=70.228.79.45&id=o-AOo2-LkfMGmC9lzs8lrcq1iZRw23djliRmb2I4YJVvYj&itag=137&aitags=134%2C136%2C137%2C160%2C243&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179927%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5mlrnll&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLOKwKpEb-uzV1ce-MT18bB0E9xxDdyzUtGKuVC-E8khmWReeCZyskAAh42WVGcJsehNlD3feqID&spc=l3OVKXPPbE-NaKFO9KMTq-mF9REqdBPYt-qvharhVMlLpwfYa6J_aYUIg0suyOvwAg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=xosi_DG7tLUOAviEhLApGQ0Q&rqh=1&gir=yes&clen=355296912&ratebypass=yes&dur=2999.399&lmt=1752040420785671&mt=1752179387&fvip=3&keepalive=yes&lmw=1&fexp=51476175&c=TVHTML5&sefc=1&txp=7209224&n=J55bY1nry6coBg&sparams=expire%2Cei%2Cip%2Cid%2Caitags%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRAIgLR8XWxhu0bMK-bPgmrM-2slveW14_K7EQLRlnhWQG2sCIHZbBufxraprwP3stUoLCRomi0AsL_urjm3ZP_fQvj1D&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRQIhAI9chNN80hcJRrU4Hnx0N4N7V5QI4uSW1KKz4dIPCbYtAiAY-t9VT9W_C-gNnhHlo6Ccc9mEK7vMCdcciEPmmeCADQ%3D%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "137",
+      "type": "video/mp4; codecs=\"avc1.640028\"",
+      "clen": "355296912",
+      "lmt": "1752040420785671",
+      "projectionType": "RECTANGULAR",
+      "fps": 30,
+      "size": "1920x1080",
+      "resolution": "1080p",
+      "qualityLabel": "1080p",
+      "container": "mp4",
+      "encoding": "h264"
+    }
+  ],
+  "formatStreams": [
+    {
+      "url": "https://rr2---sn-o097znse.googlevideo.com/videoplayback?expire=1752201526&ei=1iRwaObXMsa-sfIPopSPoAQ&ip=70.228.79.45&id=o-AIgDSRl3zylB4SorrV1Hqhi1xw5idMEpRM1l-dOsNF53&itag=18&source=youtube&requiressl=yes&xpc=EgVo2aDSNQ%3D%3D&met=1752179926%2C&mh=xg&mm=31%2C26&mn=sn-o097znse%2Csn-a5meknzr&ms=au%2Conr&mv=m&mvi=2&pl=21&rms=au%2Cau&initcwndbps=2286250&bui=AY1jyLPlKWqzM9h5HXcK0YK2wvY7UWRIatc2RJljZLgA446tnG-epu-Gv5umIKjz461StsvBart6parx&spc=l3OVKUhMh6aOJUcYAhKkjPFCTD4OAEbl1XNGrLf-U1GSJ_U0AgVlWbwq6DQtuunzXg&vprv=1&svpuc=1&mime=video%2Fmp4&ns=5jm6PqUk98glkmraWPU4hZcQ&rqh=1&gir=yes&clen=77744968&ratebypass=yes&dur=2999.553&lmt=1752040479706511&mt=1752179387&fvip=2&fexp=51355912%2C51476175&c=WEB&sefc=1&txp=7209224&n=rqe_xcoYGZ97&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Crequiressl%2Cxpc%2Cbui%2Cspc%2Cvprv%2Csvpuc%2Cmime%2Cns%2Crqh%2Cgir%2Cclen%2Cratebypass%2Cdur%2Clmt&sig=AJfQdSswRAIgYdrtsY8kiexippZ-sZqtCBtGQmGco40HrGTqZw8ejRYCICvfkqtay-TTed3F7_r8jZ0bJ59ct4IjFBK__L2mf9XD&lsparams=met%2Cmh%2Cmm%2Cmn%2Cms%2Cmv%2Cmvi%2Cpl%2Crms%2Cinitcwndbps&lsig=APaTxxMwRgIhALkFrwv6pUXlga3t-yRzi9CatGjwvgq7hGqTd36dDbyNAiEA3o363L-aLWm-v_ZEWmTNpeugR877MtgeCS-eeyEiUSY%3D&pot=IghxyXHLGZiwpg%3D%3D",
+      "itag": "18",
+      "type": "video/mp4; codecs=\"avc1.42001E, mp4a.40.2\"",
+      "quality": "medium",
+      "bitrate": "207361",
+      "fps": 30,
+      "size": "640x360",
+      "resolution": "360p",
+      "qualityLabel": "360p",
+      "container": "mp4",
+      "encoding": "h264"
+    }
+  ],
+  "captions": [
+    {
+      "label": "English (auto-generated)",
+      "language_code": "en",
+      "url": "/api/v1/captions/-75xpgYP10Q?label=English+%28auto-generated%29"
+    }
+  ],
+  "recommendedVideos": [
+    {
+      "videoId": "pMyxbt5CMnw",
+      "title": "Building Desktop Apps with Python & Flet - Part Deux",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/pMyxbt5CMnw/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/pMyxbt5CMnw/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/pMyxbt5CMnw/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/pMyxbt5CMnw/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/pMyxbt5CMnw/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/pMyxbt5CMnw/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/pMyxbt5CMnw/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/pMyxbt5CMnw/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/pMyxbt5CMnw/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 3406,
+      "viewCountText": "206",
+      "viewCount": 0,
+      "published": "2025-06-26T20:38:47Z",
+      "publishedText": "2 weeks ago"
+    },
+    {
+      "videoId": "q253iHGUxAM",
+      "title": "Bob Ross Essential Playlist",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/q253iHGUxAM/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/q253iHGUxAM/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/q253iHGUxAM/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/q253iHGUxAM/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/q253iHGUxAM/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/q253iHGUxAM/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/q253iHGUxAM/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/q253iHGUxAM/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/q253iHGUxAM/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Bob Ross",
+      "authorUrl": "/channel/UCxcnsr1R5Ge_fbTu5ajt8DQ",
+      "authorId": "UCxcnsr1R5Ge_fbTu5ajt8DQ",
+      "authorVerified": false,
+      "lengthSeconds": 0,
+      "viewCountText": "28K",
+      "viewCount": 0,
+      "published": "2025-07-09T20:38:47Z",
+      "publishedText": "1 day ago"
+    },
+    {
+      "videoId": "PDvJunu3uiM",
+      "title": "Modern Event Driven Architectures in the Cloud by Joanne Skiles",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/PDvJunu3uiM/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/PDvJunu3uiM/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/PDvJunu3uiM/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/PDvJunu3uiM/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/PDvJunu3uiM/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/PDvJunu3uiM/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/PDvJunu3uiM/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/PDvJunu3uiM/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/PDvJunu3uiM/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 2347,
+      "viewCountText": "49",
+      "viewCount": 0,
+      "published": "2025-06-10T20:38:47Z",
+      "publishedText": "1 month ago"
+    },
+    {
+      "videoId": "IhYt7rS3Nd4",
+      "title": "Desktop Apps Redux!",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/IhYt7rS3Nd4/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/IhYt7rS3Nd4/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/IhYt7rS3Nd4/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/IhYt7rS3Nd4/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/IhYt7rS3Nd4/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/IhYt7rS3Nd4/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/IhYt7rS3Nd4/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/IhYt7rS3Nd4/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/IhYt7rS3Nd4/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 3190,
+      "viewCountText": "118",
+      "viewCount": 0,
+      "published": "2025-06-10T20:38:47Z",
+      "publishedText": "1 month ago"
+    },
+    {
+      "videoId": "vKB5yP6XyDE",
+      "title": "Let’s Create a GitHub Copilot Extension! by Nick Taylor",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/vKB5yP6XyDE/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/vKB5yP6XyDE/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/vKB5yP6XyDE/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/vKB5yP6XyDE/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/vKB5yP6XyDE/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/vKB5yP6XyDE/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/vKB5yP6XyDE/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/vKB5yP6XyDE/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/vKB5yP6XyDE/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 1636,
+      "viewCountText": "105",
+      "viewCount": 0,
+      "published": "2025-06-10T20:38:47Z",
+      "publishedText": "1 month ago"
+    },
+    {
+      "videoId": "kcMzT1A34g4",
+      "title": "I Found the BLOOP In Minecraft…",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/kcMzT1A34g4/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/kcMzT1A34g4/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/kcMzT1A34g4/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/kcMzT1A34g4/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/kcMzT1A34g4/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/kcMzT1A34g4/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/kcMzT1A34g4/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/kcMzT1A34g4/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/kcMzT1A34g4/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "PrestonPlayz",
+      "authorUrl": "/channel/UCJZam2u1G0syq3kyqrCXrNw",
+      "authorId": "UCJZam2u1G0syq3kyqrCXrNw",
+      "authorVerified": false,
+      "lengthSeconds": 1417,
+      "viewCountText": "1.2M",
+      "viewCount": 0,
+      "published": "2025-07-05T20:38:47Z",
+      "publishedText": "5 days ago"
+    },
+    {
+      "videoId": "jF8mNnuNvEA",
+      "title": "Jon Stewart on Who Trump’s Big Beautiful Bill Really Helps — and Hurts | The Daily Show",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/jF8mNnuNvEA/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/jF8mNnuNvEA/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/jF8mNnuNvEA/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/jF8mNnuNvEA/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/jF8mNnuNvEA/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/jF8mNnuNvEA/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/jF8mNnuNvEA/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/jF8mNnuNvEA/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/jF8mNnuNvEA/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "The Daily Show",
+      "authorUrl": "/channel/UCwWhs_6x42TyRM4Wstoq8HA",
+      "authorId": "UCwWhs_6x42TyRM4Wstoq8HA",
+      "authorVerified": false,
+      "lengthSeconds": 1395,
+      "viewCountText": "4.5M",
+      "viewCount": 0,
+      "published": "2025-07-08T20:38:47Z",
+      "publishedText": "2 days ago"
+    },
+    {
+      "videoId": "FWAdfuPpLOc",
+      "title": "World's Fastest Car Vs Cheetah!",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/FWAdfuPpLOc/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/FWAdfuPpLOc/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/FWAdfuPpLOc/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/FWAdfuPpLOc/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/FWAdfuPpLOc/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/FWAdfuPpLOc/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/FWAdfuPpLOc/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/FWAdfuPpLOc/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/FWAdfuPpLOc/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "MrBeast",
+      "authorUrl": "/channel/UCX6OQ3DkcsbYNE6H8uQQuVA",
+      "authorId": "UCX6OQ3DkcsbYNE6H8uQQuVA",
+      "authorVerified": false,
+      "lengthSeconds": 1237,
+      "viewCountText": "85M",
+      "viewCount": 0,
+      "published": "2025-07-05T20:38:47Z",
+      "publishedText": "5 days ago"
+    },
+    {
+      "videoId": "fOhhnF3zRBA",
+      "title": "Elon’s Grok Chatbot Turns Hitler & Marco Rubio Gets an AI Imposter | The Daily Show",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/fOhhnF3zRBA/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/fOhhnF3zRBA/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/fOhhnF3zRBA/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/fOhhnF3zRBA/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/fOhhnF3zRBA/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/fOhhnF3zRBA/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/fOhhnF3zRBA/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/fOhhnF3zRBA/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/fOhhnF3zRBA/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "The Daily Show",
+      "authorUrl": "/channel/UCwWhs_6x42TyRM4Wstoq8HA",
+      "authorId": "UCwWhs_6x42TyRM4Wstoq8HA",
+      "authorVerified": false,
+      "lengthSeconds": 623,
+      "viewCountText": "1.5M",
+      "viewCount": 0,
+      "published": "2025-07-10T02:38:47Z",
+      "publishedText": "18 hours ago"
+    },
+    {
+      "videoId": "wf0saRe19Gs",
+      "title": "I Transformed YouTuber Houses!",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/wf0saRe19Gs/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/wf0saRe19Gs/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/wf0saRe19Gs/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/wf0saRe19Gs/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/wf0saRe19Gs/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/wf0saRe19Gs/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/wf0saRe19Gs/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/wf0saRe19Gs/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/wf0saRe19Gs/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Matthew Beem",
+      "authorUrl": "/channel/UCR_J_SntqJh5eXw66d5hJxA",
+      "authorId": "UCR_J_SntqJh5eXw66d5hJxA",
+      "authorVerified": false,
+      "lengthSeconds": 1942,
+      "viewCountText": "7.6M",
+      "viewCount": 0,
+      "published": "2025-07-05T20:38:47Z",
+      "publishedText": "5 days ago"
+    },
+    {
+      "videoId": "c-VKOvfzEFw",
+      "title": "Cloud Systems, Observability and Responsibility: A Fireside Chat with Charity Majors",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/c-VKOvfzEFw/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/c-VKOvfzEFw/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/c-VKOvfzEFw/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/c-VKOvfzEFw/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/c-VKOvfzEFw/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/c-VKOvfzEFw/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/c-VKOvfzEFw/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/c-VKOvfzEFw/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/c-VKOvfzEFw/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 2502,
+      "viewCountText": "29K",
+      "viewCount": 0,
+      "published": "2025-06-19T20:38:47Z",
+      "publishedText": "3 weeks ago"
+    },
+    {
+      "videoId": "O9YN9gMrPAM",
+      "title": "Build Desktop Apps with Python & Flet",
+      "videoThumbnails": [
+        {
+          "quality": "maxres",
+          "url": "/vi/O9YN9gMrPAM/maxres.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "maxresdefault",
+          "url": "/vi/O9YN9gMrPAM/maxresdefault.jpg",
+          "width": 1280,
+          "height": 720
+        },
+        {
+          "quality": "sddefault",
+          "url": "/vi/O9YN9gMrPAM/sddefault.jpg",
+          "width": 640,
+          "height": 480
+        },
+        {
+          "quality": "high",
+          "url": "/vi/O9YN9gMrPAM/hqdefault.jpg",
+          "width": 480,
+          "height": 360
+        },
+        {
+          "quality": "medium",
+          "url": "/vi/O9YN9gMrPAM/mqdefault.jpg",
+          "width": 320,
+          "height": 180
+        },
+        {
+          "quality": "default",
+          "url": "/vi/O9YN9gMrPAM/default.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "start",
+          "url": "/vi/O9YN9gMrPAM/1.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "middle",
+          "url": "/vi/O9YN9gMrPAM/2.jpg",
+          "width": 120,
+          "height": 90
+        },
+        {
+          "quality": "end",
+          "url": "/vi/O9YN9gMrPAM/3.jpg",
+          "width": 120,
+          "height": 90
+        }
+      ],
+      "author": "Certified Fresh Events",
+      "authorUrl": "/channel/UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorId": "UC8mBtfX_7KNLP3LMQZJA8yg",
+      "authorVerified": false,
+      "lengthSeconds": 3325,
+      "viewCountText": "219",
+      "viewCount": 0,
+      "published": "2025-06-10T20:38:47Z",
+      "publishedText": "1 month ago"
+    }
+  ]
+}

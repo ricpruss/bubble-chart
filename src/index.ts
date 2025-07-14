@@ -8,227 +8,169 @@ import { D3DataUtils } from './d3/index.js';
 /**
  * Simple D3-native chart wrapper that adds events directly to D3 selections
  */
-class D3ChartWrapper {
-  private config: Partial<BubbleChartOptions> = {};
-  private chartData: BubbleChartData[] | any = null;
+/**
+ * Simplified fluent API builder that directly uses builders without wrapper overhead
+ */
+class D3FluentBuilder {
+  private config: Partial<BubbleChartOptions> & { data?: BubbleChartData[] } = {};
   private chartInstance: any = null;
   private eventHandlers: Map<string, Function> = new Map();
-  private animationConfig: any = null;
   
   constructor(container: string) {
     this.config.container = container;
   }
   
-  withData(data: BubbleChartData[] | any) {
-    this.chartData = data;
+  withData(data: BubbleChartData[]): this {
+    // Store data and auto-render if we have enough config
+    this.config.data = data;
+    this.autoRenderIfReady();
     return this;
   }
   
-  withLabel(label: string) {
+  withLabel(label: string): this {
     this.config.label = label;
     return this;
   }
   
-  withSize(size: string) {
+  withSize(size: string): this {
     this.config.size = size;
     return this;
   }
   
-  withColor(color: string | ((d: any) => string)) {
+  withColor(color: string | ((d: any) => string)): this {
     this.config.color = color;
     return this;
   }
   
-  withType(type: string) {
+  withType(type: string): this {
     this.config.type = type as any;
     return this;
   }
   
-  withDimensions(width: number, height: number) {
+  withDimensions(width: number, height: number): this {
     this.config.width = width;
     this.config.height = height;
     return this;
   }
   
-  withPercentage(fn: any) {
+  withPercentage(fn: any): this {
     this.config.percentage = fn;
     return this;
   }
   
-  withKey(keyFn: (d: any) => string | number) {
+  withKey(keyFn: (d: any) => string | number): this {
     this.config.keyFunction = keyFn;
     return this;
   }
   
-  withTheme(theme: 'corporate' | 'ocean' | 'sunset' | 'forest' | 'slate' | 'wave') {
+  withTheme(theme: 'corporate' | 'ocean' | 'sunset' | 'forest' | 'slate' | 'wave'): this {
     this.config.theme = theme;
     return this;
   }
   
-  withAnimations(preset: string | any) {
-    // Simple D3-native animation presets
+  withAnimations(preset: string | any): this {
+    // Convert preset to animation config
     if (preset === 'gentle' || preset === 'smooth') {
-      this.animationConfig = {
-        duration: 800,
-        staggerDelay: 50,
-        easing: 'ease-out'
+      this.config.animation = {
+        enter: { duration: 800, stagger: 50, easing: 'ease-out' },
+        update: { duration: 640, easing: 'ease-in-out' },
+        exit: { duration: 400, easing: 'ease-in' }
       };
     } else if (preset === 'fast') {
-      this.animationConfig = {
-        duration: 400,
-        staggerDelay: 20,
-        easing: 'ease-out'
+      this.config.animation = {
+        enter: { duration: 400, stagger: 20, easing: 'ease-out' },
+        update: { duration: 320, easing: 'ease-in-out' },
+        exit: { duration: 200, easing: 'ease-in' }
       };
     } else if (typeof preset === 'object') {
-      this.animationConfig = preset;
+      this.config.animation = preset;
     }
     return this;
   }
   
   /**
-   * Build/render the chart using pure D3 patterns
+   * Build the chart - creates builder instance and renders if data is available
    */
-  build(): any {
-    return this.render();
-  }
-  
-  render(): any {
-    const finalConfig = {
-      container: this.config.container!,
-      label: this.config.label || 'name',
-      size: this.config.size || 'value',
-      color: this.config.color,
-      type: this.config.type || 'bubble',
-      width: this.config.width,
-      height: this.config.height,
-      percentage: this.config.percentage,
-      theme: this.config.theme,
-      keyFunction: this.config.keyFunction, // 🔑 Pass key function to builder
-      animation: this.animationConfig ? {
-        enter: {
-          duration: this.animationConfig.duration,
-          stagger: this.animationConfig.staggerDelay
-        },
-        update: {
-          duration: this.animationConfig.duration * 0.8
-        },
-        exit: {
-          duration: this.animationConfig.duration * 0.5
-        }
-      } : undefined
-    } as BubbleChartOptions;
+  build(): ChartInterface {
+    this.createBuilderInstance();
     
-    this.chartInstance = BuilderFactory.create(finalConfig);
-    
-    if (this.chartData) {
-      this.chartInstance.data(this.chartData).update();
-      
-      // Attach pure D3 events after update
-      this.attachEventsToD3Selection();
+    if (this.config.data) {
+      this.chartInstance.data(this.config.data).update();
+      this.attachEvents();
     }
     
-      // Return chart interface
-      return {
-        update: (newData: any) => {
-          // D3-native: just update data, no render() needed
+    return {
+      update: (newData: any) => {
+        if (this.chartInstance) {
           this.chartInstance.data(newData).update();
-          // Re-attach events after update
-          this.attachEventsToD3Selection();
-        },
-      
+          this.attachEvents();
+        }
+      },
       on: (event: string, handler: Function) => {
         this.eventHandlers.set(event, handler);
-        // If chart is already rendered, attach immediately
         if (this.chartInstance) {
-          this.attachEventsToD3Selection();
+          this.attachEvents();
         }
         return this;
       },
-      
       getBuilder: () => this.chartInstance
     };
   }
   
   /**
-   * Apply simple D3-native entrance animations
+   * Auto-render when we have enough configuration
    */
-  private applyD3Animations(): void {
-    if (!this.animationConfig) return;
-    
-    const container = this.config.container;
-    if (!container) return;
-    
-    const svg = d3.select(container).select('svg');
-    const bubbleGroups = svg.selectAll('.bubble');
-    
-    if (bubbleGroups.empty()) {
-      // Retry after a short delay if bubbles aren't ready yet
-      setTimeout(() => this.applyD3Animations(), 50);
-      return;
+  private autoRenderIfReady(): void {
+    if (this.config.data && this.config.container && this.config.label && this.config.size) {
+      // We have enough to render, but user still needs to call build()
+      // This just prepares everything
     }
-    
-    const { duration, staggerDelay } = this.animationConfig;
-    
-    // Animate circles with staggered entrance
-    bubbleGroups.select('circle')
-      .attr('r', 0)
-      .style('opacity', 0)
-      .transition()
-      .delay((_d: any, i: number) => i * (staggerDelay || 50))
-      .duration(duration || 800)
-      .ease(d3.easeBackOut)
-      .attr('r', function(d: any) {
-        // Get the original radius from the data
-        return d.r;
-      })
-      .style('opacity', 0.8);
-    
-    // Animate labels with slight delay
-    bubbleGroups.select('text')
-      .style('opacity', 0)
-      .transition()
-      .delay((_d: any, i: number) => i * (staggerDelay || 50) + 200)
-      .duration((duration || 800) / 2)
-      .ease(d3.easeBackOut)
-      .style('opacity', 1);
   }
   
   /**
-   * Pure D3 event attachment - no InteractionManager complexity
+   * Create builder instance with final configuration
    */
-  private attachEventsToD3Selection(): void {
+  private createBuilderInstance(): void {
+    const finalConfig: BubbleChartOptions = {
+      container: this.config.container!,
+      label: this.config.label || 'name',
+      size: this.config.size || 'value',
+      type: this.config.type || 'none',
+      ...(this.config.color && { color: this.config.color }),
+      ...(this.config.width && { width: this.config.width }),
+      ...(this.config.height && { height: this.config.height }),
+      ...(this.config.percentage && { percentage: this.config.percentage }),
+      ...(this.config.theme && { theme: this.config.theme }),
+      ...(this.config.keyFunction && { keyFunction: this.config.keyFunction }),
+      ...(this.config.animation && { animation: this.config.animation })
+    };
+    
+    this.chartInstance = BuilderFactory.create(finalConfig);
+  }
+  
+  /**
+   * Attach event handlers directly to D3 selections
+   */
+  private attachEvents(): void {
     if (!this.chartInstance || this.eventHandlers.size === 0) return;
     
-    // Find the SVG container and select all bubble groups
-    const container = this.config.container;
-    if (!container) return;
-    
-    const svg = d3.select(container).select('svg');
-    const bubbleGroups = svg.selectAll('.bubble');
+    const container = d3.select(this.config.container!);
+    const bubbleGroups = container.selectAll('.bubble');
     
     if (bubbleGroups.empty()) {
-      // Retry after a short delay if bubbles aren't ready yet
-      setTimeout(() => this.attachEventsToD3Selection(), 50);
+      setTimeout(() => this.attachEvents(), 50);
       return;
     }
     
-    // Attach each registered event handler directly to D3 selection
     this.eventHandlers.forEach((handler, eventName) => {
       bubbleGroups.on(eventName, (event: any, d: any) => {
-        // Handle different data structures from different chart types
         let eventData = d;
-        
-        // For pack layout (bubble, wave, tree charts), data is in d.data
         if (d && d.data) {
           eventData = d.data;
-          
-          // If the processed data has a nested 'data' property with original fields, use that
           if (eventData.data && typeof eventData.data === 'object') {
             eventData = eventData.data;
           }
         }
-        
-        // Call handler with the correct data structure
         handler(eventData, event, event.target);
       });
     });
@@ -236,10 +178,19 @@ class D3ChartWrapper {
 }
 
 /**
- * Pure D3-native BubbleChart API
+ * Chart interface returned by build()
+ */
+interface ChartInterface {
+  update: (newData: any) => void;
+  on: (event: string, handler: Function) => any;
+  getBuilder: () => any;
+}
+
+/**
+ * Simplified BubbleChart API with direct builder usage
  */
 export const BubbleChart = {
-  create: (container: string) => new D3ChartWrapper(container)
+  create: (container: string) => new D3FluentBuilder(container)
 };
 
 // Export BuilderFactory for advanced usage

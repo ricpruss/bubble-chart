@@ -45,16 +45,15 @@
         { "label": "Walmart", "size": 15, "count": 15, "category": "Retail" }
       ];
 
-      // 🚀 D3-Native: Chart renders automatically when data is bound!
       const chart = BubbleChart.create("#chart-container")
-        .withData(data)          // ✨ Auto-renders here!
+        .withData(data)          // Auto-renders when data is complete
         .withLabel("label")
         .withSize("size")
         .withColor("category")
-        .withTheme("corporate")  // Professional blue theme
-        .withAnimations("gentle") // ✨ Pure D3 staggered entrance animations!
+        .withTheme("corporate")
+        .withAnimations("gentle")
         .withDimensions(800, 600)
-        .build();                // Returns live chart (already rendered)
+        .build();
       
       document.getElementById('status').innerHTML = '✅ Completed!';
       document.getElementById('status').style.background = '#e7f6e7';

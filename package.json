@@ -10,9 +10,10 @@
         "dist/"
     ],
     "scripts": {
-        "build": "npm run type-check && rollup -c && npm run copy-css",
+        "build": "npm run type-check && rollup -c && npm run copy-css && npm run build-examples",
+        "build-examples": "node scripts/build-examples.js",
         "copy-css": "mkdir -p dist/css && cp src/css/bubble-chart.css dist/css/bubble-chart.css",
-        "dev": "concurrently \"rollup -c -w\" \"vite --open examples/\" --names \"📦,🌐\" --prefix-colors \"blue,green\"",
+        "dev": "concurrently \"rollup -c -w\" \"npm run build-examples\" \"vite --open examples/ --force\" --names \"📦,🔧,🌐\" --prefix-colors \"blue,yellow,green\"",
         "prepublishOnly": "npm run build",
         "test": "node scripts/test-all.js",
         "type-check": "tsc --noEmit"

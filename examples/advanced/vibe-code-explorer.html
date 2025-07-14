@@ -1,0 +1,685 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Vibe Code Explorer - Interactive Video Discovery</title>
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+    <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: #0f0f23;
+      color: #ffffff;
+      overflow-x: hidden;
+    }
+
+    .container {
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.3);
+    }
+
+    .header h1 {
+      font-size: 2.5rem;
+      font-weight: 300;
+      margin-bottom: 8px;
+      text-shadow: 0 2px 4px rgba(0,0,0,0.3);
+    }
+
+    .header .subtitle {
+      font-size: 1.1rem;
+      opacity: 0.9;
+      font-weight: 300;
+    }
+
+    /* Status Bar */
+    .status-bar {
+      background: #1e1e3f;
+      padding: 12px 20px;
+      border-bottom: 1px solid #333;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .status-text {
+      color: #a0a0ff;
+      font-size: 0.9rem;
+    }
+
+    .filters-active {
+      background: #2d4a9e;
+      color: white;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 0.8rem;
+      display: none;
+    }
+
+    .filters-active.show {
+      display: block;
+    }
+
+    /* Main Content Area */
+    .main-content {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Motion Bubble Chart Area */
+    .bubble-section {
+      height: 50vh;
+      background: linear-gradient(180deg, #1a1a2e 0%, #16213e 100%);
+      border-bottom: 2px solid #333;
+      position: relative;
+      padding: 20px;
+    }
+
+    .bubble-section h2 {
+      position: absolute;
+      top: 20px;
+      left: 20px;
+      color: #a0a0ff;
+      font-size: 1.2rem;
+      font-weight: 300;
+      z-index: 10;
+    }
+
+    #bubble-chart {
+      width: 100%;
+      height: calc(100% - 60px);
+      margin-top: 40px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.02);
+      backdrop-filter: blur(10px);
+    }
+
+    /* Video Thumbnail Grid Area */
+    .thumbnails-section {
+      height: 50vh;
+      background: #0f0f23;
+      padding: 20px;
+      overflow-y: auto;
+    }
+
+    .thumbnails-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid #333;
+    }
+
+    .thumbnails-header h2 {
+      color: #a0a0ff;
+      font-size: 1.2rem;
+      font-weight: 300;
+    }
+
+    .video-count {
+      color: #666;
+      font-size: 0.9rem;
+    }
+
+    .thumbnails-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+      padding-bottom: 40px;
+    }
+
+    /* Video Card */
+    .video-card {
+      background: #1a1a2e;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: all 0.3s ease;
+      border: 1px solid #333;
+      cursor: pointer;
+    }
+
+    .video-card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.2);
+      border-color: #667eea;
+    }
+
+    .video-thumbnail {
+      position: relative;
+      width: 100%;
+      height: 180px;
+      overflow: hidden;
+    }
+
+    .video-thumbnail img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.3s ease;
+    }
+
+    .video-card:hover .video-thumbnail img {
+      transform: scale(1.05);
+    }
+
+    .duration-badge {
+      position: absolute;
+      bottom: 8px;
+      right: 8px;
+      background: rgba(0,0,0,0.8);
+      color: white;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 500;
+    }
+
+    .video-info {
+      padding: 15px;
+    }
+
+    .video-title {
+      font-size: 0.95rem;
+      font-weight: 500;
+      line-height: 1.3;
+      margin-bottom: 8px;
+      color: #ffffff;
+      display: -webkit-box;
+      -webkit-line-clamp: 2;
+      -webkit-box-orient: vertical;
+      overflow: hidden;
+    }
+
+    .video-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 6px;
+    }
+
+    .video-author {
+      color: #a0a0ff;
+      font-size: 0.85rem;
+      text-decoration: none;
+    }
+
+    .video-author:hover {
+      text-decoration: underline;
+    }
+
+    .verified-badge {
+      width: 14px;
+      height: 14px;
+      fill: #4285f4;
+    }
+
+    .video-stats {
+      color: #888;
+      font-size: 0.8rem;
+      display: flex;
+      gap: 12px;
+    }
+
+    /* Loading States */
+    .loading {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      height: 200px;
+      color: #666;
+      font-size: 1.1rem;
+    }
+
+    .loading::after {
+      content: '...';
+      animation: loading-dots 1.5s infinite;
+    }
+
+    @keyframes loading-dots {
+      0%, 20% { content: '...'; }
+      40% { content: '....'; }
+      60% { content: '.....'; }
+      80%, 100% { content: '...'; }
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .bubble-section, .thumbnails-section {
+        height: auto;
+        min-height: 300px;
+      }
+      
+      .thumbnails-grid {
+        grid-template-columns: 1fr;
+      }
+      
+      .header h1 {
+        font-size: 1.8rem;
+      }
+    }
+
+    /* Bubble Tooltip Styles */
+    .bubble-tooltip {
+      position: absolute;
+      background: rgba(26, 26, 46, 0.95);
+      color: white;
+      padding: 12px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      pointer-events: none;
+      z-index: 1000;
+      border: 1px solid #667eea;
+      backdrop-filter: blur(10px);
+      max-width: 200px;
+    }
+
+    .bubble-tooltip .category-name {
+      font-weight: 600;
+      color: #a0a0ff;
+      margin-bottom: 4px;
+    }
+
+    .bubble-tooltip .video-count {
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <header class="header">
+      <h1>🎬 Vibe Code Explorer</h1>
+      <p class="subtitle">Discover coding videos through interactive motion bubbles</p>
+    </header>
+
+    <!-- Status Bar -->
+    <div class="status-bar">
+      <div class="status-text" id="status-text">Loading video data...</div>
+      <div class="filters-active" id="filters-active">
+        <span id="active-filters-text">No filters</span>
+      </div>
+    </div>
+
+    <!-- Main Content -->
+    <main class="main-content">
+      <!-- Motion Bubble Chart Section -->
+      <section class="bubble-section">
+        <h2>📊 Category Explorer</h2>
+        <div id="bubble-chart"></div>
+      </section>
+
+      <!-- Video Thumbnails Section -->
+      <section class="thumbnails-section">
+        <div class="thumbnails-header">
+          <h2>🎥 Video Collection</h2>
+          <div class="video-count" id="video-count">Loading...</div>
+        </div>
+        <div class="thumbnails-grid" id="thumbnails-grid">
+          <div class="loading">Loading videos</div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script type="module">
+    // Import the categorization module from compiled JavaScript
+    import { VideoCategorizer, parseViewCount, formatDuration } from '../js/video-categorizer.js';
+
+    // Vibe Code Explorer - Phase 1 Implementation
+    class VibeCodeExplorer {
+      constructor() {
+        this.categories = new Map();
+        this.videoData = [];
+        this.filteredData = [];
+        this.activeFilters = new Set();
+        this.categorizer = null;
+        
+        // Motion physics configuration for D3 force simulation
+        const motionConfig = {
+          repulseStrength: 0.4,                // Moderate repulsion (default: 0.7)
+          decay: 0.02,                         // Low decay for continuous motion (default: 0.05)
+          centerStrength: 0,                   // No center attraction - completely free floating
+          collidePadding: 4,                   // More padding between bubbles (default: 2)
+          alphaTarget: 0.05,                   // Higher energy level for continuous motion (default: 0.02)
+          alphaMin: 0.001,                     // Low minimum alpha (default: 0.00001)
+          initialVelocity: 40                  // Moderate initial velocity (default: 30)
+        };
+        
+        console.log('🔧 Motion Configuration:', motionConfig);
+        
+        // Create motion bubble chart - wrapper will pass config to BuilderFactory
+        this.bubbleChart = BubbleChart.create('#bubble-chart')
+          .withType('motion')                    // Motion bubbles with physics
+          .withSize('count')                     // Bubble size = video count
+          .withLabel('category')                 // Category name as label
+          .withColor('analysisType')             // Color by analysis type
+          .withKey(d => d.id)                    // Key for D3 data binding
+          .withDimensions(1200, 400)             // Fit the container
+          .build();
+        
+        // Get the underlying motion bubble instance and set motion config directly
+        const motionBubbleInstance = this.bubbleChart.getBuilder();
+        if (motionBubbleInstance && motionBubbleInstance.setMotionConfig) {
+          console.log('⚙️ Setting motion config directly on MotionBubble instance');
+          motionBubbleInstance.setMotionConfig(motionConfig);
+          console.log('✅ Motion Config Applied:', motionBubbleInstance.getMotionConfig());
+        } else {
+          console.log('❌ Could not access MotionBubble instance or setMotionConfig method');
+        }
+
+        
+        // Start loading data (event handlers will be set up after first render)
+        this.init();
+      }
+
+      async init() {
+        try {
+          await this.loadData();
+          this.updateStatus('Data loaded successfully! Click bubbles to filter videos.');
+        } catch (error) {
+          console.error('Failed to load data:', error);
+          this.updateStatus('Failed to load video data. Please check the console for details.');
+        }
+      }
+
+      async loadData() {
+        this.updateStatus('Loading video data...');
+        
+        // Use D3's JSON loading capabilities
+        this.videoData = await d3.json('/examples/data/vibe-code_q-vibe-code_sort_by-relevance_type-all.json');
+        
+        // Parse view counts from text format to numbers
+        this.videoData = this.videoData.map(video => ({
+          ...video,
+          viewCount: parseViewCount(video.viewCountText || '0')
+        }));
+        
+        this.filteredData = [...this.videoData];
+        
+        // Initialize categorizer with loaded data
+        this.categorizer = new VideoCategorizer(this.videoData);
+        
+        this.updateStatus('Analyzing video categories...');
+        
+        // Start with duration analysis
+        await this.performDurationAnalysis();
+        
+        // Add view count analysis (Priority 1)
+        await this.performViewCountAnalysis();
+        
+        // Update video grid
+        this.updateVideoGrid();
+        
+        this.updateStatus(`Loaded ${this.videoData.length} videos with multiple category types.`);
+      }
+
+      performDurationAnalysis() {
+        const durationCategories = this.categorizer.categorizeByduration();
+        this.updateMotionBubbles(durationCategories, 'duration');
+      }
+
+      performViewCountAnalysis() {
+        const viewCountCategories = this.categorizer.categorizeByViewCount();
+        this.updateMotionBubbles(viewCountCategories, 'viewCount');
+      }
+
+      updateMotionBubbles(newCategories, analysisType) {
+        // Add new categories to existing data
+        newCategories.forEach(cat => {
+          this.categories.set(cat.id, cat);
+        });
+
+        // Get all current categories for display
+        const allCategories = Array.from(this.categories.values());
+        
+        console.log('🎯 Updating bubbles with categories:', allCategories);
+        
+        // Update motion bubble chart using wrapper's update method
+        this.bubbleChart.update(allCategories);
+        
+        // Set up event handlers after bubbles are rendered
+        setTimeout(() => {
+          this.setupEventHandlers();
+        }, 100); // Small delay to ensure bubbles are rendered
+        
+        // Check motion config from the underlying instance
+        const motionInstance = this.bubbleChart.getBuilder();
+        if (motionInstance && motionInstance.getMotionConfig) {
+          console.log('⚙️ Current Motion Config:', motionInstance.getMotionConfig());
+        }
+      }
+
+      setupEventHandlers() {
+        console.log('🎯 Setting up event handlers...');
+        
+        // Debug: Check if bubbles exist in DOM
+        const bubbles = document.querySelectorAll('#bubble-chart .bubble');
+        console.log(`Found ${bubbles.length} bubbles in DOM`);
+        
+        // Set up event handlers on the chart instance directly
+        const chartInstance = this.bubbleChart.getBuilder();
+        console.log('Chart instance:', chartInstance);
+        
+        if (chartInstance) {
+          console.log('✅ Setting up builder event handlers');
+          chartInstance.on('click', (data, event, element) => {
+            console.log('🎯 Builder bubble clicked:', data);
+            this.toggleFilter(data);
+          });
+
+          chartInstance.on('mouseover', (data, event, element) => {
+            console.log('🎯 Builder bubble mouseover:', data.category || data.label);
+            this.showBubbleTooltip(data, event);
+          });
+
+          chartInstance.on('mouseout', (data, event, element) => {
+            console.log('🎯 Builder bubble mouseout');
+            this.hideBubbleTooltip();
+          });
+        } else {
+          console.log('❌ No chart instance found');
+        }
+
+        // Also try the wrapper's event system as backup
+        console.log('✅ Setting up wrapper event handlers');
+        this.bubbleChart.on('click', (data, event, element) => {
+          console.log('🎯 Wrapper bubble clicked:', data);
+          this.toggleFilter(data);
+        });
+
+        this.bubbleChart.on('mouseover', (data, event, element) => {
+          console.log('🎯 Wrapper bubble mouseover:', data.category || data.label);
+          this.showBubbleTooltip(data, event);
+        });
+
+        this.bubbleChart.on('mouseout', (data, event, element) => {
+          console.log('🎯 Wrapper bubble mouseout');
+          this.hideBubbleTooltip();
+        });
+        
+        // Test: Add manual click listeners as fallback
+        bubbles.forEach((bubble, index) => {
+          bubble.addEventListener('click', (event) => {
+            console.log(`🎯 Manual click handler triggered on bubble ${index}`);
+            // Try to find the category data
+            const svg = document.querySelector('#bubble-chart svg');
+            if (svg) {
+              const allBubbles = svg.querySelectorAll('.bubble');
+              console.log(`SVG has ${allBubbles.length} bubbles`);
+            }
+          });
+        });
+        
+        console.log('✅ Event handlers setup complete');
+      }
+
+      toggleFilter(categoryData) {
+        const categoryId = categoryData.id;
+        
+        if (this.activeFilters.has(categoryId)) {
+          // Remove filter
+          this.activeFilters.delete(categoryId);
+        } else {
+          // Add filter
+          this.activeFilters.add(categoryId);
+        }
+        
+        this.applyFilters();
+        this.updateFilterStatus();
+      }
+
+      applyFilters() {
+        if (this.activeFilters.size === 0) {
+          // No filters active - show all videos
+          this.filteredData = [...this.videoData];
+        } else {
+          // Use categorizer's filtering method
+          const categoryIds = Array.from(this.activeFilters);
+          this.filteredData = this.categorizer.getFilteredVideos(categoryIds);
+        }
+        
+        this.updateVideoGrid();
+      }
+
+      updateFilterStatus() {
+        const filtersElement = document.getElementById('filters-active');
+        const filtersTextElement = document.getElementById('active-filters-text');
+        
+        if (this.activeFilters.size === 0) {
+          filtersElement.classList.remove('show');
+        } else {
+          const activeFilterNames = Array.from(this.activeFilters).map(id => {
+            const category = this.categories.get(id);
+            return category ? category.category : id;
+          });
+          
+          filtersTextElement.textContent = `Filters: ${activeFilterNames.join(', ')}`;
+          filtersElement.classList.add('show');
+        }
+      }
+
+      updateVideoGrid() {
+        const grid = document.getElementById('thumbnails-grid');
+        const countElement = document.getElementById('video-count');
+        
+        // Update count
+        countElement.textContent = `${this.filteredData.length} videos`;
+        
+        // Clear existing content
+        grid.innerHTML = '';
+        
+        // Create video cards
+        this.filteredData.forEach(video => {
+          const card = this.createVideoCard(video);
+          grid.appendChild(card);
+        });
+      }
+
+      createVideoCard(video) {
+        const card = document.createElement('div');
+        card.className = 'video-card';
+        
+        // Format duration
+        const duration = this.formatDuration(video.lengthSeconds);
+        
+        // Get thumbnail URL (use medium quality) from localhost:3000
+        const thumbnailPath = video.videoThumbnails?.find(t => t.quality === 'medium')?.url || 
+                             video.videoThumbnails?.[0]?.url;
+        const thumbnail = thumbnailPath ? `http://localhost:3000${thumbnailPath}` : '/placeholder-thumbnail.jpg';
+        
+        card.innerHTML = `
+          <div class="video-thumbnail">
+            <img src="${thumbnail}" alt="${video.title}" onerror="this.src='/placeholder-thumbnail.jpg'">
+            <div class="duration-badge">${duration}</div>
+          </div>
+          <div class="video-info">
+            <div class="video-title">${video.title}</div>
+            <div class="video-meta">
+              <a href="#" class="video-author">${video.author}</a>
+              ${video.authorVerified ? `
+                <svg class="verified-badge" viewBox="0 0 24 24">
+                  <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M11,16.5L18,9.5L16.59,8.09L11,13.67L7.91,10.59L6.5,12L11,16.5Z"/>
+                </svg>
+              ` : ''}
+            </div>
+            <div class="video-stats">
+              <span>${video.viewCountText}</span>
+              <span>${video.publishedText}</span>
+            </div>
+          </div>
+        `;
+        
+        // Add click handler for video
+        card.addEventListener('click', () => {
+          this.openVideo(video);
+        });
+        
+        return card;
+      }
+
+      formatDuration(seconds) {
+        return formatDuration(seconds);
+      }
+
+      openVideo(video) {
+        // For now, just log the video - in a real app this would open the video
+        console.log('Opening video:', video.title, video.videoId);
+        // Could open in a modal, navigate to video page, etc.
+      }
+
+      showBubbleTooltip(data, event) {
+        // Remove existing tooltip
+        this.hideBubbleTooltip();
+        
+        const tooltip = document.createElement('div');
+        tooltip.className = 'bubble-tooltip';
+        tooltip.innerHTML = `
+          <div class="category-name">${data.category}</div>
+          <div class="video-count">${data.count} videos</div>
+        `;
+        
+        tooltip.style.left = (event.pageX + 10) + 'px';
+        tooltip.style.top = (event.pageY - 10) + 'px';
+        
+        document.body.appendChild(tooltip);
+        
+        // Store reference for cleanup
+        this.currentTooltip = tooltip;
+      }
+
+      hideBubbleTooltip() {
+        if (this.currentTooltip) {
+          this.currentTooltip.remove();
+          this.currentTooltip = null;
+        }
+      }
+
+      updateStatus(message) {
+        document.getElementById('status-text').textContent = message;
+      }
+    }
+
+    // Initialize the application when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new VibeCodeExplorer();
+    });
+  </script>
+</body>
+</html>
