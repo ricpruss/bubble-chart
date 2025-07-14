@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Bubble Chart - Simplified Configuration API</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../dist/bubble-chart.min.js"></script>
+  <style>
+    body { font-family: sans-serif; margin: 20px; }
+    .chart-container {
+      width: 100%;
+      max-width: 800px;
+      height: 600px;
+      margin: 20px auto;
+      border: 1px solid #eee;
+      background: #fafafa;
+    }
+    .example-section {
+      margin: 20px 0;
+      padding: 20px;
+      border: 1px solid #ddd;
+      border-radius: 5px;
+    }
+    .code-block {
+      background: #f5f5f5;
+      padding: 15px;
+      border-radius: 3px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>🎯 Simplified Configuration API</h1>
+  
+  <div class="example-section">
+    <h2>📊 Traditional Fluent API (Still Works)</h2>
+    <div class="code-block">
+const chart = BubbleChart.create("#chart1")
+  .withData(data)
+  .withLabel("label")
+  .withSize("size")
+  .withColor("category")
+  .withTheme("corporate")
+  .withAnimations("gentle")
+  .withDimensions(800, 600)
+  .build();
+    </div>
+    <div id="chart1" class="chart-container"></div>
+  </div>
+
+  <div class="example-section">
+    <h2>⚡ New Simplified Configuration API</h2>
+    <div class="code-block">
+const chart = BubbleChart.createWith({
+  container: "#chart2",
+  label: "label",
+  size: "size",
+  color: "category",
+  theme: "ocean",
+  type: "wave",
+  width: 800,
+  height: 600,
+  waveSpeed: 100,
+  waveAmplitude: 15,
+  animation: {
+    enter: { duration: 1000, stagger: 30 },
+    update: { duration: 800 },
+    exit: { duration: 400 }
+  }
+});
+chart.update(data);
+    </div>
+    <div id="chart2" class="chart-container"></div>
+  </div>
+
+  <div class="example-section">
+    <h2>🌳 Tree Chart with Simplified Config</h2>
+    <div class="code-block">
+const treeChart = BubbleChart.createWith({
+  container: "#chart3",
+  label: "label",
+  size: "size",
+  theme: "forest",
+  type: "tree",
+  width: 800,
+  height: 600,
+  treeSpeed: 200,
+  treeMinRadius: 8,
+  onClick: (data) => console.log("Clicked:", data)
+});
+treeChart.update(data);
+    </div>
+    <div id="chart3" class="chart-container"></div>
+  </div>
+
+  <script>
+    const data = [
+      { "label": "Apple", "size": 40, "count": 40, "category": "Technology" },
+      { "label": "Microsoft", "size": 35, "count": 35, "category": "Technology" },
+      { "label": "Johnson & Johnson", "size": 60, "count": 60, "category": "Healthcare" },
+      { "label": "Pfizer", "size": 30, "count": 30, "category": "Healthcare" },
+      { "label": "JPMorgan Chase", "size": 25, "count": 25, "category": "Finance" },
+      { "label": "Bank of America", "size": 20, "count": 20, "category": "Finance" },
+      { "label": "Harvard University", "size": 90, "count": 90, "category": "Education" },
+      { "label": "Walmart", "size": 15, "count": 15, "category": "Retail" }
+    ];
+
+    try {
+      // Traditional Fluent API
+      const chart1 = BubbleChart.create("#chart1")
+        .withData(data)
+        .withLabel("label")
+        .withSize("size")
+        .withColor("category")
+        .withTheme("corporate")
+        .withAnimations("gentle")
+        .withDimensions(800, 600)
+        .build();
+      
+      // New Simplified Configuration API
+      const chart2 = BubbleChart.createWith({
+        container: "#chart2",
+        label: "label",
+        size: "size",
+        color: "category",
+        theme: "ocean",
+        type: "wave",
+        width: 800,
+        height: 600,
+        waveSpeed: 100,
+        waveAmplitude: 15,
+        animation: {
+          enter: { duration: 1000, stagger: 30 },
+          update: { duration: 800 },
+          exit: { duration: 400 }
+        }
+      });
+      chart2.update(data);
+      
+      // Tree Chart with Simplified Config
+      const treeChart = BubbleChart.createWith({
+        container: "#chart3",
+        label: "label",
+        size: "size",
+        theme: "forest",
+        type: "tree",
+        width: 800,
+        height: 600,
+        treeSpeed: 200,
+        treeMinRadius: 8,
+        onClick: (data) => console.log("Clicked:", data)
+      });
+      treeChart.update(data);
+      
+      console.log("✅ All three configuration approaches work!");
+      
+    } catch (error) {
+      console.error("❌ Error:", error);
+    }
+  </script>
+
+</body>
+</html>

@@ -4,6 +4,7 @@ import * as d3 from 'd3';
 import { BuilderFactory } from './builders/builder-factory.js';
 import type { BubbleChartData, BubbleChartOptions } from './types/index.js';
 import { D3DataUtils } from './d3/index.js';
+import { SimplifiedChartOptions, createDefaultOptions, migrateConfig } from './config/simple-config.js';
 
 /**
  * Simple D3-native chart wrapper that adds events directly to D3 selections
@@ -190,7 +191,27 @@ interface ChartInterface {
  * Simplified BubbleChart API with direct builder usage
  */
 export const BubbleChart = {
-  create: (container: string) => new D3FluentBuilder(container)
+  create: (container: string) => new D3FluentBuilder(container),
+  
+  /**
+   * Alternative API for advanced users who want to use simplified configuration directly
+   */
+  createWith: (config: Partial<SimplifiedChartOptions>) => {
+    const defaults = createDefaultOptions();
+    const finalConfig = { ...defaults, ...config };
+    
+    // Convert to old format for backward compatibility
+    const oldConfig = migrateConfig(finalConfig);
+    const builder = BuilderFactory.create(oldConfig as BubbleChartOptions);
+    
+    return {
+      update: (data: BubbleChartData[]) => {
+        builder.data(data).update();
+        return builder;
+      },
+      builder
+    };
+  }
 };
 
 // Export BuilderFactory for advanced usage
@@ -228,6 +249,16 @@ export type {
   BubbleEventType,
   BubbleEventHandlers
 } from './types/index.js';
+
+// Export simplified configuration types
+export type {
+  SimplifiedChartOptions,
+  CoreChartOptions,
+  SpecializedOptions,
+  AnimationOptions
+} from './config/simple-config.js';
+
+export { createDefaultOptions, migrateConfig, validateConfig } from './config/simple-config.js';
 
 // Export color palettes for custom styling
 export {
