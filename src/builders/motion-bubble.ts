@@ -2,7 +2,6 @@ import * as d3 from 'd3';
 import { BaseChartBuilder } from '../core/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import type { BubbleChartData } from '../data/index.js';
-import { D3DataUtils } from '../d3/index.js';
 import { ChartPipeline } from './shared/index.js';
 
 /**
@@ -80,9 +79,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       const { svg, dimensions } = svgElements;
 
       // Create scales using the shared ChartPipeline
-      const radiusScale = D3DataUtils.createRadiusScale(
+      const radiusScale = ChartPipeline.createRadiusScale(
         this.processedData,
-        (d) => d.size,
         [8, Math.min(dimensions.width, dimensions.height) / 12]
       );
       
@@ -91,10 +89,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         this.config
       );
 
-      // Apply theme background color if available
-      if (theme?.background) {
-        svgElements.svg.style('background', theme.background);
-      }
+      // Apply theme background
+      ChartPipeline.applyTheme(svgElements, theme);
       
       // Create motion nodes with random initial positions
       const motionNodes = this.processedData.map((d) => ({
@@ -113,25 +109,27 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .attr('class', 'bubble-chart bubble');
 
       // Create circles with motion-specific styling
-      bubbleGroups.append('circle')
-        .attr('r', (d: any) => d.r)
-        .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 1.5)
-        .attr('opacity', 0.85)
-        .style('cursor', 'pointer');
+      ChartPipeline.renderCircles(bubbleGroups, {
+        radiusAccessor: (d: any) => d.r,
+        colorAccessor: (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'),
+        strokeColor: '#fff',
+        strokeWidth: 1.5,
+        opacity: 0.85,
+        initialRadius: 0,
+        initialOpacity: 0
+      });
 
       // Add text labels using centralized rendering
       ChartPipeline.renderLabels(bubbleGroups, {
         radiusAccessor: (d: any) => d.r,
         labelAccessor: (d: any) => d.data?.label || d.label || '',
-        textColor: this.getTextColor(),
+        textColor: 'white',
         formatFunction: this.config.format?.text ? this.config.format.text : undefined,
         initialOpacity: 1 // Motion bubbles don't use entrance animations
       });
 
       // Use InteractionManager for event handling
-      this.interactionManager.attachBubbleEvents(bubbleGroups, this.processedData);
+      ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
 
       // Start force simulation for continuous motion
       this.startForceSimulation(motionNodes, bubbleGroups, dimensions);

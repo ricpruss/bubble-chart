@@ -4,66 +4,6 @@ import { BaseChartBuilder } from '../core/index.js';
 import { ChartPipeline } from './shared/index.js';
 import * as d3 from 'd3';
 
-/**
- * D3-native data processing utilities
- * Leverages d3-array, d3-scale, and d3-format for cleaner data handling
- */
-class D3DataUtils {
-  /**
-   * Extract values using D3's native accessor pattern
-   */
-  static createAccessor<T>(accessor: string | ((d: T) => any)): (d: T) => any {
-    return typeof accessor === 'function' ? accessor : (d: T) => (d as any)[accessor];
-  }
-
-  /**
-   * Create scale using D3's native scale patterns
-   */
-  static createRadiusScale(data: any[], sizeAccessor: (d: any) => number, range: [number, number] = [5, 50]) {
-    const extent = d3.extent(data, sizeAccessor) as [number, number];
-    return d3.scaleSqrt().domain(extent).range(range);
-  }
-
-  /**
-   * Process data using D3's native patterns - much simpler than our custom processor
-   * Enhanced to handle color extraction
-   */
-  static processForVisualization<T extends BubbleChartData>(
-    data: T[], 
-    labelAccessor: string | string[] | ((d: T) => string),
-    sizeAccessor: string | string[] | ((d: T) => number),
-    colorAccessor?: string | string[] | ((d: T) => string)
-  ): Array<{ data: T; label: string; size: number; colorValue?: string }> {
-    // Handle array accessors by taking the first valid one, with fallbacks
-    const finalLabelAccessor = Array.isArray(labelAccessor) 
-      ? labelAccessor[0] || 'label' 
-      : labelAccessor || 'label';
-    const finalSizeAccessor = Array.isArray(sizeAccessor) 
-      ? sizeAccessor[0] || 'size' 
-      : sizeAccessor || 'size';
-    const finalColorAccessor = colorAccessor 
-      ? (Array.isArray(colorAccessor) ? colorAccessor[0] : colorAccessor)
-      : null;
-    
-    const getLabelValue = this.createAccessor(finalLabelAccessor);
-    const getSizeValue = this.createAccessor(finalSizeAccessor);
-    const getColorValue = finalColorAccessor ? this.createAccessor(finalColorAccessor) : null;
-    
-    return data.map(d => {
-      const result: { data: T; label: string; size: number; colorValue?: string } = {
-        data: d,
-        label: String(getLabelValue(d) || 'Unknown'),
-        size: Number(getSizeValue(d) || 1)
-      };
-      
-      if (getColorValue) {
-        result.colorValue = String(getColorValue(d) || 'default');
-      }
-      
-      return result;
-    });
-  }
-}
 
 /**
  * Interface for orbital node data with physics properties
@@ -115,53 +55,37 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     const { svg, dimensions } = svgElements;
     this.center = { x: dimensions.width / 2, y: dimensions.height / 2 };
 
-    // Use D3's native data processing instead of complex pipeline
-    const colorConfig = (this.config.color || this.config.colour);
-    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-      ? colorConfig as (string | ((d: BubbleChartData) => string))
-      : undefined;
-    
-    const processedData = D3DataUtils.processForVisualization(
-      this.chartData,
-      this.config.label || 'label',
-      this.config.size || 'size',
-      colorAccessor
-    );
+    const processedData = ChartPipeline.processData(this.chartData, this.config);
 
-    // Create radius scale using D3's native patterns
-    const radiusScale = D3DataUtils.createRadiusScale(
-      processedData,
-      d => d.size,
-      [8, Math.min(dimensions.width, dimensions.height) / 12]
-    );
+    // Create radius scale using central utility
+    const radiusScale = ChartPipeline.createRadiusScale(processedData, [8, Math.min(dimensions.width, dimensions.height) / 12]);
 
-    // Create color scale using ChartPipeline for theme support
+    // Create color scale
     const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
 
     // Apply theme background color if available
-    if (theme?.background) {
-      svgElements.svg.style('background', theme.background);
-    }
+    ChartPipeline.applyTheme(svg, theme);
 
     // Create orbit nodes with simplified logic
     this.orbitNodes = this.createSimplifiedOrbitNodes(processedData, radiusScale, colorScale);
     
-    // Create bubbles using D3's native data binding with proper CSS classes
-    const bubbleGroups = svg.selectAll('.bubble')
-      .data(this.orbitNodes, (d: any) => (d as OrbitNode).label)
-      .join('g')
-      .attr('class', 'bubble')
-      .classed('bubble-chart', true); // Add bubble-chart class for CSS styling
+    // Create bubbles using centralized rendering
+    const bubbleGroups = ChartPipeline.renderBubbleGroups(svg, this.orbitNodes, {
+      keyFunction: (d: any) => d.label,
+      cssClass: 'bubble-chart bubble',
+      transform: false // We'll handle positioning manually due to orbital motion
+    });
 
-    // Add circles
-    bubbleGroups.selectAll('circle')
-      .data((d: any) => [d])
-      .join('circle')
-      .attr('r', (d: any) => d.r)
-      .attr('fill', (d: any) => d.color)
-      .attr('stroke', '#fff')
-      .attr('stroke-width', 2)
-      .style('cursor', 'pointer'); // Make it clear these are interactive
+    // Add circles using centralized rendering
+    ChartPipeline.renderCircles(bubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      colorAccessor: (d: any) => d.color,
+      strokeColor: '#fff',
+      strokeWidth: 2,
+      opacity: 0.8,
+      initialRadius: 0,
+      initialOpacity: 0
+    });
 
     // Add labels using centralized rendering
     ChartPipeline.renderLabels(bubbleGroups, {
@@ -174,8 +98,8 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     // Start orbital animation
     this.startOrbitAnimation(bubbleGroups);
     
-    // Attach simplified event handling
-    this.attachSimplifiedEvents(bubbleGroups);
+    // Attach standardized event handling
+    ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
   }
 
   /**
@@ -215,46 +139,6 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
   }
 
 
-  /**
-   * Attach simplified event handling using D3's native patterns
-   * Enhanced to integrate with existing event system
-   */
-  private attachSimplifiedEvents(selection: d3.Selection<any, any, any, any>): void {
-    selection
-      .on('click', (event, d) => {
-        // Simple click feedback with better visual response
-        const circle = d3.select(event.currentTarget).select('circle');
-        circle
-          .transition()
-          .duration(150)
-          .attr('r', d.r * 1.3)
-          .attr('stroke-width', 6)
-          .transition()
-          .duration(150)
-          .attr('r', d.r)
-          .attr('stroke-width', 2);
-      })
-      .on('mouseover', (event, _d) => {
-        // Enhanced hover effect with better visual feedback
-        const circle = d3.select(event.currentTarget).select('circle');
-        circle
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 4)
-          .attr('stroke', '#333'); // Darker stroke on hover
-      })
-      .on('mouseout', (event, _d) => {
-        const circle = d3.select(event.currentTarget).select('circle');
-        circle
-          .transition()
-          .duration(200)
-          .attr('stroke-width', 2)
-          .attr('stroke', '#fff'); // Back to white stroke
-        
-        // Simple mouse out handling
-        // Event handling integrated through D3's native patterns
-      });
-  }
 
   /**
    * Start orbital animation using D3's timer and data binding

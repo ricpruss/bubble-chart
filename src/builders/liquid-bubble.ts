@@ -2,7 +2,6 @@ import * as d3 from 'd3';
 import type { BubbleChartData } from '../data/index.js';
 import type { BubbleChartOptions } from '../config/index.js';
 import { BaseChartBuilder } from '../core/index.js';
-import { D3DataUtils } from '../d3/index.js';
 import { ChartPipeline } from './shared/index.js';
 
 /**
@@ -49,47 +48,33 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       return;
     }
 
-    // Process data with color accessor using D3DataUtils
-    const colorConfig = this.config.color;
-    const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-      ? colorConfig as (string | ((d: BubbleChartData) => string))
-      : undefined;
-    
-    const processedData = D3DataUtils.processForVisualization(
-      this.chartData,
-      this.config.label || 'label',
-      this.config.size || 'size',
-      colorAccessor
-    );
-
-    // Use shared pipeline for color scale creation with theme support
-    const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
-
     const svgElements = this.svgManager.getElements();
     if (!svgElements) return;
 
     const { svg, dimensions } = svgElements;
 
-    // Apply theme background color if available
-    if (theme?.background) {
-      svgElements.svg.style('background', theme.background);
-    }
-
-    // Create layout nodes using D3DataUtils
-    const layoutNodes = D3DataUtils.createPackLayout(
+    // Use ChartPipeline for data processing
+    const processedData = ChartPipeline.processData(this.chartData, this.config);
+    
+    // Create bubble layout
+    const layoutNodes = ChartPipeline.createBubbleLayout(
       processedData,
       dimensions.width,
       dimensions.height,
       5
     );
 
-    // Create bubble groups using D3's native data binding
-    const bubbleGroups = svg.selectAll('.bubble')
-      .data(layoutNodes)
-      .join('g')
-      .attr('class', 'bubble-chart bubble')
-      .attr('transform', (d: any) => `translate(${d.x}, ${d.y})`)
-      .style('cursor', 'pointer');
+    // Create color scale with theme support
+    const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
+
+    // Apply theme background
+    ChartPipeline.applyTheme(svgElements, theme);
+
+    // Create bubble groups using ChartPipeline
+    const bubbleGroups = ChartPipeline.renderBubbleGroups(svg, layoutNodes, {
+      cssClass: 'bubble-chart bubble',
+      transform: true
+    });
 
     // Create circles (background for liquid fill) with themed background
     bubbleGroups.selectAll('circle').remove(); // Clear existing to avoid duplicates
@@ -104,7 +89,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     ChartPipeline.renderLabels(bubbleGroups, {
       radiusAccessor: (d: any) => d.r,
       labelAccessor: (d: any) => d.data?.label || d.label || '',
-      textColor: this.getTextColor(),
+      textColor: 'white',
       initialOpacity: 1 // Liquid bubbles render text immediately
     });
 
@@ -112,7 +97,7 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
     this.createLiquidElements(bubbleGroups, layoutNodes, processedData, colorScale, theme);
 
     // Hook up mouse / touch interactions
-    this.interactionManager.attachBubbleEvents(bubbleGroups, processedData);
+    ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
   }
 
   /**

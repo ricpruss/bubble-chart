@@ -51,6 +51,14 @@ const chart = BubbleChart.create('#chart')
 ```typescript
 BubbleChart.create(container: string)      // Create chart builder
   .withData(data: T[])                     // Bind data (triggers auto-render)
+  .withLabel(labelKey: string)             // Define label field
+  .withSize(sizeKey: string)               // Define size field
+  .withColor(colorBy: string)              // Define color field
+  .withType(type: 'bubble' | 'wave' | 'liquid' | 'tree' | 'motion')  // Define chart type
+  .withTheme(theme: 'corporate' | 'ocean' | 'sunset' | 'forest' | 'slate' | 'wave') // Apply theme
+  .withAnimations(animationPreset: string) // Choose animation style
+  .withDimensions(width: number, height: number)  // Set dimensions
+  .withKey(keyFunction: (d: T) => string)  // Define key function for streaming
   .build()                                 // Returns live chart instance
 
 // 🚀 D3-Native: Charts render automatically when data is bound!
@@ -86,11 +94,17 @@ BubbleChart.create(container: string)      // Create chart builder
 .withGrouping('sector')                    // Auto-color by field
 ```
 
-### Advanced Data Sources
+### Streaming and Live Updates
 ```typescript
-.fromObservable(dataStream)                // Reactive data binding
-.fromWebSocket({ url: 'ws://api.com' })    // WebSocket data
-.fromPolling({ url: '/api/data' })         // Polling data source
+.withStreaming({
+  keyFunction: (d: T) => string,          // Key function for D3 data join
+  enterAnimation: { duration: number, stagger: number },
+  updateAnimation: { duration: number },
+  exitAnimation: { duration: number }
+})                                       // Enable live updates
+.withData(dataStream | T[])               // Data source can be array or stream
+.update(data: T[])                        // Update chart with new data array
+.withAnimations('gentle' | 'energetic' | { enter: AnimationConfig, update: AnimationConfig, exit: AnimationConfig }) // Customize animations
 ```
 
 ## Usage Examples

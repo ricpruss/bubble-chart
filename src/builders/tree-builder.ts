@@ -39,34 +39,14 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     // Store the original data (could be array or hierarchical object)
     this.chartData = Array.isArray(data) ? data : [data] as T[];
 
-    // For hierarchical data, extract leaf nodes for D3DataUtils processing
+    // For hierarchical data, extract leaf nodes for processing
     if (!Array.isArray(data) && data && typeof data === 'object') {
       // Extract all leaf nodes from the hierarchy
       const leafNodes = this.extractLeafNodes(data);
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      this.processedData = D3DataUtils.processForVisualization(
-        leafNodes,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
-      );
+      this.processedData = ChartPipeline.processData(leafNodes, this.config);
     } else {
-      // For array data, use D3DataUtils processing
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      this.processedData = D3DataUtils.processForVisualization(
-        this.chartData,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
-      );
+      // For array data, use standard processing
+      this.processedData = ChartPipeline.processData(this.chartData, this.config);
     }
 
     return this;
@@ -124,23 +104,18 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     
     // Create color scale for tree nodes using ChartPipeline for theme support
     const { colorScale, theme } = ChartPipeline.createColorScale(this.processedData, this.config);
-
-    // Apply theme background color if available
-    if (theme?.background) {
-      svgElements.svg.style('background', theme.background);
-    }
+    ChartPipeline.applyTheme(svg, theme);
 
     // Create D3.js hierarchy for node information (parents vs children)
     const root = d3.hierarchy(rootDatum);
     const hierarchyNodes = root.descendants();
     
-    // Create bubble groups
-    const bubbleGroups = svg.selectAll('g.bubble')
-      .data(layoutNodes)
-      .enter()
-      .append('g')
-      .attr('class', 'bubble')
-      .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+    // Create bubble groups using centralized rendering
+    const bubbleGroups = ChartPipeline.renderBubbleGroups(svg, layoutNodes, {
+      keyFunction: (d: any) => d.data?.id || d.data?.label || JSON.stringify(d.data),
+      cssClass: 'bubble',
+      transform: true
+    });
 
     // Create circles with tree-specific styling
     const circles = bubbleGroups.append('circle')
@@ -178,29 +153,12 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
       initialOpacity: 0 // Tree bubbles use entrance animations
     });
     
-    // Apply entrance animations if configured
-    if (this.config.animation) {
-      const animDuration = this.config.animation?.enter?.duration || 800;
-      const staggerDelay = this.config.animation?.enter?.stagger || 0;
-      
-      bubbleGroups
-        .style('opacity', 0)
-        .transition()
-        .duration(animDuration)
-        .delay((_d: any, i: number) => i * staggerDelay)
-        .style('opacity', 1);
-      
-      // Also animate text opacity for leaf nodes
-      leafBubbleGroups.selectAll('text')
-        .transition()
-        .delay((_d: any, i: number) => i * staggerDelay + 200)
-        .duration(animDuration / 2)
-        .style('opacity', 1);
-    }
+    // Apply entrance animations using centralized system
+    ChartPipeline.applyEntranceAnimations(bubbleGroups, this.config);
     
     // Attach interactions only to leaf nodes
     const leafBubbles = bubbleGroups.filter((_d: any, i: number) => !hierarchyNodes[i]?.children);
-    this.interactionManager.attachBubbleEvents(leafBubbles, this.processedData);
+    ChartPipeline.attachStandardEvents(leafBubbles, this.interactionManager);
   }
 
 
@@ -222,17 +180,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     
     // Re-process data with new config if needed
     if (this.chartData.length) {
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      this.processedData = D3DataUtils.processForVisualization(
-        this.chartData,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
-      );
+      this.processedData = ChartPipeline.processData(this.chartData, this.config);
     }
     
     return this;

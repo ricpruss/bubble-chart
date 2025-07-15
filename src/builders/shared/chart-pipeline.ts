@@ -1,8 +1,7 @@
-import { D3DataUtils } from '../../d3/index.js';
-
 import type { BubbleChartOptions } from '../../config/index.js';
 import type { BubbleChartData } from '../../data/index.js';
 import { D3DataUtils } from '../../d3/index.js';
+import type { InteractionManager } from '../../core/interaction-manager.js';
 import * as d3 from 'd3';
 
 /**
@@ -16,7 +15,7 @@ export const ChartPipeline = {
    * @param config - Chart configuration
    * @returns Processed data ready for visualization
    */
-processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): D3DataUtils.D3ProcessedData<T>[] {
+processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): any[] {
     const colorConfig = config.color;
     const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
       ? colorConfig as (string | ((d: BubbleChartData) => string))
@@ -27,7 +26,7 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): D
       config.label || 'label',
       config.size || 'size',
       colorAccessor
-    ) as D3DataUtils.D3ProcessedData<T>[];
+    );
   },
 
   /**
@@ -164,14 +163,181 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): D
   },
 
   /**
-   * Calculate font size based on radius with better scaling
+   * Calculate font size based on radius using D3 scale for consistency
    * @param radius - Bubble radius
+   * @param radiusRange - Expected radius range for domain [min, max]
    * @returns Font size as string with 'px' unit
    */
-  calculateFontSize(radius: number): string {
-    // Centralized font size calculation with better scaling
-    const baseFontSize = Math.max(10, radius / 3);
-    const scaledSize = Math.min(baseFontSize, 24); // Max font size for readability
-    return `${scaledSize}px`;
+  calculateFontSize(radius: number, radiusRange: [number, number] = [0, 100]): string {
+    // Use D3 scale for consistent font sizing
+    const fontScale = d3.scaleLinear()
+      .domain(radiusRange)
+      .range([10, 24])
+      .clamp(true);
+    return `${fontScale(radius)}px`;
+  },
+
+  /**
+   * Create radius scale using D3DataUtils - centralized for all builders
+   * @param data - Processed data
+   * @param range - Output range [min, max]
+   * @returns D3 radius scale
+   */
+  createRadiusScale(data: any[], range: [number, number]): d3.ScalePower<number, number> {
+    return D3DataUtils.createRadiusScale(data, (d) => d.size, range);
+  },
+
+  /**
+   * Apply theme to SVG container
+   * @param svgElements - SVG elements from SVG manager
+   * @param theme - Theme data
+   */
+  applyTheme(svgElements: any, theme: any): void {
+    if (theme?.background && svgElements?.svg?.style) {
+      svgElements.svg.style('background', theme.background);
+    }
+  },
+
+  /**
+   * Create key function for D3 data binding
+   * @param config - Chart configuration
+   * @returns Key function or undefined
+   */
+  createKeyFunction(config: BubbleChartOptions): ((d: any) => string) | undefined {
+    if (config.keyFunction) {
+      return (d: any) => {
+        // Handle nested data structure: d.data.data contains the original data
+        const originalData = d.data?.data || d.data || d;
+        return String(config.keyFunction!(originalData));
+      };
+    }
+    return undefined;
+  },
+
+  /**
+   * Render bubble groups with D3's native data binding
+   * @param svg - D3 selection of SVG element
+   * @param nodes - Layout nodes
+   * @param config - Rendering configuration
+   * @returns D3 selection of bubble groups
+   */
+  renderBubbleGroups(svg: any, nodes: any[], config: {
+    keyFunction?: (d: any) => string;
+    cssClass?: string;
+    transform?: boolean;
+  }): any {
+    const keyFunction = config.keyFunction;
+    const cssClass = config.cssClass || 'bubble-chart bubble';
+    
+    return svg.selectAll('.bubble')
+      .data(nodes, keyFunction)
+      .join('g')
+      .attr('class', cssClass)
+      .attr('transform', config.transform !== false ? 
+        (d: any) => `translate(${d.x}, ${d.y})` : null)
+      .style('cursor', 'pointer');
+  },
+
+  /**
+   * Render circles with consistent styling
+   * @param groups - D3 selection of bubble groups
+   * @param config - Circle rendering configuration
+   * @returns D3 selection of circles
+   */
+  renderCircles(groups: any, config: {
+    radiusAccessor?: (d: any) => number;
+    colorAccessor?: (d: any) => string;
+    strokeColor?: string;
+    strokeWidth?: number;
+    opacity?: number;
+    initialRadius?: number;
+    initialOpacity?: number;
+  }): any {
+    const radiusAccessor = config.radiusAccessor || ((d: any) => d.r);
+    const colorAccessor = config.colorAccessor || (() => '#1f77b4');
+    const strokeColor = config.strokeColor || '#fff';
+    const strokeWidth = config.strokeWidth || 2;
+    const opacity = config.opacity || 0.8;
+    const initialRadius = config.initialRadius || 0;
+    const initialOpacity = config.initialOpacity || 0;
+    
+    return groups.selectAll('circle')
+      .data((d: any) => [d])
+      .join('circle')
+      .attr('r', initialRadius)
+      .style('opacity', initialOpacity)
+      .attr('fill', colorAccessor)
+      .attr('stroke', strokeColor)
+      .attr('stroke-width', strokeWidth)
+      .transition()
+      .duration(300)
+      .attr('r', radiusAccessor)
+      .style('opacity', opacity);
+  },
+
+  /**
+   * Attach standard events to bubble groups
+   * @param groups - D3 selection of bubble groups
+   * @param interactionManager - Interaction manager instance
+   */
+  attachStandardEvents(groups: any, _interactionManager: InteractionManager<any>): void {
+    // Standard hover effects
+    groups
+      .on('mouseover', function(this: SVGGElement, _event: MouseEvent, _d: any) {
+        d3.select(this).select('circle')
+          .transition()
+          .duration(200)
+          .attr('stroke-width', 4)
+          .attr('stroke', '#333');
+      })
+      .on('mouseout', function(this: SVGGElement, _event: MouseEvent, _d: any) {
+        d3.select(this).select('circle')
+          .transition()
+          .duration(200)
+          .attr('stroke-width', 2)
+          .attr('stroke', '#fff');
+      });
+    
+    // Delegate to interaction manager for other events
+    // The interaction manager will handle tooltips and custom events
+  },
+
+  /**
+   * Text wrapping utility for SVG text elements
+   * @param textSelection - D3 selection of text elements
+   * @param width - Maximum width for wrapping
+   */
+  wrapText(textSelection: any, width: number): void {
+    textSelection.each(function(this: SVGTextElement) {
+      const textElement = d3.select(this);
+      const words = textElement.text().split(/\s+/).reverse();
+      const lineHeight = 1.1;
+      const y = textElement.attr('y');
+      const dy = parseFloat(textElement.attr('dy'));
+      
+      let line: string[] = [];
+      let lineNumber = 0;
+      let word: string | undefined;
+      let tspan = textElement.text(null).append('tspan')
+        .attr('x', textElement.attr('x'))
+        .attr('y', y)
+        .attr('dy', dy + 'em');
+
+      while (word = words.pop()) {
+        line.push(word);
+        tspan.text(line.join(' '));
+        
+        if (tspan.node()!.getComputedTextLength() > width && line.length > 1) {
+          line.pop();
+          tspan.text(line.join(' '));
+          line = [word];
+          tspan = textElement.append('tspan')
+            .attr('x', textElement.attr('x'))
+            .attr('y', y)
+            .attr('dy', ++lineNumber * lineHeight + dy + 'em')
+            .text(word);
+        }
+      }
+    });
   }
 };

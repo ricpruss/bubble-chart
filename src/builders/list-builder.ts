@@ -33,8 +33,8 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       
       const { svg } = svgElements;
 
-      // Sort processed data by size (descending) using D3DataUtils
-      const sortedData = D3DataUtils.sortData(this.processedData, 'size', 'desc');
+      // Sort processed data by size (descending)
+      const sortedData = ChartPipeline.processData(this.chartData, this.config).sort((a, b) => b.size - a.size);
 
       // Configuration with defaults
       const maxRadius = this.config.listBubble?.maxRadius || 25;
@@ -42,67 +42,59 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       const padding = this.config.listBubble?.padding || 10;
       const textWidth = this.config.listBubble?.textWidth || 200;
 
-      // Create radius scale using D3DataUtils
-      this.radiusScale = D3DataUtils.createRadiusScale(
-        sortedData,
-        (d) => d.size,
-        [minRadius, maxRadius]
-      );
+      // Create radius scale using ChartPipeline
+      this.radiusScale = ChartPipeline.createRadiusScale(sortedData, [minRadius, maxRadius]);
 
       // Calculate layout and update SVG dimensions properly
       const lineHeight = maxRadius * 2 + padding;
       const newHeight = lineHeight * sortedData.length;
-      
-      // Use SVGManager to update both height and viewBox
       this.svgManager.updateDimensions(
         this.svgManager.getElements()?.dimensions.width || 500,
         newHeight
       );
 
-      // Create color scale using ChartPipeline for theme support
+      // Create color scale using ChartPipeline
       const { colorScale, theme } = ChartPipeline.createColorScale(sortedData, this.config);
-
-      // Apply theme background color if available
-      if (theme?.background) {
-        svgElements.svg.style('background', theme.background);
-      }
-
+      ChartPipeline.applyTheme(svg, theme);
+      
       // Clear existing list rows first
       svg.selectAll('g.list-row').remove();
       
-      // Create row groups using modern D3 join pattern
-      const rows = svg.selectAll('g.list-row')
-        .data(sortedData)
-        .join('g')
-        .attr('class', 'list-row')
-        .attr('transform', (_d: any, i: number) => `translate(0, ${i * lineHeight + maxRadius})`)
-        .style('cursor', 'pointer');
+      // Create row groups using centralized rendering
+      const rows = ChartPipeline.renderBubbleGroups(svg, sortedData, {
+        keyFunction: (d: any) => d.label,
+        cssClass: 'list-row',
+        transform: false,
+      });
 
-      // Add circles
-      const circles = rows.append('circle')
-        .attr('cx', maxRadius)
-        .attr('cy', 0)
-        .attr('r', (d: any) => this.radiusScale!(d.size || 0))
-        .attr('fill', (d: any) => d.colorValue ? colorScale(d.colorValue) : (this.config.defaultColor || '#2196F3'))
-        .attr('stroke', '#fff')
-        .attr('stroke-width', 2)
-        .style('opacity', 0.8);
+      // Update transform and cursor
+      rows.attr('transform', (_d: any, i: number) => `translate(0, ${i * lineHeight + maxRadius})`)
+          .style('cursor', 'pointer');
 
-      // Add labels using D3DataUtils formatting
-      const labels = rows.append('text')
-        .attr('x', maxRadius * 2 + padding)
-        .attr('y', 0)
-        .attr('dy', '0.35em')
-        .style('font-size', '14px')
-        .style('font-family', 'sans-serif')
-        .style('fill', this.getTextColor())
-        .style('pointer-events', 'none')
-        .text((d: any) => {
-          const label = this.config.format?.text ? this.config.format.text(d.label) : d.label;
-          return D3DataUtils.formatLabel(label, 30);
-        })
-        .call(this.wrapText.bind(this), textWidth);
+      // Add circles using centralized rendering
+      const circles = ChartPipeline.renderCircles(rows, {
+        radiusAccessor: (d: any) => this.radiusScale!(d.size || 0),
+        colorAccessor: (d: any) => d.colorValue ? colorScale(d.colorValue) : (this.config.defaultColor || '#2196F3'),
+        strokeColor: '#fff',
+        strokeWidth: 2,
+        opacity: 0.8
+      });
 
+      // Add labels using centralized rendering
+      const labels = ChartPipeline.renderLabels(rows, {
+        radiusAccessor: (d: any) => this.radiusScale!(d.size || 0),
+        labelAccessor: (d: any) => this.config.format?.text ? this.config.format.text(d.label) : d.label,
+        textColor: this.getTextColor(),
+        maxLength: 30
+      });
+      
+      // Position labels for list layout
+      labels.attr('x', maxRadius * 2 + padding)
+            .attr('y', 0)
+            .attr('dy', '0.35em')
+            .style('font-size', '14px')
+            .style('font-family', 'sans-serif')
+            .style('text-anchor', 'start');
       // Add optional size values using D3DataUtils formatting
       if (this.config.format?.number) {
         rows.append('text')
@@ -129,6 +121,12 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .text((d: any) => D3DataUtils.formatNumber(d.size || 0));
       }
 
+      // Apply text wrapping for long labels
+      ChartPipeline.wrapText(labels, textWidth);
+      
+      // Position circles for list layout
+      circles.attr('cx', maxRadius).attr('cy', 0);
+      
       // Use interaction manager for events
       this.interactionManager.attachBubbleEvents(rows, this.processedData);
 
@@ -166,42 +164,6 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
     labels.style('opacity', 0).transition().delay((_d: any, i: number) => i * 100 + 400).duration(duration / 3).style('opacity', 1);
   }
 
-  /**
-   * Text wrapping utility for long labels
-   */
-  private wrapText(text: any, width: number): void {
-    text.each(function(this: SVGTextElement) {
-      const textElement = d3.select(this);
-      const words = textElement.text().split(/\s+/).reverse();
-      const lineHeight = 1.1;
-      const y = textElement.attr('y');
-      const dy = parseFloat(textElement.attr('dy'));
-      
-      let line: string[] = [];
-      let lineNumber = 0;
-      let word: string | undefined;
-      let tspan = textElement.text(null).append('tspan')
-        .attr('x', textElement.attr('x'))
-        .attr('y', y)
-        .attr('dy', dy + 'em');
-
-      while (word = words.pop()) {
-        line.push(word);
-        tspan.text(line.join(' '));
-        
-        if (tspan.node()!.getComputedTextLength() > width && line.length > 1) {
-          line.pop();
-          tspan.text(line.join(' '));
-          line = [word];
-          tspan = textElement.append('tspan')
-            .attr('x', textElement.attr('x'))
-            .attr('y', y)
-            .attr('dy', ++lineNumber * lineHeight + dy + 'em')
-            .text(word);
-        }
-      }
-    });
-  }
 
   /**
    * Get readonly merged options (unified API)
@@ -221,18 +183,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
     
     // Re-process data with new config if needed
     if (this.chartData.length) {
-      // Handle color accessor type filtering
-      const colorConfig = this.config.color;
-      const colorAccessor = (typeof colorConfig === 'string' || typeof colorConfig === 'function') 
-        ? colorConfig as (string | ((d: BubbleChartData) => string))
-        : undefined;
-      
-      this.processedData = D3DataUtils.processForVisualization(
-        this.chartData,
-        this.config.label || 'label',
-        this.config.size || 'size',
-        colorAccessor
-      );
+      this.processedData = ChartPipeline.processData(this.chartData, this.config);
     }
     
     return this;
