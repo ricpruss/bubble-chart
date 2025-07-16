@@ -174,6 +174,12 @@ const chart = BubbleChart.create('#chart')
   .withType('motion')                      // Motion chart with physics
   .withTooltips(['company', 'year', 'revenue', 'employees'])
   .build();                                // Returns live animated chart
+
+// Motion charts support spatial filtering by category
+const builder = chart.getBuilder();
+builder.triggerSpatialFilter('region');   // Cluster bubbles by region
+builder.triggerSpatialFilter('income');   // Cluster bubbles by income level
+builder.triggerSpatialFilter();           // Reset to original layout
 ```
 
 ### Wave and Liquid Charts - D3-Native Fluid Animations

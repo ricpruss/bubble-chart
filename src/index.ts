@@ -88,6 +88,53 @@ class D3FluentBuilder {
     }
     return this;
   }
+
+  /**
+   * Enhanced tooltip configuration (supports function for custom tooltips)
+   */
+  withTooltips(tooltipConfig: boolean | string[] | ((d: any) => any[])): this {
+    this.config.tooltip = tooltipConfig;
+    return this;
+  }
+
+  /**
+   * Time field for motion charts
+   */
+  withTime(timeField: string): this {
+    this.config.time = timeField;
+    return this;
+  }
+
+  /**
+   * Enable streaming data updates
+   */
+  withStreaming(options?: any): this {
+    this.config.keyFunction = options?.keyFunction || ((d: any) => d.id || d.name);
+    if (options?.enterAnimation) {
+      this.config.animation = {
+        enter: options.enterAnimation,
+        update: options.updateAnimation || { duration: 600, easing: 'ease-in-out' },
+        exit: options.exitAnimation || { duration: 400, easing: 'ease-in' }
+      };
+    }
+    return this;
+  }
+
+  /**
+   * Enable grouping by field
+   */
+  withGrouping(groupField: string): this {
+    this.config.colour = groupField;
+    return this;
+  }
+  
+  /**
+   * Enable interactive filtering - clicking bubbles spatially separates by group
+   */
+  withInteractiveFiltering(enabled: boolean = true): this {
+    this.config.interactiveFiltering = enabled;
+    return this;
+  }
   
   /**
    * Build the chart - creates builder instance and renders if data is available
@@ -107,6 +154,14 @@ class D3FluentBuilder {
           this.attachEvents();
         }
       },
+      updateData: (newData: any) => {
+        if (this.chartInstance && this.chartInstance.updateData) {
+          this.chartInstance.updateData(newData);
+        } else if (this.chartInstance) {
+          this.chartInstance.data(newData).update();
+        }
+        this.attachEvents();
+      },
       on: (event: string, handler: Function) => {
         this.eventHandlers.set(event, handler);
         if (this.chartInstance) {
@@ -114,7 +169,46 @@ class D3FluentBuilder {
         }
         return this;
       },
-      getBuilder: () => this.chartInstance
+      onBubble: (event: string, handler: Function) => {
+        this.eventHandlers.set(event, handler);
+        if (this.chartInstance) {
+          this.attachEvents();
+        }
+        return this;
+      },
+      getBuilder: () => this.chartInstance,
+      store: {
+        add: (item: any) => {
+          // Add to current data and update
+          if (this.config.data) {
+            this.config.data.push(item);
+            if (this.chartInstance) {
+              this.chartInstance.data(this.config.data).update();
+              this.attachEvents();
+            }
+          }
+        },
+        remove: (key: string) => {
+          // Remove from current data and update
+          if (this.config.data && this.config.keyFunction) {
+            this.config.data = this.config.data.filter(d => 
+              this.config.keyFunction!(d) !== key
+            );
+            if (this.chartInstance) {
+              this.chartInstance.data(this.config.data).update();
+              this.attachEvents();
+            }
+          }
+        },
+        clear: () => {
+          // Clear all data
+          this.config.data = [];
+          if (this.chartInstance) {
+            this.chartInstance.data(this.config.data).update();
+            this.attachEvents();
+          }
+        }
+      }
     };
   }
   
@@ -143,7 +237,9 @@ class D3FluentBuilder {
       ...(this.config.percentage && { percentage: this.config.percentage }),
       ...(this.config.theme && { theme: this.config.theme }),
       ...(this.config.keyFunction && { keyFunction: this.config.keyFunction }),
-      ...(this.config.animation && { animation: this.config.animation })
+      ...(this.config.animation && { animation: this.config.animation }),
+      ...(this.config.interactiveFiltering && { interactiveFiltering: this.config.interactiveFiltering }),
+      ...(this.config.colour && { colour: this.config.colour })
     };
     
     this.chartInstance = BuilderFactory.create(finalConfig);
@@ -183,8 +279,15 @@ class D3FluentBuilder {
  */
 interface ChartInterface {
   update: (newData: any) => void;
+  updateData: (newData: any) => void;
   on: (event: string, handler: Function) => any;
+  onBubble: (event: string, handler: Function) => any;
   getBuilder: () => any;
+  store: {
+    add: (item: any) => void;
+    remove: (key: string) => void;
+    clear: () => void;
+  };
 }
 
 /**

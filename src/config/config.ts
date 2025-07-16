@@ -292,6 +292,10 @@ export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData>
   cluster?: boolean;
   /** Friction coefficient for simulations */
   friction?: number;
+  
+  // Interactive features
+  /** Enable interactive filtering - clicking bubbles spatially separates by group */
+  interactiveFiltering?: boolean;
 }
 
 /**

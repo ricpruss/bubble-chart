@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>Advanced Motion Chart Demo - World Bank Economic Data</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <style>
+    body { 
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+      margin: 0; 
+      padding: 20px; 
+      background: #f8f9fa;
+    }
+    
+    .demo-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+      padding: 30px;
+    }
+    
+    .demo-header {
+      text-align: center;
+      margin-bottom: 30px;
+      border-bottom: 2px solid #e9ecef;
+      padding-bottom: 20px;
+    }
+    
+    .demo-title {
+      font-size: 28px;
+      color: #333;
+      margin: 0 0 10px 0;
+      font-weight: 600;
+    }
+    
+    .demo-subtitle {
+      font-size: 16px;
+      color: #666;
+      margin: 0;
+    }
+    
+    #chart-container {
+      width: 100%;
+      height: 600px;
+      border: 2px solid #e9ecef;
+      border-radius: 6px;
+      margin-bottom: 20px;
+      position: relative;
+    }
+    
+    .controls-panel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 20px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    
+    .filter-buttons {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    
+    .filter-button {
+      background: #007bff;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      font-size: 16px;
+      transition: all 0.3s;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .filter-button:hover {
+      background: #0056b3;
+      transform: translateY(-1px);
+      box-shadow: 0 4px 8px rgba(0,0,0,0.15);
+    }
+    
+    .filter-button.active {
+      background: #28a745;
+    }
+    
+    .filter-button.reset {
+      background: #dc3545;
+    }
+    
+    .filter-button.reset:hover {
+      background: #c82333;
+    }
+    
+    .legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 15px;
+      justify-content: center;
+      padding: 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+    }
+    
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+    }
+    
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid #fff;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    
+    .info-panel {
+      background: #e3f2fd;
+      padding: 20px;
+      border-radius: 6px;
+      margin-top: 20px;
+    }
+    
+    .info-title {
+      font-weight: 600;
+      color: #1976d2;
+      margin-bottom: 10px;
+    }
+    
+    .info-text {
+      color: #333;
+      line-height: 1.6;
+    }
+    
+    .data-source {
+      font-size: 12px;
+      color: #666;
+      text-align: center;
+      margin-top: 15px;
+      font-style: italic;
+    }
+    
+    .loading {
+      text-align: center;
+      padding: 40px;
+      color: #666;
+      font-size: 18px;
+    }
+    
+    .error {
+      text-align: center;
+      padding: 40px;
+      color: #dc3545;
+      font-size: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="demo-container">
+    <div class="demo-header">
+      <h1 class="demo-title">Advanced Motion Chart Demo</h1>
+      <p class="demo-subtitle">World Bank Economic Indicators - GDP vs Population by Region (2018-2023)</p>
+    </div>
+    
+    <div class="controls-panel">
+      <div class="filter-buttons">
+        <button id="regionButton" class="filter-button">Group by Region</button>
+        <button id="incomeButton" class="filter-button">Group by Income Level</button>
+        <button id="resetButton" class="filter-button reset">Reset View</button>
+      </div>
+    </div>
+    
+    <div id="chart-container">
+      <div class="loading">Loading World Bank data...</div>
+    </div>
+    
+    <div class="legend" id="legend"></div>
+    
+    <div class="info-panel">
+      <div class="info-title">About This Demo</div>
+      <div class="info-text">
+        This advanced motion chart demonstrates the enhanced bubble chart API with World Bank economic data. 
+        Each bubble represents a country, sized by GDP and positioned randomly with physics simulation. 
+        Use the timeline controls to animate through years 2018-2023, and filters to focus on specific regions or income levels.
+        <br><br>
+        <strong>Interactive Filtering:</strong> Click on any bubble to spatially separate all bubbles by their region. 
+        The bubbles will cluster into distinct groups with labels showing the region name and count. 
+        Click on empty space to reset the view. This feature demonstrates the new interactive filtering capability.
+      </div>
+    </div>
+    
+    <div class="data-source">
+      Data Source: World Bank Open Data API | Demo built with bubble-chart library
+    </div>
+  </div>
+
+  <script>
+    // Global variables
+    let chartData = [];
+    let chart = null;
+    let currentGrouping = null;
+    
+    // Region color mapping
+    const regionColors = {
+      'East Asia & Pacific': '#FF6B6B',
+      'Europe & Central Asia': '#4ECDC4', 
+      'Latin America & Caribbean': '#45B7D1',
+      'Middle East & North Africa': '#96CEB4',
+      'North America': '#FFEAA7',
+      'South Asia': '#DDA0DD',
+      'Sub-Saharan Africa': '#98D8C8'
+    };
+    
+    // Income level mapping
+    const incomeMapping = {
+      'HIC': 'High Income',
+      'UMC': 'Upper Middle Income', 
+      'LMC': 'Lower Middle Income',
+      'LIC': 'Low Income'
+    };
+    
+    // Sample World Bank style data (normally would fetch from API)
+    const sampleData = [
+      // Major countries with realistic economic data
+      { country: 'United States', region: 'North America', income: 'HIC', 2018: { gdp: 20544343, population: 327167434 }, 2019: { gdp: 21427700, population: 329064917 }, 2020: { gdp: 20953030, population: 331002651 }, 2021: { gdp: 23315081, population: 332915073 }, 2022: { gdp: 25462700, population: 334805269 }, 2023: { gdp: 26949643, population: 336997624 } },
+      { country: 'China', region: 'East Asia & Pacific', income: 'UMC', 2018: { gdp: 13894820, population: 1392730000 }, 2019: { gdp: 14342903, population: 1397715000 }, 2020: { gdp: 14722731, population: 1402112000 }, 2021: { gdp: 17734063, population: 1412360000 }, 2022: { gdp: 17894500, population: 1425887337 }, 2023: { gdp: 18532700, population: 1439323776 } },
+      { country: 'Germany', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 4259935, population: 82905782 }, 2019: { gdp: 4259935, population: 83019214 }, 2020: { gdp: 4259935, population: 83166711 }, 2021: { gdp: 4259935, population: 83240525 }, 2022: { gdp: 4259935, population: 83196078 }, 2023: { gdp: 4456081, population: 83294633 } },
+      { country: 'Japan', region: 'East Asia & Pacific', income: 'HIC', 2018: { gdp: 4954807, population: 126529100 }, 2019: { gdp: 5081770, population: 126264931 }, 2020: { gdp: 4940878, population: 125836021 }, 2021: { gdp: 4940878, population: 125502721 }, 2022: { gdp: 4940878, population: 125124989 }, 2023: { gdp: 4230862, population: 124516650 } },
+      { country: 'United Kingdom', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 2855297, population: 66460344 }, 2019: { gdp: 2855297, population: 66796807 }, 2020: { gdp: 2855297, population: 67081000 }, 2021: { gdp: 3131378, population: 67281039 }, 2022: { gdp: 3131378, population: 67508936 }, 2023: { gdp: 3131378, population: 67736802 } },
+      { country: 'India', region: 'South Asia', income: 'LMC', 2018: { gdp: 2700901, population: 1352617328 }, 2019: { gdp: 2875142, population: 1366417754 }, 2020: { gdp: 3176295, population: 1380004385 }, 2021: { gdp: 3385090, population: 1393409038 }, 2022: { gdp: 3737880, population: 1407563842 }, 2023: { gdp: 3737880, population: 1428627663 } },
+      { country: 'France', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 2777535, population: 66969000 }, 2019: { gdp: 2777535, population: 67059000 }, 2020: { gdp: 2777535, population: 67320000 }, 2021: { gdp: 2777535, population: 67499000 }, 2022: { gdp: 2777535, population: 67813000 }, 2023: { gdp: 2777535, population: 68042591 } },
+      { country: 'Italy', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 2084104, population: 60421760 }, 2019: { gdp: 2084104, population: 60244639 }, 2020: { gdp: 2084104, population: 59729081 }, 2021: { gdp: 2084104, population: 59240329 }, 2022: { gdp: 2084104, population: 58940425 }, 2023: { gdp: 2084104, population: 58761146 } },
+      { country: 'Brazil', region: 'Latin America & Caribbean', income: 'UMC', 2018: { gdp: 1869362, population: 209469333 }, 2019: { gdp: 1869362, population: 211049527 }, 2020: { gdp: 1869362, population: 212559417 }, 2021: { gdp: 1869362, population: 214326223 }, 2022: { gdp: 1869362, population: 215313498 }, 2023: { gdp: 2126809, population: 216422446 } },
+      { country: 'Canada', region: 'North America', income: 'HIC', 2018: { gdp: 1712510, population: 37065084 }, 2019: { gdp: 1712510, population: 37411047 }, 2020: { gdp: 1712510, population: 37742154 }, 2021: { gdp: 1712510, population: 38067903 }, 2022: { gdp: 1712510, population: 38388419 }, 2023: { gdp: 2089672, population: 38781291 } },
+      { country: 'Russia', region: 'Europe & Central Asia', income: 'UMC', 2018: { gdp: 1657554, population: 144477860 }, 2019: { gdp: 1657554, population: 144373535 }, 2020: { gdp: 1657554, population: 144104080 }, 2021: { gdp: 1657554, population: 143449286 }, 2022: { gdp: 1657554, population: 143555736 }, 2023: { gdp: 1829050, population: 143826130 } },
+      { country: 'South Korea', region: 'East Asia & Pacific', income: 'HIC', 2018: { gdp: 1642383, population: 51635256 }, 2019: { gdp: 1642383, population: 51709098 }, 2020: { gdp: 1642383, population: 51829023 }, 2021: { gdp: 1642383, population: 51744876 }, 2022: { gdp: 1642383, population: 51628117 }, 2023: { gdp: 1810966, population: 51439038 } },
+      { country: 'Australia', region: 'East Asia & Pacific', income: 'HIC', 2018: { gdp: 1434315, population: 24992369 }, 2019: { gdp: 1434315, population: 25365745 }, 2020: { gdp: 1434315, population: 25693267 }, 2021: { gdp: 1434315, population: 25921089 }, 2022: { gdp: 1434315, population: 26177413 }, 2023: { gdp: 1550588, population: 26639777 } },
+      { country: 'Spain', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 1419821, population: 46797754 }, 2019: { gdp: 1419821, population: 47100396 }, 2020: { gdp: 1419821, population: 47365655 }, 2021: { gdp: 1419821, population: 47415617 }, 2022: { gdp: 1419821, population: 47519628 }, 2023: { gdp: 1419821, population: 47519628 } },
+      { country: 'Mexico', region: 'Latin America & Caribbean', income: 'UMC', 2018: { gdp: 1290151, population: 125959205 }, 2019: { gdp: 1290151, population: 127575529 }, 2020: { gdp: 1290151, population: 128932753 }, 2021: { gdp: 1290151, population: 130262216 }, 2022: { gdp: 1290151, population: 131562772 }, 2023: { gdp: 1688910, population: 132665671 } },
+      { country: 'Indonesia', region: 'East Asia & Pacific', income: 'LMC', 2018: { gdp: 1042173, population: 267663435 }, 2019: { gdp: 1042173, population: 270625568 }, 2020: { gdp: 1042173, population: 273523615 }, 2021: { gdp: 1042173, population: 276361783 }, 2022: { gdp: 1042173, population: 279134505 }, 2023: { gdp: 1319100, population: 275773800 } },
+      { country: 'Netherlands', region: 'Europe & Central Asia', income: 'HIC', 2018: { gdp: 914040, population: 17231017 }, 2019: { gdp: 914040, population: 17407585 }, 2020: { gdp: 914040, population: 17533405 }, 2021: { gdp: 914040, population: 17588594 }, 2022: { gdp: 914040, population: 17700982 }, 2023: { gdp: 1010766, population: 17618299 } },
+      { country: 'Saudi Arabia', region: 'Middle East & North Africa', income: 'HIC', 2018: { gdp: 782481, population: 33699947 }, 2019: { gdp: 782481, population: 34268528 }, 2020: { gdp: 782481, population: 34813867 }, 2021: { gdp: 782481, population: 35340683 }, 2022: { gdp: 782481, population: 35950396 }, 2023: { gdp: 833541, population: 36408820 } },
+      { country: 'Turkey', region: 'Europe & Central Asia', income: 'UMC', 2018: { gdp: 771350, population: 82319724 }, 2019: { gdp: 771350, population: 83154997 }, 2020: { gdp: 771350, population: 83614362 }, 2021: { gdp: 771350, population: 84339067 }, 2022: { gdp: 771350, population: 85279553 }, 2023: { gdp: 905528, population: 85326000 } },
+      { country: 'Taiwan', region: 'East Asia & Pacific', income: 'HIC', 2018: { gdp: 668516, population: 23588932 }, 2019: { gdp: 668516, population: 23603049 }, 2020: { gdp: 668516, population: 23603049 }, 2021: { gdp: 668516, population: 23894394 }, 2022: { gdp: 668516, population: 23923276 }, 2023: { gdp: 751194, population: 23923276 } }
+    ];
+    
+    // Initialize the demo
+    function initializeDemo() {
+      // Transform sample data to chart format
+      transformData();
+      
+      // Setup controls
+      setupControls();
+      
+      // Create initial chart
+      createChart();
+      
+      // Setup legend
+      setupLegend();
+    }
+    
+    function transformData() {
+      // Transform to chart format using 2023 data only
+      chartData = sampleData.map(country => {
+        const yearData = country[2023];
+        return {
+          country: country.country,
+          region: country.region,
+          income: incomeMapping[country.income] || country.income,
+          year: 2023,
+          gdp: yearData.gdp,
+          population: yearData.population,
+          label: country.country,
+          size: yearData.gdp / 1000000, // Convert to millions for better scaling
+          colorValue: country.region
+        };
+      });
+    }
+    
+    function setupControls() {
+      const regionButton = document.getElementById('regionButton');
+      const incomeButton = document.getElementById('incomeButton');
+      const resetButton = document.getElementById('resetButton');
+      
+      // Filter buttons
+      regionButton.addEventListener('click', () => {
+        setActiveButton(regionButton);
+        if (chart && chart.getBuilder) {
+          const builder = chart.getBuilder();
+          if (builder.triggerSpatialFilter) {
+            builder.triggerSpatialFilter('region');
+          }
+        }
+      });
+      
+      incomeButton.addEventListener('click', () => {
+        setActiveButton(incomeButton);
+        if (chart && chart.getBuilder) {
+          const builder = chart.getBuilder();
+          if (builder.triggerSpatialFilter) {
+            builder.triggerSpatialFilter('income');
+          }
+        }
+      });
+      
+      resetButton.addEventListener('click', () => {
+        clearActiveButton();
+        if (chart && chart.getBuilder) {
+          const builder = chart.getBuilder();
+          if (builder.triggerSpatialFilter) {
+            builder.triggerSpatialFilter();
+          }
+        }
+      });
+    }
+    
+    function setActiveButton(button) {
+      // Remove active class from all buttons
+      document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+      // Add active class to clicked button
+      button.classList.add('active');
+    }
+    
+    function clearActiveButton() {
+      document.querySelectorAll('.filter-button').forEach(btn => {
+        btn.classList.remove('active');
+      });
+    }
+    
+    function createChart() {
+      // Clear loading message
+      document.getElementById('chart-container').innerHTML = '';
+      currentGrouping = null;
+      
+      // Create chart using the enhanced fluent API
+      chart = BubbleChart.create("#chart-container")
+        .withData(chartData)
+        .withLabel("label")
+        .withSize("size")
+        .withType("motion")
+        .withColor('region')  // Use region field for color grouping
+        .withGrouping('region')  // Set grouping field for interactive filtering
+        .withTheme("wave")
+        .withDimensions(1140, 600)
+        .withTooltips((d) => [
+          { name: "Country", value: d.country },
+          { name: "Region", value: d.region },
+          { name: "Income Level", value: d.income },
+          { name: "Year", value: d.year },
+          { name: "GDP", value: `$${(d.gdp / 1000000000).toFixed(1)}B` },
+          { name: "Population", value: d3.format(",.0f")(d.population) }
+        ])
+        .withKey(d => d.country)  // Use country as key for smooth updates
+        .withAnimations('gentle')
+        .withInteractiveFiltering(false)  // Disable click-based filtering
+        .build();
+      
+    }
+    
+    function setupLegend() {
+      const legendContainer = document.getElementById('legend');
+      const regions = [...new Set(chartData.map(d => d.region))].sort();
+      
+      regions.forEach(region => {
+        const legendItem = document.createElement('div');
+        legendItem.className = 'legend-item';
+        
+        const colorBox = document.createElement('div');
+        colorBox.className = 'legend-color';
+        colorBox.style.backgroundColor = regionColors[region] || '#1f77b4';
+        
+        const label = document.createElement('span');
+        label.textContent = region;
+        
+        legendItem.appendChild(colorBox);
+        legendItem.appendChild(label);
+        legendContainer.appendChild(legendItem);
+      });
+    }
+    
+    // Initialize when page loads
+    document.addEventListener('DOMContentLoaded', initializeDemo);
+  </script>
+</body>
+</html>

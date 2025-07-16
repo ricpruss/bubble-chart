@@ -103,11 +103,16 @@ BubbleChart.create('#chart')
 
 **Motion Charts** - Time-series animation with smooth transitions
 ```typescript
-BubbleChart.create('#chart')
+const chart = BubbleChart.create('#chart')
   .withData(timeSeriesData)
   .withType('motion')
   .withTime('year')
   .render();
+
+// Motion charts support spatial filtering
+const builder = chart.getBuilder();
+builder.triggerSpatialFilter('region');  // Cluster bubbles by region
+builder.triggerSpatialFilter();          // Reset to original layout
 ```
 
 **Orbital Motion** - Bubbles with orbital physics animations
@@ -204,20 +209,23 @@ const chart = BubbleChart.create('#chart')
 
 ## Examples
 
-Run the development server to explore examples:
+Explore comprehensive examples organized by complexity:
 
+### Quick Start
 ```bash
 npm run dev
 # Visit http://localhost:3333/examples/
 ```
 
-Available examples:
-- **Basic Usage** - Simple bubble charts with auto-detection
-- **Animation Showcase** - All animation presets demonstrated
-- **Streaming Data** - Real-time updates via WebSocket
-- **Time Series** - Motion charts with temporal data
-- **Hierarchical** - Tree structures and nested data
-- **TypeScript** - Advanced type usage patterns
+### Example Categories
+
+**📋 Simple Examples** - Basic demonstrations of each chart type with clean, minimal code
+
+**🚀 Advanced Examples** - Complex implementations with interactive features, streaming data, and real-world scenarios
+
+**🦧 Automated Testing** - Comprehensive test suite with detailed console logging for development
+
+Visit [examples/index.html](examples/index.html) for the complete interactive catalog, or use `npm run dev` to run the development server with live reloading.
 
 ## Configuration
 
