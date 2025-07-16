@@ -37,6 +37,12 @@ const baseConfig: BubbleChartOptions = {
 };
 
 describe('Builders Integration Tests', () => {
+  afterEach(() => {
+    // Clean up D3 transitions
+    if (typeof (global as any).flushAllD3Transitions === 'function') {
+      (global as any).flushAllD3Transitions();
+    }
+  });
   
   describe('BubbleBuilder Core Integration', () => {
     test('BubbleBuilder constructor initializes correctly', () => {

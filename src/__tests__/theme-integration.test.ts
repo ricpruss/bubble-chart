@@ -53,6 +53,11 @@ describe('Theme Integration Tests', () => {
       }
     });
     createdBuilders = [];
+    
+    // Clean up any remaining D3 timers
+    if (typeof (global as any).flushAllD3Transitions === 'function') {
+      (global as any).flushAllD3Transitions();
+    }
   });
   
   describe('Fluent API withTheme method', () => {

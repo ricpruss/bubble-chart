@@ -41,4 +41,4 @@ export default {
     'node_modules/(?!d3)'
   ],
   setupFiles: ['<rootDir>/test/jest-setup.ts']
-}; 
+};

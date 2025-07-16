@@ -1,6 +1,8 @@
 # Bubble Chart
 
-A modern TypeScript library for creating interactive bubble visualizations with intelligent defaults and a fluent API.
+What began as play with [mbaez's motion-bubble.js](https://github.com/mbaez/bubbles-chart/blob/master/src/js/motion-bubble.js) and exploration through vibe coding tools has crystallized into something sharper: a TypeScript library that makes data dance.
+
+Bubbles emerge from arrays with the kind of fluid intelligence that anticipates your needs. Default behaviors learned from patterns in thousands of datasets. A fluent API that reads like conversation.
 
 ## Install
 
@@ -19,12 +21,12 @@ const companies = [
   { name: "Amazon", revenue: 513983, sector: "Technology" }
 ];
 
-// Simple: Auto-detects best fields for labels, sizing, and colors
+// The library reads your data, chooses wisely
 const chart = BubbleChart.create('#chart')
   .withData(companies)
   .render();
 
-// Enhanced: Override specific fields  
+// Or guide its decisions
 const chart = BubbleChart.create('#chart')
   .withData(companies)
   .withSize('revenue')
@@ -32,15 +34,15 @@ const chart = BubbleChart.create('#chart')
   .render();
 ```
 
-## Features
+## What It Does
 
-✨ **Intelligent Defaults** - Auto-detects optimal fields for labels, sizing, and colors  
-🎯 **Fluent API** - Method chaining with progressive enhancement  
-📊 **Multiple Chart Types** - Bubble, tree, motion, orbital, liquid, and more  
-🔄 **Real-time Updates** - Streaming data support with smooth animations  
-🎨 **Smart Tooltips** - Automatic tooltip generation with data intelligence  
+✨ **Intelligent Defaults** - Reads your data structure, selects optimal fields  
+🎯 **Fluent API** - Method chaining that feels like natural language  
+📊 **Multiple Expressions** - Bubble, tree, motion, orbital, liquid forms  
+🔄 **Live Updates** - Streaming data with seamless transitions  
+🎨 **Smart Tooltips** - Context-aware information display  
 ⚡ **TypeScript Native** - Full type safety with intelligent inference  
-🎭 **Animation Presets** - Built-in animation styles optimized for different use cases
+🎭 **Animation Presets** - Timing and easing optimized for different contexts
 
 ## Fluent API
 
@@ -234,11 +236,10 @@ For detailed configuration options, see [CONFIG.md](docs/CONFIG.md).
 ## Testing
 
 ```bash
-npm run test:smoke      # Quick verification
-npm run test:unit       # Core functionality
-npm run test:integration # Full scenarios
-npm run test:browser    # Visual verification
+npm test                # Run comprehensive test suite (smoke + unit + integration)
 ```
+
+For interactive testing, use the browser examples via `npm run dev`.
 
 ## License
 
