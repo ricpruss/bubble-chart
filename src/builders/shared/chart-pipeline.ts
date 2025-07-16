@@ -250,7 +250,7 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
     strokeColor?: string;
     strokeWidth?: number;
     opacity?: number;
-    initialRadius?: number;
+    initialRadius?: number | ((d: any) => number);
     initialOpacity?: number;
   }): any {
     const radiusAccessor = config.radiusAccessor || ((d: any) => d.r);
@@ -264,7 +264,7 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
     return groups.selectAll('circle')
       .data((d: any) => [d])
       .join('circle')
-      .attr('r', initialRadius)
+      .attr('r', typeof initialRadius === 'function' ? initialRadius : initialRadius)
       .style('opacity', initialOpacity)
       .attr('fill', colorAccessor)
       .attr('stroke', strokeColor)

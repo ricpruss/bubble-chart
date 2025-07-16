@@ -345,7 +345,7 @@
     // Vibe Code Explorer - Phase 1 Implementation
     class VibeCodeExplorer {
       constructor() {
-        this.categories = new Map();
+        this.currentCategories = [];  // Current categories being displayed
         this.videoData = [];
         this.filteredData = [];
         this.activeFilters = new Set();
@@ -353,33 +353,51 @@
         
         // Motion physics configuration for D3 force simulation
         const motionConfig = {
-          repulseStrength: 0.4,                // Moderate repulsion (default: 0.7)
-          decay: 0.02,                         // Low decay for continuous motion (default: 0.05)
-          centerStrength: 0,                   // No center attraction - completely free floating
-          collidePadding: 4,                   // More padding between bubbles (default: 2)
-          alphaTarget: 0.05,                   // Higher energy level for continuous motion (default: 0.02)
-          alphaMin: 0.001,                     // Low minimum alpha (default: 0.00001)
-          initialVelocity: 40                  // Moderate initial velocity (default: 30)
+          repulseStrength: 0.1,                // Very low repulsion for tighter clustering (default: 0.7)
+          decay: 0.04,                         // Moderate decay for gentle motion (default: 0.05)
+          centerStrength: 0.1,                 // Moderate center attraction to keep bubbles near category centers
+          collidePadding: 2,                   // Standard padding between bubbles (default: 2)
+          alphaTarget: 0.015,                  // Gentle energy level for subtle motion (default: 0.02)
+          alphaMin: 0.001                      // Low minimum alpha (default: 0.00001)
         };
         
-        console.log('🔧 Motion Configuration:', motionConfig);
+        // console.log('🔧 Motion Configuration:', motionConfig);
         
         // Create motion bubble chart - wrapper will pass config to BuilderFactory
+        const chartContainer = document.getElementById('bubble-chart');
+        const containerWidth = chartContainer.offsetWidth || 1200;
+        const containerHeight = chartContainer.offsetHeight || 400;
+        
         this.bubbleChart = BubbleChart.create('#bubble-chart')
           .withType('motion')                    // Motion bubbles with physics
           .withSize('count')                     // Bubble size = video count
           .withLabel('category')                 // Category name as label
           .withColor('analysisType')             // Color by analysis type
           .withKey(d => d.id)                    // Key for D3 data binding
-          .withDimensions(1200, 400)             // Fit the container
+          .withDimensions(containerWidth, containerHeight)  // Responsive dimensions
+          .withTheme('slate')                    // Dark theme for better visibility
+          .withAnimations({                      // Configure animations to prevent replay
+            enter: {
+              duration: 800,
+              easing: 'ease-out'
+            },
+            update: {
+              duration: 0,                       // No update animation for motion bubbles
+              easing: 'linear'
+            },
+            exit: {
+              duration: 600,
+              easing: 'ease-in'
+            }
+          })
           .build();
         
         // Get the underlying motion bubble instance and set motion config directly
         const motionBubbleInstance = this.bubbleChart.getBuilder();
         if (motionBubbleInstance && motionBubbleInstance.setMotionConfig) {
-          console.log('⚙️ Setting motion config directly on MotionBubble instance');
+          // console.log('⚙️ Setting motion config directly on MotionBubble instance');
           motionBubbleInstance.setMotionConfig(motionConfig);
-          console.log('✅ Motion Config Applied:', motionBubbleInstance.getMotionConfig());
+          // console.log('✅ Motion Config Applied:', motionBubbleInstance.getMotionConfig());
         } else {
           console.log('❌ Could not access MotionBubble instance or setMotionConfig method');
         }
@@ -415,82 +433,126 @@
         
         // Initialize categorizer with loaded data
         this.categorizer = new VideoCategorizer(this.videoData);
+        // console.log('📥 Video data sample:', this.videoData.slice(0, 3));
+        console.log('📊 Total videos loaded:', this.videoData.length);
         
         this.updateStatus('Analyzing video categories...');
         
-        // Start with duration analysis
-        await this.performDurationAnalysis();
+        // Start streaming categories asynchronously
+        this.startCategoryStreaming();
         
-        // Add view count analysis (Priority 1)
-        await this.performViewCountAnalysis();
-        
-        // Update video grid
+        // Update video grid with initial data
         this.updateVideoGrid();
         
-        this.updateStatus(`Loaded ${this.videoData.length} videos with multiple category types.`);
+        this.updateStatus('Video data loaded. Streaming categories...');
       }
 
-      performDurationAnalysis() {
-        const durationCategories = this.categorizer.categorizeByduration();
-        this.updateMotionBubbles(durationCategories, 'duration');
-      }
-
-      performViewCountAnalysis() {
-        const viewCountCategories = this.categorizer.categorizeByViewCount();
-        this.updateMotionBubbles(viewCountCategories, 'viewCount');
-      }
-
-      updateMotionBubbles(newCategories, analysisType) {
-        // Add new categories to existing data
-        newCategories.forEach(cat => {
-          this.categories.set(cat.id, cat);
-        });
-
-        // Get all current categories for display
-        const allCategories = Array.from(this.categories.values());
+      // Start streaming categories as they arrive from different analyses
+      async startCategoryStreaming() {
+        console.log('🚀 Starting category streaming...');
         
-        console.log('🎯 Updating bubbles with categories:', allCategories);
+        // Clear current categories to start fresh
+        this.currentCategories = [];
         
-        // Update motion bubble chart using wrapper's update method
-        this.bubbleChart.update(allCategories);
-        
-        // Set up event handlers after bubbles are rendered
+        // Stream duration categories with delay
         setTimeout(() => {
-          this.setupEventHandlers();
-        }, 100); // Small delay to ensure bubbles are rendered
+          console.log('🔍 Streaming duration categories...');
+          const durationCategories = this.categorizer.categorizeByduration();
+          this.streamCategories(durationCategories, 50); // Stream with 50ms between each
+        }, 100);
         
-        // Check motion config from the underlying instance
-        const motionInstance = this.bubbleChart.getBuilder();
-        if (motionInstance && motionInstance.getMotionConfig) {
-          console.log('⚙️ Current Motion Config:', motionInstance.getMotionConfig());
-        }
+        // Stream view count categories with delay
+        setTimeout(() => {
+          console.log('🔍 Streaming view count categories...');
+          const viewCountCategories = this.categorizer.categorizeByViewCount();
+          this.streamCategories(viewCountCategories, 50);
+        }, 800);
+        
+        // Stream verification categories with delay
+        setTimeout(() => {
+          console.log('🔍 Streaming verification categories...');
+          const verificationCategories = this.categorizer.categorizeByVerification();
+          this.streamCategories(verificationCategories, 50);
+        }, 1500);
+      }
+      
+      // Stream categories one by one with staggered animation
+      streamCategories(categories, delay = 50) {
+        categories.forEach((category, index) => {
+          setTimeout(() => {
+            // Add category to current data
+            this.currentCategories.push(category);
+            
+            // Update chart with D3-native pattern
+            this.bubbleChart.update(this.currentCategories);
+            
+            console.log(`✨ ${category.category} (${category.analysisType})`);
+            this.updateStatus(`Streaming categories... (${this.currentCategories.length} loaded)`);
+            
+            // Set up event handlers after first category renders
+            if (this.currentCategories.length === 1) {
+              setTimeout(() => this.setupEventHandlers(), 100);
+            }
+          }, index * delay);
+        });
+      }
+      
+      // Get initial position for each analysis type (evenly spaced around canvas)
+      getInitialPositionForType(analysisType) {
+        const chartContainer = document.getElementById('bubble-chart');
+        const width = chartContainer.offsetWidth || 1200;
+        const height = chartContainer.offsetHeight || 400;
+        
+        const positions = {
+          'duration': { x: width * 0.2, y: height * 0.2 },      // Top-left
+          'viewCount': { x: width * 0.8, y: height * 0.2 },     // Top-right  
+          'verification': { x: width * 0.5, y: height * 0.8 }   // Bottom-center
+        };
+        
+        // Return position with dimensions for proper fraction calculation
+        return {
+          ...(positions[analysisType] || { x: width * 0.5, y: height * 0.5 }),
+          width,
+          height
+        };
+      }
+
+      // Get category breakdown for debugging
+      getCategoryBreakdown(categories) {
+        const breakdown = {};
+        categories.forEach(cat => {
+          const type = cat.analysisType;
+          if (!breakdown[type]) breakdown[type] = 0;
+          breakdown[type]++;
+        });
+        return breakdown;
       }
 
       setupEventHandlers() {
-        console.log('🎯 Setting up event handlers...');
+        // console.log('🎯 Setting up event handlers...');
         
         // Debug: Check if bubbles exist in DOM
         const bubbles = document.querySelectorAll('#bubble-chart .bubble');
-        console.log(`Found ${bubbles.length} bubbles in DOM`);
+        // console.log(`Found ${bubbles.length} bubbles in DOM`);
         
         // Set up event handlers on the chart instance directly
         const chartInstance = this.bubbleChart.getBuilder();
-        console.log('Chart instance:', chartInstance);
+        // console.log('Chart instance:', chartInstance);
         
         if (chartInstance) {
-          console.log('✅ Setting up builder event handlers');
+          // console.log('✅ Setting up builder event handlers');
           chartInstance.on('click', (data, event, element) => {
-            console.log('🎯 Builder bubble clicked:', data);
+            // console.log('🎯 Builder bubble clicked:', data);
             this.toggleFilter(data);
           });
 
           chartInstance.on('mouseover', (data, event, element) => {
-            console.log('🎯 Builder bubble mouseover:', data.category || data.label);
+            // console.log('🎯 Builder bubble mouseover:', data.category || data.label);
             this.showBubbleTooltip(data, event);
           });
 
           chartInstance.on('mouseout', (data, event, element) => {
-            console.log('🎯 Builder bubble mouseout');
+            // console.log('🎯 Builder bubble mouseout');
             this.hideBubbleTooltip();
           });
         } else {
@@ -498,19 +560,19 @@
         }
 
         // Also try the wrapper's event system as backup
-        console.log('✅ Setting up wrapper event handlers');
+        // console.log('✅ Setting up wrapper event handlers');
         this.bubbleChart.on('click', (data, event, element) => {
-          console.log('🎯 Wrapper bubble clicked:', data);
+          // console.log('🎯 Wrapper bubble clicked:', data);
           this.toggleFilter(data);
         });
 
         this.bubbleChart.on('mouseover', (data, event, element) => {
-          console.log('🎯 Wrapper bubble mouseover:', data.category || data.label);
+          // console.log('🎯 Wrapper bubble mouseover:', data.category || data.label);
           this.showBubbleTooltip(data, event);
         });
 
         this.bubbleChart.on('mouseout', (data, event, element) => {
-          console.log('🎯 Wrapper bubble mouseout');
+          // console.log('🎯 Wrapper bubble mouseout');
           this.hideBubbleTooltip();
         });
         
@@ -527,7 +589,7 @@
           });
         });
         
-        console.log('✅ Event handlers setup complete');
+        // console.log('✅ Event handlers setup complete');
       }
 
       toggleFilter(categoryData) {
@@ -566,7 +628,7 @@
           filtersElement.classList.remove('show');
         } else {
           const activeFilterNames = Array.from(this.activeFilters).map(id => {
-            const category = this.categories.get(id);
+            const category = this.currentCategories.find(cat => cat.id === id);
             return category ? category.category : id;
           });
           

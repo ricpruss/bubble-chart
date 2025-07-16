@@ -35,6 +35,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   private currentFilter: string | null = null;
   private filterGroups: Map<string, any[]> = new Map();
   private filterLabels: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
+  private categoryTypePositions: Map<string, {x: number, y: number}> = new Map(); // Category type spawn positions
+  private positionsInitialized: boolean = false; // Track if positions have been set up
+  private lastCanvasWidth: number = 0;
+  private lastCanvasHeight: number = 0;
 
   constructor(config: BubbleChartOptions) {
     // Ensure we can modify the config by creating a mutable copy
@@ -43,22 +47,29 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     
     // Merge animation defaults with user config
     this.motionConfig = {
-      repulseStrength: 0.7,
+      repulseStrength: 0.4,   // Balanced collision strength to prevent overlap
       decay: 0.05,
-      collidePadding: 2,
+      collidePadding: 3,      // Moderate padding between bubbles
       centerStrength: 0.05,
       alphaMin: 0.00001,
       alphaTarget: 0.02,
       ...(this.config.animation as MotionConfig || {})
     };
+    
+    // Initialize fixed positions for the three known analysis types
+    // This prevents violent movement by avoiding dynamic recalculation
+    this.setupFixedCategoryPositions();
+    // Don't set positionsInitialized to true here - we need to scale them on first render
   }
 
   /**
-   * Renders motion bubbles with force simulation using building blocks
+   * Renders motion bubbles with force simulation using proper D3 enter-update-exit pattern
    */
   protected performRender(): void {
     try {
       if (!this.chartData || this.chartData.length === 0) {
+        // Handle empty data case
+        this.clearBubbles();
         return;
       }
 
@@ -68,10 +79,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         this.config
       );
       
-
-      // Stop any existing simulation
-      this.stopSimulation();
-
       // Get SVG elements from building blocks
       const svgElements = this.svgManager.getElements();
       if (!svgElements) {
@@ -94,44 +101,124 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       // Apply theme background
       ChartPipeline.applyTheme(svgElements, theme);
       
-      // Create motion nodes with random initial positions
-      const motionNodes = this.processedData.map((d) => {
-        const node = {
-          data: d,
-          r: radiusScale(d.size),
-          x: Math.random() * dimensions.width,
-          y: Math.random() * dimensions.height
-        };
-        return node;
+      // Create motion nodes, preserving existing nodes from simulation
+      const existingNodes = this.simulation ? this.simulation.nodes() : [];
+      const existingNodeMap = new Map();
+      
+      // Create lookup map for existing nodes
+      existingNodes.forEach(node => {
+        const key = node.data.id || node.data.label || JSON.stringify(node.data);
+        existingNodeMap.set(key, node);
       });
       
-
-      // Create bubble groups and elements
+      // Update positions only if canvas size changed
+      this.updatePositionsForCanvasSize(dimensions);
+      
+      // Separate existing and new nodes
+      const existingMotionNodes: any[] = [];
+      const newNodes: any[] = [];
+      
+      this.processedData.forEach((d) => {
+        const key = d.id || d.label || JSON.stringify(d);
+        const existingNode = existingNodeMap.get(key);
+        
+        if (existingNode) {
+          // Update existing node data but preserve position and velocity
+          existingNode.data = d;
+          existingNode.r = radiusScale(d.size);
+          
+          existingMotionNodes.push(existingNode);
+        } else {
+          // Create new node with category type-based initial position
+          const analysisType = d.analysisType || 'default';
+          const position = this.getInitialPositionForType(analysisType);
+          
+          const radius = radiusScale(d.size);
+          
+          // Use exact category type position
+          const initialX = position.x;
+          const initialY = position.y;
+          
+          // Create new bubble at category position
+          
+          const node = {
+            data: d,
+            r: radius,
+            x: initialX,
+            y: initialY,
+            vx: 0,
+            vy: 0
+          };
+          newNodes.push(node);
+        }
+      });
+      
+      // First, render only existing nodes
+      const motionNodes = [...existingMotionNodes];
+      
+      // Use D3's enter-update-exit pattern with proper key function
       const bubbleGroups = svg.selectAll('g.bubble')
-        .data(motionNodes)
-        .enter()
-        .append('g')
-        .attr('class', 'bubble-chart bubble');
+        .data(motionNodes, (d: any) => d.data.id || d.data.label || JSON.stringify(d.data))
+        .join(
+          // ENTER: Create new bubbles
+          (enter: any) => {
+            const enterGroups = enter
+              .append('g')
+              .attr('class', 'bubble-chart bubble')
+              .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
 
-      // Create circles with motion-specific styling
-      ChartPipeline.renderCircles(bubbleGroups, {
-        radiusAccessor: (d: any) => d.r,
-        colorAccessor: (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'),
-        strokeColor: '#fff',
-        strokeWidth: 1.5,
-        opacity: 0.85,
-        initialRadius: 0,
-        initialOpacity: 0
-      });
+            // Create circles for new bubbles - simplified approach
+            enterGroups.selectAll('circle')
+              .data((d: any) => [d])
+              .join('circle')
+              .attr('r', (d: any) => d.r)
+              .style('opacity', 0.85)
+              .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
+              .attr('stroke', '#fff')
+              .attr('stroke-width', 1.5);
 
-      // Add text labels using centralized rendering
-      ChartPipeline.renderLabels(bubbleGroups, {
-        radiusAccessor: (d: any) => d.r,
-        labelAccessor: (d: any) => d.data?.label || d.label || '',
-        textColor: 'white',
-        formatFunction: this.config.format?.text ? this.config.format.text : undefined,
-        initialOpacity: 1 // Motion bubbles don't use entrance animations
-      });
+            // Add text labels for new bubbles
+            ChartPipeline.renderLabels(enterGroups, {
+              radiusAccessor: (d: any) => d.r,
+              labelAccessor: (d: any) => d.data?.label || d.label || '',
+              textColor: 'white',
+              formatFunction: this.config.format?.text ? this.config.format.text : undefined,
+              initialOpacity: 1
+            });
+
+            // Animate entrance
+            enterGroups.style('opacity', 0)
+              .transition()
+              .duration(500)
+              .style('opacity', 1);
+
+            return enterGroups;
+          },
+          // UPDATE: Update existing bubbles
+          (update: any) => {
+            // Update positions and properties of existing bubbles
+            update.select('circle')
+              .transition()
+              .duration(300)
+              .attr('r', (d: any) => d.r)
+              .style('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'));
+
+            update.select('text')
+              .transition()
+              .duration(300)
+              .text((d: any) => d.data?.label || d.label || '');
+
+            return update;
+          },
+          // EXIT: Remove old bubbles
+          (exit: any) => {
+            exit.transition()
+              .duration(300)
+              .style('opacity', 0)
+              .remove();
+            return exit;
+          }
+        );
 
       // Use InteractionManager for event handling
       ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
@@ -141,8 +228,13 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         this.setupInteractiveFiltering(bubbleGroups, motionNodes, dimensions);
       }
 
-      // Start force simulation for continuous motion
-      this.startForceSimulation(motionNodes, bubbleGroups, dimensions);
+      // Start or update force simulation
+      this.updateForceSimulation(motionNodes, bubbleGroups, dimensions);
+      
+      // Add new nodes directly without staggering
+      if (newNodes.length > 0) {
+        this.addNodesDirectly(newNodes, svg, colorScale);
+      }
 
     } catch (error) {
       throw error;
@@ -150,26 +242,103 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   }
 
   /**
-   * Starts the D3.js force simulation for continuous motion
+   * Starts the D3.js force simulation for continuous motion with category-specific forces
    * @param nodes - Motion nodes with position and radius data
    * @param bubbleGroups - D3 selection of bubble groups
    * @param dimensions - SVG dimensions for centering forces
    */
-  private startForceSimulation(nodes: any[], bubbleGroups: any, dimensions: any): void {
+  private startForceSimulation(nodes: any[], _bubbleGroups: any, dimensions: any): void {
     const { repulseStrength, decay, collidePadding, centerStrength, alphaMin, alphaTarget } = this.motionConfig;
+    
+    // Starting force simulation with category-specific forces
     
     this.simulation = d3.forceSimulation(nodes)
       .velocityDecay(decay)
-      .alpha(1)
+      .alpha(1)  // Initial startup energy
       .alphaMin(alphaMin)
-      .alphaTarget(alphaTarget)
-      .force('x', d3.forceX(dimensions.width / 2).strength(centerStrength))
-      .force('y', d3.forceY(dimensions.height / 2).strength(centerStrength))
+      .alphaTarget(alphaTarget)  // Maintain gentle ongoing motion
+      // Category-specific forces instead of global center
+      .force('category-x', d3.forceX()
+        .strength(centerStrength)
+        .x((d: any) => {
+          const analysisType = d.data.analysisType || 'default';
+          const categoryPos = this.categoryTypePositions.get(analysisType);
+          return categoryPos ? categoryPos.x : dimensions.width / 2;
+        }))
+      .force('category-y', d3.forceY()
+        .strength(centerStrength)
+        .y((d: any) => {
+          const analysisType = d.data.analysisType || 'default';
+          const categoryPos = this.categoryTypePositions.get(analysisType);
+          return categoryPos ? categoryPos.y : dimensions.height / 2;
+        }))
       .force('collision', d3.forceCollide()
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))))
       .on('tick', () => {
-        bubbleGroups.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+        // Get current nodes from simulation
+        const currentNodes = this.simulation ? this.simulation.nodes() : [];
+        
+        // Log high-velocity nodes and track category drift
+        currentNodes.forEach(node => {
+          const velocity = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
+          if (velocity > 10) { // Threshold for "violent" movement
+            console.log(`⚡ HIGH VELOCITY: "${node.data.label}" velocity=${velocity.toFixed(2)}, vx=${node.vx.toFixed(2)}, vy=${node.vy.toFixed(2)}, position=(${node.x.toFixed(0)}, ${node.y.toFixed(0)})`);
+          }
+          
+          // Track distance from category center
+          const analysisType = node.data.analysisType || 'default';
+          const categoryPos = this.categoryTypePositions.get(analysisType);
+          if (categoryPos) {
+            const distance = Math.sqrt(Math.pow(node.x - categoryPos.x, 2) + Math.pow(node.y - categoryPos.y, 2));
+            if (distance > 100) { // Log if more than 100px away from category center
+              console.log(`🎯 CATEGORY DRIFT: "${node.data.label}" (${analysisType}) distance=${distance.toFixed(0)}px from center (${categoryPos.x.toFixed(0)}, ${categoryPos.y.toFixed(0)})`);
+            }
+          }
+        });
+        
+        // Constrain bubbles to canvas boundaries with damping
+        currentNodes.forEach(node => {
+          const radius = node.r;
+          const dampingFactor = 0.3; // Reduce velocity on bounce
+          const prevVx = node.vx;
+          const prevVy = node.vy;
+
+          // Bounce off boundaries with damping
+          if (node.x - radius < 0) {
+            node.x = radius;
+            node.vx = Math.abs(node.vx) * dampingFactor; // Damped bounce
+            if (Math.abs(prevVx) > 5) {
+              console.log(`🔄 LEFT BOUNCE: "${node.data.label}" vx: ${prevVx.toFixed(2)} -> ${node.vx.toFixed(2)}`);
+            }
+          } else if (node.x + radius > dimensions.width) {
+            node.x = dimensions.width - radius;
+            node.vx = -Math.abs(node.vx) * dampingFactor; // Damped bounce
+            if (Math.abs(prevVx) > 5) {
+              console.log(`🔄 RIGHT BOUNCE: "${node.data.label}" vx: ${prevVx.toFixed(2)} -> ${node.vx.toFixed(2)}`);
+            }
+          }
+          if (node.y - radius < 0) {
+            node.y = radius;
+            node.vy = Math.abs(node.vy) * dampingFactor; // Damped bounce
+            if (Math.abs(prevVy) > 5) {
+              console.log(`🔄 TOP BOUNCE: "${node.data.label}" vy: ${prevVy.toFixed(2)} -> ${node.vy.toFixed(2)}`);
+            }
+          } else if (node.y + radius > dimensions.height) {
+            node.y = dimensions.height - radius;
+            node.vy = -Math.abs(node.vy) * dampingFactor; // Damped bounce
+            if (Math.abs(prevVy) > 5) {
+              console.log(`🔄 BOTTOM BOUNCE: "${node.data.label}" vy: ${prevVy.toFixed(2)} -> ${node.vy.toFixed(2)}`);
+            }
+          }
+        });
+        
+        // Update ALL bubble groups in the SVG
+        const svgElements = this.svgManager.getElements();
+        if (svgElements) {
+          svgElements.svg.selectAll('g.bubble')
+            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+        }
       });
   }
 
@@ -229,8 +398,20 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       const svgElements = this.svgManager.getElements();
       if (svgElements) {
         this.simulation
-          .force('x', d3.forceX(svgElements.dimensions.width / 2).strength(centerStrength))
-          .force('y', d3.forceY(svgElements.dimensions.height / 2).strength(centerStrength))
+          .force('category-x', d3.forceX()
+            .strength(centerStrength)
+            .x((d: any) => {
+              const analysisType = d.data.analysisType || 'default';
+              const categoryPos = this.categoryTypePositions.get(analysisType);
+              return categoryPos ? categoryPos.x : svgElements.dimensions.width / 2;
+            }))
+          .force('category-y', d3.forceY()
+            .strength(centerStrength)
+            .y((d: any) => {
+              const analysisType = d.data.analysisType || 'default';
+              const categoryPos = this.categoryTypePositions.get(analysisType);
+              return categoryPos ? categoryPos.y : svgElements.dimensions.height / 2;
+            }))
           .force('collision', d3.forceCollide()
             .radius((d: any) => d.r + collidePadding)
             .strength(Math.max(0, Math.min(1, repulseStrength))));
@@ -339,8 +520,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     if (this.simulation) {
       
       // Remove ALL existing forces to prevent conflicts
-      this.simulation.force('x', null);
-      this.simulation.force('y', null);
+      this.simulation.force('category-x', null);
+      this.simulation.force('category-y', null);
       this.simulation.force('collision', null);
       
       // Create a single combined force for each node
@@ -393,8 +574,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       this.simulation.velocityDecay(0.4);
       
       
-      // Restart simulation with higher alpha
-      this.simulation.alpha(1).restart();
+      // No restart needed - alphaTarget keeps simulation alive
+      console.log('🔄 Filter applied - simulation continues with existing energy');
       
       // Check if simulation is running
       setTimeout(() => {
@@ -428,13 +609,25 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       this.simulation.force('filter-x', null);
       this.simulation.force('filter-y', null);
       
-      // Restore original center forces
+      // Restore original category-specific forces
       const { centerStrength } = this.motionConfig;
-      this.simulation.force('x', d3.forceX(dimensions.width / 2).strength(centerStrength));
-      this.simulation.force('y', d3.forceY(dimensions.height / 2).strength(centerStrength));
+      this.simulation.force('category-x', d3.forceX()
+        .strength(centerStrength)
+        .x((d: any) => {
+          const analysisType = d.data.analysisType || 'default';
+          const categoryPos = this.categoryTypePositions.get(analysisType);
+          return categoryPos ? categoryPos.x : dimensions.width / 2;
+        }));
+      this.simulation.force('category-y', d3.forceY()
+        .strength(centerStrength)
+        .y((d: any) => {
+          const analysisType = d.data.analysisType || 'default';
+          const categoryPos = this.categoryTypePositions.get(analysisType);
+          return categoryPos ? categoryPos.y : dimensions.height / 2;
+        }));
       
-      // Restart simulation
-      this.simulation.alpha(0.5).restart();
+      // No restart needed - alphaTarget keeps simulation alive
+      console.log('🔄 Filter reset - simulation continues with existing energy');
     }
 
     // Remove filter labels
@@ -494,6 +687,224 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       this.filterLabels.remove();
       this.filterLabels = null;
     }
+  }
+
+  /**
+   * Clear all bubbles from the chart
+   */
+  private clearBubbles(): void {
+    const svgElements = this.svgManager.getElements();
+    if (svgElements) {
+      svgElements.svg.selectAll('g.bubble').remove();
+    }
+    this.stopSimulation();
+  }
+
+  /**
+   * Update or start force simulation with new nodes
+   * @param nodes - Motion nodes with position and radius data
+   * @param bubbleGroups - D3 selection of bubble groups
+   * @param dimensions - SVG dimensions for centering forces
+   */
+  private updateForceSimulation(nodes: any[], bubbleGroups: any, dimensions: any): void {
+    if (this.simulation) {
+      // Set zero initial velocity for all new nodes to prevent flying off screen
+      nodes.forEach(node => {
+        if (node.vx === undefined) {
+          node.vx = 0;
+          node.vy = 0;
+        }
+      });
+      
+      // Update existing simulation with new nodes
+      this.simulation.nodes(nodes);
+      
+      // Update the tick function to handle the new bubble groups WITH boundary constraints
+      this.simulation.on('tick', () => {
+        // Get current nodes from simulation
+        const currentNodes = this.simulation ? this.simulation.nodes() : [];
+        
+        // Constrain bubbles to canvas boundaries with damping
+        currentNodes.forEach(node => {
+          const radius = node.r;
+          const dampingFactor = 0.3; // Reduce velocity on bounce
+          
+          // Bounce off boundaries with damping
+          if (node.x - radius < 0) {
+            node.x = radius;
+            node.vx = Math.abs(node.vx) * dampingFactor; // Damped bounce
+          } else if (node.x + radius > dimensions.width) {
+            node.x = dimensions.width - radius;
+            node.vx = -Math.abs(node.vx) * dampingFactor; // Damped bounce
+          }
+          if (node.y - radius < 0) {
+            node.y = radius;
+            node.vy = Math.abs(node.vy) * dampingFactor; // Damped bounce
+          } else if (node.y + radius > dimensions.height) {
+            node.y = dimensions.height - radius;
+            node.vy = -Math.abs(node.vy) * dampingFactor; // Damped bounce
+          }
+        });
+        
+        // Update ALL bubble groups in the SVG, not just the initial selection
+        const svgElements = this.svgManager.getElements();
+        if (svgElements) {
+          svgElements.svg.selectAll('g.bubble')
+            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+        }
+      });
+      
+      
+      // Update collision force radius in case new bubbles have different sizes
+      const { collidePadding, repulseStrength } = this.motionConfig;
+      this.simulation.force('collision', d3.forceCollide()
+        .radius((d: any) => d.r + collidePadding)
+        .strength(Math.max(0, Math.min(1, repulseStrength))));
+      
+      // No restart needed - alphaTarget keeps simulation alive for new bubbles
+      console.log('➕ New bubbles added - simulation continues with existing energy');
+      
+      // Log if any nodes have undefined velocity
+      nodes.forEach(node => {
+        if (node.vx === undefined || node.vy === undefined) {
+          console.log(`⚠️ Node with undefined velocity: ${JSON.stringify(node.data)}`);
+        }
+      });
+    } else {
+      // Start new simulation if none exists
+      this.startForceSimulation(nodes, bubbleGroups, dimensions);
+    }
+  }
+
+  /**
+   * Get the initial position for a given analysis type
+   * @param analysisType - The analysis type to get position for
+   * @returns The x,y coordinates for this type
+   */
+  private getInitialPositionForType(analysisType: string): {x: number, y: number} {
+    const position = this.categoryTypePositions.get(analysisType);
+    
+    if (!position) {
+      // For general motion bubbles without analysis types, use canvas center
+      const svgElements = this.svgManager.getElements();
+      if (svgElements) {
+        const centerX = svgElements.dimensions.width / 2;
+        const centerY = svgElements.dimensions.height / 2;
+        return { x: centerX, y: centerY };
+      }
+      // Fallback to origin if no SVG elements available
+      return { x: 0, y: 0 };
+    }
+    
+    return position;
+  }
+
+  /**
+   * Initialize fixed positions for known analysis types
+   * This prevents violent movement by setting up stable positions once
+   */
+  private setupFixedCategoryPositions(): void {
+    // Initialize with default positions that will be scaled on first render
+    // These are proportional positions that get scaled to actual dimensions
+    this.categoryTypePositions.set('duration', { x: 0.5, y: 0.15 });     // Top center
+    this.categoryTypePositions.set('viewCount', { x: 0.15, y: 0.85 });   // Bottom left
+    this.categoryTypePositions.set('verification', { x: 0.85, y: 0.85 }); // Bottom right
+    
+    // Fixed category positions initialized
+  }
+
+  /**
+   * Update positions based on canvas dimensions - only if size changed
+   * @param dimensions - Canvas dimensions
+   */
+  private updatePositionsForCanvasSize(dimensions: any): void {
+    // Check if canvas size has changed
+    const sizeChanged = this.lastCanvasWidth !== dimensions.width || this.lastCanvasHeight !== dimensions.height;
+    
+    if (!sizeChanged && this.positionsInitialized) {
+      return;
+    }
+    
+    // Update cached dimensions
+    this.lastCanvasWidth = dimensions.width;
+    this.lastCanvasHeight = dimensions.height;
+    
+    // Always scale the fixed positions to actual canvas dimensions
+    // This ensures our fixed positions are always in the right coordinates
+    this.categoryTypePositions.forEach((pos, type) => {
+      this.categoryTypePositions.set(type, {
+        x: pos.x * dimensions.width,
+        y: pos.y * dimensions.height
+      });
+    });
+    
+    this.positionsInitialized = true;
+  }
+
+  
+  /**
+   * Add nodes with staggered entry animation
+   * @param nodes - Array of new nodes to add
+   * @param svg - SVG element
+   * @param colorScale - Color scale function
+   */
+  private addNodesDirectly(nodes: any[], svg: any, colorScale: any): void {
+    if (!this.simulation) return;
+    
+    // Add nodes with staggered timing for better visual effect
+    nodes.forEach((node, index) => {
+      setTimeout(() => {
+        // Add this node to the simulation
+        const currentNodes = this.simulation ? this.simulation.nodes() : [];
+        const updatedNodes = [...currentNodes, node];
+        this.simulation?.nodes(updatedNodes);
+        
+        // Create the visual bubble for this node
+        const newBubbleGroup = svg.append('g')
+          .datum(node)
+          .attr('class', 'bubble-chart bubble')
+          .attr('transform', `translate(${node.x},${node.y})`)
+          .style('opacity', 0);
+        
+        // Add circle
+        newBubbleGroup.append('circle')
+          .attr('r', node.r)
+          .style('opacity', 0.85)
+          .attr('fill', node.data.colorValue ? colorScale(node.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
+          .attr('stroke', '#fff')
+          .attr('stroke-width', 1.5);
+        
+        // Add label
+        ChartPipeline.renderLabels(newBubbleGroup, {
+          radiusAccessor: () => node.r,
+          labelAccessor: () => node.data?.label || node.label || '',
+          textColor: 'white',
+          formatFunction: this.config.format?.text ? this.config.format.text : undefined,
+          initialOpacity: 1
+        });
+        
+        // Animate entrance with scale effect
+        newBubbleGroup.select('circle')
+          .attr('r', 0)
+          .transition()
+          .duration(600)
+          .ease(d3.easeBackOut.overshoot(1.2))
+          .attr('r', node.r);
+        
+        newBubbleGroup.transition()
+          .duration(400)
+          .style('opacity', 1);
+        
+        // Add event handlers
+        ChartPipeline.attachStandardEvents(newBubbleGroup, this.interactionManager);
+        
+        // Update collision force to include new nodes
+        const { collidePadding, repulseStrength } = this.motionConfig;
+        this.simulation?.force('collision', d3.forceCollide()
+          .radius((d: any) => d.r + collidePadding)
+          .strength(Math.max(0, Math.min(1, repulseStrength))));
+      }, index * 150); // Stagger by 150ms per bubble
+    });
   }
 
   /**

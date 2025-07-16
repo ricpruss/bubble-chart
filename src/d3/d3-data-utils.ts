@@ -106,10 +106,10 @@ export class D3DataUtils {
     },
     'slate': {
       colors: ['#0f172a', '#334155', '#64748b', '#94a3b8', '#cbd5e1'],
-      background: '#f8fafc',
-      backgroundDark: '#e2e8f0',
-      waveBackground: '#e2e8f0', // Light gray for wave background
-      liquidBackground: '#f1f5f9', // Very light gray for liquid background
+      background: '#0f172a',  // Dark slate background
+      backgroundDark: '#1e293b',  // Darker slate for contrast
+      waveBackground: '#1e293b', // Dark slate for wave background
+      liquidBackground: '#334155', // Medium slate for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
       overlayOpacity: 0.8
@@ -296,6 +296,11 @@ export class D3DataUtils {
         } else {
           result.percentage = 0.7; // Default visual value
         }
+      }
+
+      // Preserve analysisType if it exists in the original data
+      if ((d as any).analysisType) {
+        (result as any).analysisType = (d as any).analysisType;
       }
 
       return result;
