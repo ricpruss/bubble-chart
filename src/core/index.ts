@@ -149,8 +149,18 @@ export abstract class BaseChartBuilder<T extends BubbleChartData = BubbleChartDa
    * Initialize all building blocks
    */
   private initialize(): void {
+    // Set responsive options BEFORE initializing SVG
+    if (this.config.responsive) {
+      this.svgManager.setResponsiveOptions(this.config.responsive);
+    }
+    
     // Initialize SVG (svgManager already created in constructor)
     const svgElements = this.svgManager.initialize(this.config);
+    
+    // Set up responsive behavior if configured
+    if (this.config.responsive) {
+      this.svgManager.makeResponsive(this.config.responsive);
+    }
     
     // Initialize rendering pipeline
     this.renderingPipeline = new RenderingPipeline<T>({

@@ -12,6 +12,17 @@ export interface SVGDimensions {
   height: number;
 }
 
+export interface ResponsiveOptions {
+  minWidth?: number;
+  maxWidth?: number;
+  minHeight?: number;
+  maxHeight?: number;
+  aspectRatio?: number;
+  maintainAspectRatio?: boolean;
+  debounceMs?: number;
+  onResize?: (dimensions: SVGDimensions) => void;
+}
+
 export interface SVGElements {
   container: any;
   svg: any;
@@ -24,6 +35,9 @@ export interface SVGElements {
  */
 export class SVGManager {
   private elements?: SVGElements;
+  private resizeObserver?: ResizeObserver | undefined;
+  private responsiveOptions?: ResponsiveOptions | undefined;
+  private resizeTimer?: NodeJS.Timeout | undefined;
 
   /**
    * Initialize SVG elements with proper error handling and responsive sizing
@@ -49,8 +63,7 @@ export class SVGManager {
       .attr('width', dimensions.width)
       .attr('height', dimensions.height)
       .attr('viewBox', `0 0 ${dimensions.width} ${dimensions.height}`)
-      .style('background', 'transparent')
-      .style('overflow', 'visible');
+      .style('background', 'transparent');
 
     // Create main group for transformations
     const mainGroup = svg
@@ -68,7 +81,7 @@ export class SVGManager {
   }
 
   /**
-   * Calculate responsive dimensions with fallbacks
+   * Calculate responsive dimensions with fallbacks and responsive constraints
    * @param container - D3 selection of container element
    * @param config - Chart configuration
    * @returns Calculated dimensions
@@ -80,12 +93,49 @@ export class SVGManager {
     const containerNode = container.node() as HTMLElement;
     
     // Get container dimensions with fallbacks
-    const containerWidth = containerNode?.clientWidth || 500;
-    const containerHeight = containerNode?.clientHeight || 500;
+    const containerRect = containerNode?.getBoundingClientRect();
+    const containerWidth = containerRect?.width || containerNode?.clientWidth || 500;
+    const containerHeight = containerRect?.height || containerNode?.clientHeight || 500;
+
+    // Apply responsive constraints if options are available
+    const responsive = this.responsiveOptions || {};
+    const viewportWidth = typeof window !== 'undefined' ? window.innerWidth : 1200;
+    const viewportHeight = typeof window !== 'undefined' ? window.innerHeight : 800;
+
+    // Calculate base dimensions
+    let width = config.width || containerWidth;
+    let height = config.height || containerHeight;
+
+    // Apply responsive constraints
+    const minWidth = responsive.minWidth || 320;
+    const maxWidth = responsive.maxWidth || Math.min(containerWidth, viewportWidth * 0.9);
+    const minHeight = responsive.minHeight || 240;
+    const maxHeight = responsive.maxHeight || Math.min(containerHeight, viewportHeight * 0.8);
+
+    width = Math.max(minWidth, Math.min(maxWidth, width));
+    height = Math.max(minHeight, Math.min(maxHeight, height));
+
+    // Apply aspect ratio constraints
+    if (responsive.aspectRatio && responsive.maintainAspectRatio) {
+      const ratio = responsive.aspectRatio;
+      const currentRatio = width / height;
+      
+      if (currentRatio > ratio) {
+        width = height * ratio;
+      } else {
+        height = width / ratio;
+      }
+    }
+
+    // Apply mobile-specific adjustments
+    if (viewportWidth < 768) {
+      width = Math.min(width, viewportWidth - 40); // 20px padding on each side
+      height = Math.min(height, viewportHeight * 0.6); // Max 60% of viewport height on mobile
+    }
 
     return {
-      width: config.width || containerWidth,
-      height: config.height || containerHeight
+      width: Math.round(width),
+      height: Math.round(height)
     };
   }
 
@@ -115,37 +165,126 @@ export class SVGManager {
   }
 
   /**
-   * Add responsive behavior to SVG
-   * @param callback - Function to call on resize
+   * Add responsive behavior to SVG with comprehensive options
+   * @param options - Responsive configuration options
+   * @param callback - Function to call on resize (deprecated, use options.onResize)
    */
-  makeResponsive(callback?: (dimensions: SVGDimensions) => void): void {
+  makeResponsive(options?: ResponsiveOptions | ((dimensions: SVGDimensions) => void), callback?: (dimensions: SVGDimensions) => void): void {
     if (!this.elements) return;
 
-    const container = this.elements.container;
-    const resizeObserver = new ResizeObserver(() => {
-      const containerNode = container.node() as HTMLElement;
-      if (containerNode) {
-        const width = containerNode.clientWidth;
-        const height = containerNode.clientHeight;
-        
-        this.updateDimensions(width, height);
-        callback?.(this.elements!.dimensions);
-      }
-    });
+    // Handle legacy callback parameter
+    if (typeof options === 'function') {
+      callback = options;
+      options = {};
+    }
 
+    this.responsiveOptions = options || {};
+    const debounceMs = this.responsiveOptions.debounceMs || 250;
+    const onResize = this.responsiveOptions.onResize || callback;
+
+    const container = this.elements.container;
     const containerNode = container.node() as HTMLElement;
-    if (containerNode) {
-      resizeObserver.observe(containerNode);
+    
+    if (!containerNode) return;
+
+    // Create debounced resize handler
+    const handleResize = () => {
+      if (this.resizeTimer) {
+        clearTimeout(this.resizeTimer);
+      }
+      
+      this.resizeTimer = setTimeout(() => {
+        if (!this.elements) return;
+        
+        const containerNode = container.node() as HTMLElement;
+        if (containerNode) {
+          // Recalculate dimensions with responsive constraints
+          const newDimensions = this.calculateDimensions(container, {
+            container: '',
+            label: '',
+            size: ''
+          } as BubbleChartOptions);
+          
+          this.updateDimensions(newDimensions.width, newDimensions.height);
+          onResize?.(this.elements.dimensions);
+        }
+      }, debounceMs);
+    };
+
+    // Use ResizeObserver for modern browsers
+    if (typeof ResizeObserver !== 'undefined') {
+      this.resizeObserver = new ResizeObserver(handleResize);
+      this.resizeObserver.observe(containerNode);
+    } else {
+      // Fallback to window resize for older browsers
+      window.addEventListener('resize', handleResize);
     }
   }
 
   /**
-   * Clean up SVG elements
+   * Set responsive options without triggering immediate resize
+   * @param options - Responsive configuration options
+   */
+  setResponsiveOptions(options: ResponsiveOptions): void {
+    this.responsiveOptions = { ...this.responsiveOptions, ...options };
+  }
+
+  /**
+   * Get current responsive options
+   * @returns Current responsive options
+   */
+  getResponsiveOptions(): ResponsiveOptions | undefined {
+    return this.responsiveOptions;
+  }
+
+  /**
+   * Force a responsive recalculation
+   */
+  forceResponsiveUpdate(): void {
+    if (!this.elements) return;
+    
+    const container = this.elements.container;
+    const newDimensions = this.calculateDimensions(container, {
+      container: '',
+      label: '',
+      size: ''
+    } as BubbleChartOptions);
+    
+    this.updateDimensions(newDimensions.width, newDimensions.height);
+    this.responsiveOptions?.onResize?.(this.elements.dimensions);
+  }
+
+  /**
+   * Check if the chart is currently responsive
+   * @returns True if responsive behavior is enabled
+   */
+  isResponsive(): boolean {
+    return !!this.resizeObserver;
+  }
+
+  /**
+   * Clean up SVG elements and responsive observers
    */
   destroy(): void {
+    // Clean up resize observer
+    if (this.resizeObserver) {
+      this.resizeObserver.disconnect();
+      delete this.resizeObserver;
+    }
+    
+    // Clean up resize timer
+    if (this.resizeTimer) {
+      clearTimeout(this.resizeTimer);
+      delete this.resizeTimer;
+    }
+    
+    // Clean up elements
     if (this.elements) {
       this.elements.container.selectAll('*').remove();
       this.elements = undefined!;
     }
+    
+    // Clean up responsive options
+    delete this.responsiveOptions;
   }
 } 

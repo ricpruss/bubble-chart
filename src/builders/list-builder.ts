@@ -55,7 +55,10 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
 
       // Create color scale using ChartPipeline
       const { colorScale, theme } = ChartPipeline.createColorScale(sortedData, this.config);
-      ChartPipeline.applyTheme(svg, theme);
+      ChartPipeline.applyTheme(svgElements, theme);
+      
+      // Get theme text color
+      const themeTextColor = theme?.textColor || '#ffffff';
       
       // Clear existing list rows first
       svg.selectAll('g.list-row').remove();
@@ -74,18 +77,29 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
       // Add circles using centralized rendering
       const circles = ChartPipeline.renderCircles(rows, {
         radiusAccessor: (d: any) => this.radiusScale!(d.size || 0),
-        colorAccessor: (d: any) => d.colorValue ? colorScale(d.colorValue) : (this.config.defaultColor || '#2196F3'),
+        colorAccessor: (d: any) => {
+          if (d.colorValue) {
+            return colorScale(d.colorValue);
+          }
+          // For list view, cycle through theme colors starting from index 1 (skip background color)
+          const themeColors = theme?.colors || ['#334155', '#64748b', '#94a3b8', '#cbd5e1'];
+          const colorIndex = sortedData.indexOf(d) % (themeColors.length - 1);
+          return themeColors[colorIndex + 1] || themeColors[1];
+        },
         strokeColor: '#fff',
         strokeWidth: 2,
-        opacity: 0.8
+        opacity: 0.8,
+        initialRadius: this.config.animation ? 0 : (d: any) => this.radiusScale!(d.size || 0), // Start with 0 for animation
+        initialOpacity: this.config.animation ? 0 : 0.8 // Start with 0 for animation
       });
 
       // Add labels using centralized rendering
       const labels = ChartPipeline.renderLabels(rows, {
         radiusAccessor: (d: any) => this.radiusScale!(d.size || 0),
         labelAccessor: (d: any) => this.config.format?.text ? this.config.format.text(d.label) : d.label,
-        textColor: this.getTextColor(),
-        maxLength: 30
+        textColor: themeTextColor,
+        maxLength: 30,
+        initialOpacity: this.config.animation ? 0 : 1 // Start with 0 for animation
       });
       
       // Position labels for list layout
@@ -103,7 +117,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .attr('dy', '1.5em')
           .style('font-size', '12px')
           .style('font-family', 'sans-serif')
-          .style('fill', this.getTextColor())
+          .style('fill', themeTextColor)
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
           .text((d: any) => this.config.format!.number!(d.size || 0));
@@ -115,7 +129,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .attr('dy', '1.5em')
           .style('font-size', '12px')
           .style('font-family', 'sans-serif')
-          .style('fill', this.getTextColor())
+          .style('fill', themeTextColor)
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
           .text((d: any) => D3DataUtils.formatNumber(d.size || 0));
@@ -160,7 +174,15 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
         .attr('transform', (_d: any, i: number) => `translate(0, ${i * lineHeight + maxRadius})`)
         .style('opacity', 1);
 
-    circles.attr('r', 0).transition().delay((_d: any, i: number) => i * 100 + 200).duration(duration / 2).attr('r', (d: any) => this.radiusScale!(d.size || 0));
+    // Animate both radius and opacity for circles
+    circles.attr('r', 0)
+        .style('opacity', 0)
+        .transition()
+        .delay((_d: any, i: number) => i * 100 + 200)
+        .duration(duration / 2)
+        .attr('r', (d: any) => this.radiusScale!(d.size || 0))
+        .style('opacity', 0.8);
+        
     labels.style('opacity', 0).transition().delay((_d: any, i: number) => i * 100 + 400).duration(duration / 3).style('opacity', 1);
   }
 

@@ -95,16 +95,16 @@ export class WaveBubble<T extends BubbleChartData = BubbleChartData> extends Bas
         .attr('stroke-width', 1.5)
         .style('cursor', 'pointer');
 
+      // Add wave-specific elements with theme
+      this.createWaveElements(bubbleGroups, processedData, colorScale, theme);
+
       // Add labels using centralized rendering
       ChartPipeline.renderLabels(bubbleGroups, {
         radiusAccessor: (d: any) => d.r,
         labelAccessor: (d: any) => d.data?.label || d.label || '',
-        textColor: 'white',
+        textColor: theme?.textColor || 'white',
         initialOpacity: 1 // Wave bubbles render text immediately
       });
-
-      // Add wave-specific elements with theme
-      this.createWaveElements(bubbleGroups, processedData, colorScale, theme);
 
       // Attach events and start animation
       ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);

@@ -104,7 +104,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     
     // Create color scale for tree nodes using ChartPipeline for theme support
     const { colorScale, theme } = ChartPipeline.createColorScale(this.processedData, this.config);
-    ChartPipeline.applyTheme(svg, theme);
+    ChartPipeline.applyTheme(svgElements, theme);
 
     // Create D3.js hierarchy for node information (parents vs children)
     const root = d3.hierarchy(rootDatum);
@@ -149,7 +149,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
         const leafData = this.processedData.find(pd => pd.data === d.data);
         return leafData?.label || d.data?.label || d.label || '';
       },
-      textColor: this.getTextColor(),
+      textColor: theme?.textColor || '#ffffff',
       initialOpacity: 0 // Tree bubbles use entrance animations
     });
     

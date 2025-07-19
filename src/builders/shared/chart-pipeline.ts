@@ -106,20 +106,22 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
       const duration = config.animation?.enter?.duration || 800;
       const staggerDelay = config.animation?.enter?.stagger || 0;
       
-      // Animate all circles (they start with r=0 and opacity=0)
-      bubbleGroups.selectAll('circle')
-        .transition()
-        .delay((_d: any, i: number) => i * staggerDelay)
-        .duration(duration)
-        .attr('r', (d: any) => d.r)
-        .style('opacity', 0.8);
-
-      // Animate all labels (they start with opacity=0)
-      bubbleGroups.selectAll('text')
-        .transition()
-        .delay((_d: any, i: number) => i * staggerDelay + (staggerDelay > 0 ? 200 : 0))
-        .duration(duration / 2)
-        .style('opacity', 1);
+      // Apply stagger delay per bubble group, not per circle
+      bubbleGroups.each(function(this: any, _d: any, i: number) {
+        const groupSelection = d3.select(this);
+        
+        // Animate circles with stagger delay based on group index
+        groupSelection.selectAll('circle')
+          .transition()
+          .delay(i * staggerDelay)
+          .duration(duration)
+          .attr('r', (d: any) => d.r)
+          .style('opacity', 0.8);
+        
+        // Set text opacity to 1 immediately (no separate animation)
+        groupSelection.selectAll('text')
+          .style('opacity', 1);
+      });
     } else {
       // No animations - set final values immediately
       bubbleGroups.selectAll('circle')
@@ -147,19 +149,33 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
   }): any {
     return bubbleGroups.selectAll('text')
       .data((d: any) => [d]) // One text per bubble group
-      .join('text')
-      .attr('text-anchor', 'middle')
-      .attr('dominant-baseline', 'central')
-      .style('fill', options.textColor)
-      .style('font-size', (d: any) => this.calculateFontSize(options.radiusAccessor(d)))
-      .style('font-weight', 'bold')
-      .style('pointer-events', 'none')
-      .style('opacity', options.initialOpacity !== undefined ? options.initialOpacity : 0) // Allow override
-      .text((d: any) => {
-        const label = options.labelAccessor(d);
-        const formatted = options.formatFunction ? options.formatFunction(label) : label;
-        return D3DataUtils.formatLabel(formatted, options.maxLength || 15);
-      });
+      .join(
+        // Enter: create new text elements
+        (enter: any) => enter.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .style('fill', options.textColor)
+          .style('font-size', (d: any) => this.calculateFontSize(options.radiusAccessor(d)))
+          .style('font-weight', 'bold')
+          .style('pointer-events', 'none')
+          .style('opacity', options.initialOpacity !== undefined ? options.initialOpacity : 0)
+          .text((d: any) => {
+            const label = options.labelAccessor(d);
+            const formatted = options.formatFunction ? options.formatFunction(label) : label;
+            return D3DataUtils.formatLabel(formatted, options.maxLength || 15);
+          }),
+        // Update: update existing text elements
+        (update: any) => update
+          .style('fill', options.textColor)
+          .style('font-size', (d: any) => this.calculateFontSize(options.radiusAccessor(d)))
+          .text((d: any) => {
+            const label = options.labelAccessor(d);
+            const formatted = options.formatFunction ? options.formatFunction(label) : label;
+            return D3DataUtils.formatLabel(formatted, options.maxLength || 15);
+          }),
+        // Exit: remove old text elements
+        (exit: any) => exit.remove()
+      );
   },
 
   /**
@@ -253,26 +269,30 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
     initialRadius?: number | ((d: any) => number);
     initialOpacity?: number;
   }): any {
-    const radiusAccessor = config.radiusAccessor || ((d: any) => d.r);
     const colorAccessor = config.colorAccessor || (() => '#1f77b4');
     const strokeColor = config.strokeColor || '#fff';
     const strokeWidth = config.strokeWidth || 2;
-    const opacity = config.opacity || 0.8;
     const initialRadius = config.initialRadius || 0;
     const initialOpacity = config.initialOpacity || 0;
     
     return groups.selectAll('circle')
       .data((d: any) => [d])
-      .join('circle')
-      .attr('r', typeof initialRadius === 'function' ? initialRadius : initialRadius)
-      .style('opacity', initialOpacity)
-      .attr('fill', colorAccessor)
-      .attr('stroke', strokeColor)
-      .attr('stroke-width', strokeWidth)
-      .transition()
-      .duration(300)
-      .attr('r', radiusAccessor)
-      .style('opacity', opacity);
+      .join(
+        // Enter: only create new circles
+        (enter: any) => enter.append('circle')
+          .attr('r', typeof initialRadius === 'function' ? initialRadius : initialRadius)
+          .style('opacity', initialOpacity)
+          .attr('fill', colorAccessor)
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', strokeWidth),
+        // Update: only update attributes that might change
+        (update: any) => update
+          .attr('fill', colorAccessor)
+          .attr('stroke', strokeColor)
+          .attr('stroke-width', strokeWidth),
+        // Exit: remove old circles
+        (exit: any) => exit.remove()
+      );
   },
 
   /**

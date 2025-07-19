@@ -85,16 +85,16 @@ export class LiquidBubble<T extends BubbleChartData = BubbleChartData> extends B
       .attr('stroke-width', 2)
       .style('opacity', 0.8);
 
-    // Add labels using centralized rendering
-    ChartPipeline.renderLabels(bubbleGroups, {
-      radiusAccessor: (d: any) => d.r,
-      labelAccessor: (d: any) => d.data?.label || d.label || '',
-      textColor: 'white',
-      initialOpacity: 1 // Liquid bubbles render text immediately
-    });
+      // Add the flat liquid surface with theme
+      this.createLiquidElements(bubbleGroups, layoutNodes, processedData, colorScale, theme);
 
-    // Add the flat liquid surface with theme
-    this.createLiquidElements(bubbleGroups, layoutNodes, processedData, colorScale, theme);
+      // Add labels using centralized rendering
+      ChartPipeline.renderLabels(bubbleGroups, {
+        radiusAccessor: (d: any) => d.r,
+        labelAccessor: (d: any) => d.data?.label || d.label || '',
+        textColor: theme?.textColor || 'white',
+        initialOpacity: 1 // Liquid bubbles render text immediately
+      });
 
     // Hook up mouse / touch interactions
     ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);

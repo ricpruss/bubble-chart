@@ -1,7 +1,12 @@
 // Import the D3-native API (no reactive system)
-import { BubbleChart } from './index.js';
+import { BubbleChart, ResponsiveTextUtils } from './index.js';
 
-// Create the global BubbleChart object with D3-native API
-const BubbleChartGlobal: typeof BubbleChart = BubbleChart;
+// Add ResponsiveTextUtils to the BubbleChart object for UMD usage
+(BubbleChart as any).ResponsiveTextUtils = ResponsiveTextUtils;
 
-export default BubbleChartGlobal;
+// Also add ResponsiveTextUtils to the global window object for convenience
+if (typeof window !== 'undefined') {
+  (window as any).ResponsiveTextUtils = ResponsiveTextUtils;
+}
+
+export default BubbleChart;

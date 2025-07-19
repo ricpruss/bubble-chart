@@ -53,7 +53,7 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
 
       // Centralized color scale creation and theme application
       const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
-      ChartPipeline.applyTheme(svgElements.svg, theme);
+      ChartPipeline.applyTheme(svgElements, theme);
 
       // Render circles and labels
       ChartPipeline.renderCircles(bubbleGroups, {
@@ -62,7 +62,7 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
       ChartPipeline.renderLabels(bubbleGroups, {
         radiusAccessor: (d: any) => d.r,
         labelAccessor: (d: any) => d.data?.label || d.label || '',
-        textColor: this.getTextColor(),
+        textColor: theme?.textColor || '#ffffff',
         formatFunction: this.config.format?.text
       });
 

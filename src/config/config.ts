@@ -296,6 +296,19 @@ export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData>
   // Interactive features
   /** Enable interactive filtering - clicking bubbles spatially separates by group */
   interactiveFiltering?: boolean;
+  
+  // Responsive configuration
+  /** Responsive behavior settings */
+  responsive?: {
+    minWidth?: number;
+    maxWidth?: number;
+    minHeight?: number;
+    maxHeight?: number;
+    aspectRatio?: number;
+    maintainAspectRatio?: boolean;
+    debounceMs?: number;
+    onResize?: (dimensions: { width: number; height: number }) => void;
+  };
 }
 
 /**

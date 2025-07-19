@@ -65,64 +65,64 @@ export class D3DataUtils {
    */
   static readonly THEMED_PALETTES = {
     'corporate': {
-      colors: ['#1e3a8a', '#3b82f6', '#60a5fa', '#93c5fd', '#dbeafe'],
-      background: '#f8fafc',
-      backgroundDark: '#e0e7ff',
-      waveBackground: '#e0e7ff', // Lighter blue for wave background
-      liquidBackground: '#dbeafe', // Very light blue for liquid background
+      colors: ['#1e40af', '#dc2626', '#16a34a', '#ca8a04', '#9333ea', '#c2410c', '#0891b2', '#be185d'], // Vibrant diverse corporate colors
+      background: '#1a1a2e', // Dark blue-gray - matches vibe demo container background
+      backgroundDark: '#16213e', // Slightly lighter blue-gray
+      waveBackground: '#16213e', // Blue-gray for wave background
+      liquidBackground: '#667eea', // Gradient accent color for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.7
+      overlayOpacity: 0.85 // High opacity for contrast
     },
     'ocean': {
-      colors: ['#0c4a6e', '#0369a1', '#0284c7', '#0ea5e9', '#38bdf8'],
-      background: '#f0f9ff',
-      backgroundDark: '#e0f2fe',
-      waveBackground: '#e0f2fe', // Light cyan for wave background
-      liquidBackground: '#cffafe', // Very light cyan for liquid background
+      colors: ['#0369a1', '#0284c7', '#0ea5e9', '#38bdf8', '#7dd3fc'], // Ocean blue range
+      background: '#0c4a6e', // Deep ocean blue - matches the blue theme palette
+      backgroundDark: '#075985', // Medium ocean blue
+      waveBackground: '#075985', // Ocean blue for wave background
+      liquidBackground: '#0284c7', // Brighter blue for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.75
+      overlayOpacity: 0.85 // High opacity for contrast
     },
     'sunset': {
-      colors: ['#dc2626', '#ea580c', '#f59e0b', '#eab308', '#84cc16'],
-      background: '#fef7ed',
-      backgroundDark: '#fed7aa',
-      waveBackground: '#fed7aa', // Light orange for wave background
-      liquidBackground: '#fef3c7', // Very light yellow for liquid background
+      colors: ['#dc2626', '#ea580c', '#f59e0b', '#eab308', '#facc15'], // Warm sunset gradient
+      background: '#991b1b', // Dark red - matches sunset palette
+      backgroundDark: '#b91c1c', // Medium dark red
+      waveBackground: '#b91c1c', // Dark red for wave background
+      liquidBackground: '#dc2626', // Brighter red for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.65
+      overlayOpacity: 0.85 // High opacity for contrast
     },
     'forest': {
-      colors: ['#166534', '#16a34a', '#4ade80', '#86efac', '#bbf7d0'],
-      background: '#f0fdf4',
-      backgroundDark: '#dcfce7',
-      waveBackground: '#dcfce7', // Light green for wave background
-      liquidBackground: '#ecfccb', // Very light lime for liquid background
+      colors: ['#16a34a', '#22c55e', '#4ade80', '#86efac', '#bbf7d0'], // Natural green range
+      background: '#14532d', // Dark forest green - matches theme palette
+      backgroundDark: '#166534', // Medium dark green
+      waveBackground: '#166534', // Dark green for wave background
+      liquidBackground: '#15803d', // Brighter green for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.7
+      overlayOpacity: 0.85 // High opacity for contrast
     },
     'slate': {
       colors: ['#0f172a', '#334155', '#64748b', '#94a3b8', '#cbd5e1'],
-      background: '#0f172a',  // Dark slate background
-      backgroundDark: '#1e293b',  // Darker slate for contrast
-      waveBackground: '#1e293b', // Dark slate for wave background
-      liquidBackground: '#334155', // Medium slate for liquid background
+      background: '#7c2d12',  // Deep burnt red - distinct from slate grays
+      backgroundDark: '#9a3412',  // Medium burnt red for contrast
+      waveBackground: '#9a3412', // Burnt red for wave background
+      liquidBackground: '#c2410c', // Brighter burnt red for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.8
+      overlayOpacity: 0.85
     },
     'wave': {
-      colors: ['#1e40af', '#3b82f6', '#06b6d4', '#10b981', '#84cc16'],
-      background: '#f0f9ff',
-      backgroundDark: '#dbeafe',
-      waveBackground: '#dbeafe', // Light blue for wave background
-      liquidBackground: '#e0f2fe', // Very light cyan for liquid background
+      colors: ['#06b6d4', '#0891b2', '#0e7490', '#155e75', '#164e63'], // Cyan-teal wave range
+      background: '#00f2fe', // Light teal - matches page background gradient
+      backgroundDark: '#4facfe', // Slightly darker teal from gradient start
+      waveBackground: '#4facfe', // Light teal for wave background
+      liquidBackground: '#06b6d4', // Complementary teal for liquid background
       textColor: '#ffffff',
       strokeColor: '#ffffff',
-      overlayOpacity: 0.75
+      overlayOpacity: 0.85 // High opacity for contrast
     }
   };
 
@@ -367,9 +367,15 @@ export class D3DataUtils {
     height: number,
     padding: number = 5
   ): Array<{ x: number; y: number; r: number; data: D3ProcessedData<T> }> {
+    // Account for stroke width and padding to ensure bubbles stay within bounds
+    const strokeWidth = 2; // Standard stroke width
+    const margin = strokeWidth + 2; // Extra margin for safety
+    const adjustedWidth = Math.max(100, width - (margin * 2));
+    const adjustedHeight = Math.max(100, height - (margin * 2));
+    
     // Create pack layout using D3's native patterns
     const pack = d3.pack()
-      .size([width, height])
+      .size([adjustedWidth, adjustedHeight])
       .padding(padding);
 
     // Create hierarchy for pack layout
@@ -381,8 +387,8 @@ export class D3DataUtils {
     const nodes = pack(root).descendants().slice(1); // Skip root node
 
     return nodes.map(node => ({
-      x: node.x,
-      y: node.y,
+      x: node.x + margin, // Offset by margin to center in original space
+      y: node.y + margin, // Offset by margin to center in original space
       r: node.r,
       data: node.data as D3ProcessedData<T>
     }));

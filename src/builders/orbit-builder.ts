@@ -64,7 +64,7 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     const { colorScale, theme } = ChartPipeline.createColorScale(processedData, this.config);
 
     // Apply theme background color if available
-    ChartPipeline.applyTheme(svg, theme);
+    ChartPipeline.applyTheme(svgElements, theme);
 
     // Create orbit nodes with simplified logic
     this.orbitNodes = this.createSimplifiedOrbitNodes(processedData, radiusScale, colorScale);
@@ -83,15 +83,15 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       strokeColor: '#fff',
       strokeWidth: 2,
       opacity: 0.8,
-      initialRadius: 0,
-      initialOpacity: 0
+      initialRadius: (d: any) => d.r, // Start with full radius for orbit
+      initialOpacity: 0.8 // Start visible for orbit animation
     });
 
     // Add labels using centralized rendering
     ChartPipeline.renderLabels(bubbleGroups, {
       radiusAccessor: (d: any) => d.r,
       labelAccessor: (d: any) => d.data?.label || d.label || '',
-      textColor: this.getTextColor(),
+      textColor: theme?.textColor || '#ffffff',
       initialOpacity: 1 // Orbit bubbles render text immediately
     });
     
@@ -111,10 +111,19 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     radiusScale: d3.ScalePower<number, number>,
     colorScale: any
   ): OrbitNode[] {
-    // Use D3's range for orbital positioning
-    const orbitRadii = d3.range(processedData.length).map(i => 
-      60 + (i * 40) // Simple linear spacing
-    );
+    // Calculate max bubble radius to account for in positioning
+    const maxBubbleRadius = Math.max(...processedData.map(d => radiusScale(d.size)));
+    
+    // Calculate max orbit radius based on SVG dimensions, accounting for bubble size
+    const availableRadius = Math.min(this.center.x, this.center.y) - maxBubbleRadius - 10; // 10px padding
+    const maxRadius = Math.max(availableRadius * 0.8, 60); // At least 60px orbit radius
+    const minRadius = 40; // Minimum orbit radius
+    
+    // Use D3's range for orbital positioning with proper scaling
+    const orbitRadii = d3.range(processedData.length).map(i => {
+      const t = processedData.length > 1 ? i / (processedData.length - 1) : 0;
+      return minRadius + (maxRadius - minRadius) * t;
+    });
     
     return processedData.map((item, i) => {
       const node: OrbitNode = {

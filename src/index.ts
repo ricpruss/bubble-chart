@@ -137,6 +137,24 @@ class D3FluentBuilder {
   }
   
   /**
+   * Enable responsive behavior with optional constraints
+   * @param options - Responsive configuration options
+   */
+  withResponsive(options: {
+    minWidth?: number;
+    maxWidth?: number;
+    minHeight?: number;
+    maxHeight?: number;
+    aspectRatio?: number;
+    maintainAspectRatio?: boolean;
+    debounceMs?: number;
+    onResize?: (dimensions: { width: number; height: number }) => void;
+  } = {}): this {
+    this.config.responsive = options;
+    return this;
+  }
+  
+  /**
    * Build the chart - creates builder instance and renders if data is available
    */
   build(): ChartInterface {
@@ -177,6 +195,21 @@ class D3FluentBuilder {
         return this;
       },
       getBuilder: () => this.chartInstance,
+      makeResponsive: (options?: any) => {
+        if (this.chartInstance && this.chartInstance.svgManager) {
+          return this.chartInstance.svgManager.makeResponsive(options);
+        }
+      },
+      setResponsiveOptions: (options: any) => {
+        if (this.chartInstance && this.chartInstance.svgManager) {
+          this.chartInstance.svgManager.setResponsiveOptions(options);
+        }
+      },
+      forceResponsiveUpdate: () => {
+        if (this.chartInstance && this.chartInstance.svgManager) {
+          this.chartInstance.svgManager.forceResponsiveUpdate();
+        }
+      },
       store: {
         add: (item: any) => {
           // Add to current data and update
@@ -239,7 +272,8 @@ class D3FluentBuilder {
       ...(this.config.keyFunction && { keyFunction: this.config.keyFunction }),
       ...(this.config.animation && { animation: this.config.animation }),
       ...(this.config.interactiveFiltering && { interactiveFiltering: this.config.interactiveFiltering }),
-      ...(this.config.colour && { colour: this.config.colour })
+      ...(this.config.colour && { colour: this.config.colour }),
+      ...(this.config.responsive && { responsive: this.config.responsive })
     };
     
     this.chartInstance = BuilderFactory.create(finalConfig);
@@ -283,6 +317,9 @@ interface ChartInterface {
   on: (event: string, handler: Function) => any;
   onBubble: (event: string, handler: Function) => any;
   getBuilder: () => any;
+  makeResponsive: (options?: any) => void;
+  setResponsiveOptions: (options: any) => void;
+  forceResponsiveUpdate: () => void;
   store: {
     add: (item: any) => void;
     remove: (key: string) => void;
@@ -367,6 +404,16 @@ export { createDefaultOptions, migrateConfig, validateConfig } from './config/si
 export {
   D3DataUtils
 } from './d3/index.js';
+
+// Export responsive text utilities
+export {
+  ResponsiveTextManager,
+  responsiveText,
+  ResponsiveTextUtils,
+  type ResponsiveTextOptions,
+  type ResponsiveBreakpoints,
+  type ResponsiveTextConfig
+} from './utils/responsive-text.js';
 
 // Export themed palettes for advanced usage
 export const THEMED_PALETTES = D3DataUtils.THEMED_PALETTES;
