@@ -31,14 +31,14 @@
     }
     
     .demo-title {
-      font-size: 28px;
+      font-size: clamp(1.5rem, 5vw, 28px);
       color: #333;
       margin: 0 0 10px 0;
       font-weight: 600;
     }
     
     .demo-subtitle {
-      font-size: 16px;
+      font-size: clamp(0.9rem, 3vw, 16px);
       color: #666;
       margin: 0;
     }
@@ -77,7 +77,7 @@
       border-radius: 6px;
       cursor: pointer;
       font-weight: 600;
-      font-size: 16px;
+      font-size: clamp(0.8rem, 3vw, 16px);
       transition: all 0.3s;
       box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
@@ -163,6 +163,15 @@
       padding: 40px;
       color: #dc3545;
       font-size: 16px;
+    }
+    
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .demo-container { padding: 20px; }
+      #chart-container { height: 500px; }
+      .filter-buttons { gap: 10px; }
+      .legend { gap: 10px; }
     }
   </style>
 </head>
@@ -345,6 +354,15 @@
       document.getElementById('chart-container').innerHTML = '';
       currentGrouping = null;
       
+      // D3-native Responsive Text Setup
+      const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+      
+      // Initialize responsive page layout
+      ResponsiveTextUtils.createResponsivePage('.demo-container');
+      
+      // Setup responsive typography
+      ResponsiveTextUtils.setupResponsiveHeadings();
+      
       // Create chart using the enhanced fluent API
       chart = BubbleChart.create("#chart-container")
         .withData(chartData)
@@ -354,7 +372,6 @@
         .withColor('region')  // Use region field for color grouping
         .withGrouping('region')  // Set grouping field for interactive filtering
         .withTheme("wave")
-        .withDimensions(1140, 600)
         .withTooltips((d) => [
           { name: "Country", value: d.country },
           { name: "Region", value: d.region },
@@ -366,6 +383,15 @@
         .withKey(d => d.country)  // Use country as key for smooth updates
         .withAnimations('gentle')
         .withInteractiveFiltering(false)  // Disable click-based filtering
+        .withResponsive({
+          minWidth: 320,
+          minHeight: 350,
+          maxHeight: 600,
+          debounceMs: 200,
+          onResize: (dimensions) => {
+            console.log('📏 Motion Chart Demo resized to:', dimensions);
+          }
+        })
         .build();
       
     }

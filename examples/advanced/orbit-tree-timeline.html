@@ -8,27 +8,55 @@
   <script src="../../dist/bubble-chart.min.js"></script>
   <script src="../js/companies.js"></script>
   <style>
-    body { font-family: sans-serif; }
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
     #controls {
       margin: 1rem auto;
-      max-width: 900px;
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
       justify-content: center;
     }
-    .year-btn { border:1px solid #888; background:#f5f5f5; padding:0.25rem 0.75rem; border-radius:4px; cursor:pointer; user-select:none; }
-    .year-btn.active{background:#ff6384;color:#fff;border-color:#ff6384;}
-    .year-btn:hover{background:#eee;}
-    #orbit-container{width:100%;max-width:900px;height:600px;margin:auto;}
+    .year-btn { 
+      border: 1px solid #888; 
+      background: #f5f5f5; 
+      padding: 0.25rem 0.75rem; 
+      border-radius: 4px; 
+      cursor: pointer; 
+      user-select: none;
+      font-size: clamp(0.8rem, 2vw, 0.95rem);
+      transition: all 0.15s ease;
+    }
+    .year-btn.active { background: #ff6384; color: #fff; border-color: #ff6384; }
+    .year-btn:hover { background: #eee; }
+    #orbit-container { width: 100%; height: 600px; }
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .container { padding: 0.5rem; }
+      #orbit-container { height: 500px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Orbit Bubble Chart – Timeline</h1>
-  <div id="controls"></div>
-  <div id="orbit-container"></div>
+  <div class="container">
+    <h1>Orbit Bubble Chart – Timeline</h1>
+    <div id="controls"></div>
+    <div id="orbit-container"></div>
+  </div>
 
   <script>
+    // D3-native Responsive Text Setup
+    const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+    
+    // Initialize responsive page layout
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Setup responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
     // Create timeline based on sectors instead of years since companies data is static
     const allData = window.data.map(d => ({
       ...d,
@@ -62,6 +90,15 @@
           .withSize('size')
           .withColor('sector')       // Color by sector
           .withType('orbit')
+          .withResponsive({
+            minWidth: 320,
+            minHeight: 350,
+            maxHeight: 600,
+            debounceMs: 200,
+            onResize: (dimensions) => {
+              console.log('📏 Orbit Timeline resized to:', dimensions);
+            }
+          })
           .build();                  // Returns live chart (already rendered)
       } else {
         // Update existing chart with D3-native update

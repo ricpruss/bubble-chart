@@ -2,24 +2,148 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Tree Bubble Chart</title>
+  <title>Tree Bubble Chart - Responsive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
+    body { 
+      margin: 0; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+      backdrop-filter: blur(10px);
+    }
+    h1 {
+      text-align: center;
+      color: #2d5016;
+      margin-bottom: 20px;
+      font-weight: 300;
+    }
+    .subtitle {
+      text-align: center;
+      color: #5a7c65;
+      margin-bottom: 30px;
+      font-style: italic;
+    }
     #chart-container {
       width: 100%;
-      max-width: 800px;
-      height: 600px;
-      margin: auto;
-      border: 1px solid #eee;
+      min-height: 450px;
+      height: 65vh;
+      max-height: 700px;
+      border: 2px solid #d4edda;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #f8fff9, #e8f5e8);
+      margin-bottom: 20px;
+      box-shadow: inset 0 2px 4px rgba(0,0,0,0.1);
+    }
+    .info {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 20px;
+      margin-top: 25px;
+    }
+    .info-card {
+      padding: 20px;
+      background: linear-gradient(145deg, #f0f8f0, #e0f0e0);
+      border-radius: 8px;
+      border-left: 4px solid #28a745;
+    }
+    .info-title {
+      font-weight: 600;
+      color: #2d5016;
+      margin-bottom: 8px;
+      font-size: 1.1em;
+    }
+    .info-text {
+      color: #4a5c4a;
+      line-height: 1.5;
+    }
+    .hierarchy-legend {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 15px;
+      margin-bottom: 20px;
+      padding: 15px;
+      background: #f8fff9;
+      border-radius: 8px;
+      border: 1px solid #d4edda;
+    }
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 5px 12px;
+      background: white;
+      border-radius: 20px;
+      border: 1px solid #c3e6cb;
+    }
+    .legend-color {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 2px solid white;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+    }
+    @media (max-width: 768px) {
+      .container { border-radius: 8px; }
+      #chart-container { height: 55vh; min-height: 350px; }
+      .info { grid-template-columns: 1fr; gap: 15px; }
+      .hierarchy-legend { flex-direction: column; align-items: center; }
     }
   </style>
 </head>
 <body>
-  <h1>Tree Bubble Chart</h1>
-  <div id="chart-container"></div>
+  <div class="container">
+    <h1>🌳 Tree Bubble Chart - Responsive</h1>
+    <p class="subtitle">Hierarchical organization data with forest theme</p>
+    
+    <div class="hierarchy-legend">
+      <div class="legend-item">
+        <div class="legend-color" style="background: #2e8b57;"></div>
+        <span>Tech</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #9acd32;"></div>
+        <span>Creative</span>
+      </div>
+      <div class="legend-item">
+        <div class="legend-color" style="background: #8fbc8f;"></div>
+        <span>Business</span>
+      </div>
+    </div>
+    
+    <div id="chart-container"></div>
+    
+    <div class="info">
+      <div class="info-card">
+        <div class="info-title">📊 Hierarchical Data</div>
+        <div class="info-text">
+          This tree chart visualizes organizational structure with nested departments. 
+          Each bubble represents a team sized by headcount.
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-title">🎨 Forest Theme</div>
+        <div class="info-text">
+          Natural green color palette representing growth and organic structure. 
+          Categories are color-coded for easy identification.
+        </div>
+      </div>
+      <div class="info-card">
+        <div class="info-title">📱 Responsive Design</div>
+        <div class="info-text">
+          Chart automatically adapts to different screen sizes while maintaining 
+          hierarchical relationships and readability.
+        </div>
+      </div>
+    </div>
+  </div>
 
   <script>
     const data = {
@@ -60,16 +184,37 @@
       ]
     };
 
-    // 🚀 D3-Native: Chart renders automatically when data is bound!
+    // 🎨 D3-Native: Set up responsive layout and typography
+    const { ResponsiveTextUtils } = BubbleChart;
+    
+    // Create responsive page container
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Set up responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
+
+    // 🚀 D3-Native: Chart with responsive hierarchical layout!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)            // ✨ Auto-renders here!
+      .withData(data)
       .withLabel("label")
       .withSize("amount")
-      .withColor("category")     // Color by category to show grouping
+      .withColor("category")
       .withType("tree")
-      .withTheme("forest")       // Nature/organic theme
-      .withAnimations("gentle")  // Pure D3 staggered entrance animations
-      .build();                  // Returns live chart (already rendered)
+      .withTheme("forest")
+      .withAnimations("gentle")
+      .withResponsive({
+        minWidth: 320,
+        maxWidth: 1000,
+        minHeight: 350,
+        maxHeight: 700,
+        aspectRatio: 1.4,
+        maintainAspectRatio: true,
+        debounceMs: 200,
+        onResize: (dimensions) => {
+          console.log('🌳 Tree chart resized to:', dimensions);
+        }
+      })
+      .build();
   </script>
 </body>
 </html>

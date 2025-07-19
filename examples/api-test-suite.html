@@ -7,24 +7,60 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
-    #chart { border: 1px solid #ccc; margin: 20px 0; }
-    .controls { margin: 10px 0; }
-    .controls button { margin-right: 10px; padding: 8px 16px; }
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    h1 { font-size: clamp(1.5rem, 5vw, 2.5rem); }
+    #chart { border: 1px solid #ccc; margin: 20px 0; width: 100%; height: 400px; }
+    .controls { 
+      margin: 10px 0; 
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+    }
+    .controls button { 
+      padding: 8px 16px;
+      font-size: clamp(0.8rem, 3vw, 1rem);
+      cursor: pointer;
+      border: none;
+      background: #007bff;
+      color: white;
+      border-radius: 4px;
+    }
+    .controls button:hover {
+      background: #0056b3;
+    }
+    #status {
+      margin-top: 10px;
+      padding: 10px;
+      background: #f8f9fa;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .container { padding: 10px; }
+      #chart { height: 300px; }
+    }
   </style>
 </head>
 <body>
-  <h1>D3-Native Fluent API Test</h1>
-  
-  <div class="controls">
-    <button onclick="testBasicChart()">Test Basic Chart</button>
-    <button onclick="testStreamingChart()">Test Streaming Chart</button>
-    <button onclick="testMotionChart()">Test Motion Chart</button>
-    <button onclick="clearChart()">Clear Chart</button>
+  <div class="container">
+    <h1>D3-Native Fluent API Test</h1>
+    
+    <div class="controls">
+      <button onclick="testBasicChart()">Test Basic Chart</button>
+      <button onclick="testStreamingChart()">Test Streaming Chart</button>
+      <button onclick="testMotionChart()">Test Motion Chart</button>
+      <button onclick="clearChart()">Clear Chart</button>
+    </div>
+    
+    <div id="chart"></div>
+    <div id="status"></div>
   </div>
-  
-  <div id="chart"></div>
-  <div id="status"></div>
 
   <script>
     // Test data
@@ -48,14 +84,24 @@
       try {
         clearChart();
         
+        // D3-native Responsive Text Setup
+        const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+        ResponsiveTextUtils.createResponsivePage('.container');
+        ResponsiveTextUtils.setupResponsiveHeadings();
+        
         // Test D3-native API
         if (typeof BubbleChart !== 'undefined') {
           currentChart = BubbleChart.create('#chart')
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
-            .withDimensions(600, 400)
             .withAnimations('gentle') // Add animations for visibility
+            .withResponsive({
+              minWidth: 320,
+              minHeight: 300,
+              maxHeight: 400,
+              debounceMs: 200
+            })
             .build();
           
           currentChart.update(testData);
@@ -79,11 +125,16 @@
             .withLabel('name')
             .withSize('size')
             .withColor('sector')
-            .withDimensions(600, 400)
             .withAnimations({
               enter: { duration: 800, stagger: 100, easing: 'ease-out' },
               update: { duration: 600, easing: 'ease-in-out' },
               exit: { duration: 400, easing: 'ease-in' }
+            })
+            .withResponsive({
+              minWidth: 320,
+              minHeight: 300,
+              maxHeight: 400,
+              debounceMs: 200
             })
             .build();
           
@@ -122,8 +173,13 @@
             .withSize('size')
             .withColor('sector')
             .withType('motion')
-            .withDimensions(600, 400)
             .withAnimations('gentle') // Add animations for visibility
+            .withResponsive({
+              minWidth: 320,
+              minHeight: 300,
+              maxHeight: 400,
+              debounceMs: 200
+            })
             .build();
           
           currentChart.update(testData);

@@ -6,23 +6,30 @@
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../../dist/bubble-chart.min.js"></script>
   <style>
-    body { font-family: monospace; margin: 20px; }
+    body { font-family: monospace; margin: 0; padding: 20px; }
+    .container { max-width: 1200px; margin: 0 auto; }
+    h1 { font-size: clamp(1.5rem, 5vw, 2.5rem); }
     .debug { background: #f0f0f0; padding: 10px; margin: 10px 0; border-radius: 4px; }
     .trace { background: #fff2e7; }
     .critical { background: #ffe7e7; border: 2px solid red; }
     .timing { background: #e7f5ff; }
-    #chart { width: 600px; height: 400px; border: 1px solid #ddd; margin: 10px 0; }
+    #chart { width: 100%; height: 400px; border: 1px solid #ddd; margin: 10px 0; }
     .timestamp { color: #666; font-size: 0.8em; }
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      #chart { height: 300px; }
+    }
   </style>
 </head>
 <body>
-
-  <h1>🧪 Basic Rendering Test</h1>
-  <div class="debug trace">
-    <h3>Console Output:</h3>
-    <div id="trace"></div>
+  <div class="container">
+    <h1>🧪 Basic Rendering Test</h1>
+    <div class="debug trace">
+      <h3>Console Output:</h3>
+      <div id="trace"></div>
+    </div>
+    <div id="chart"></div>
   </div>
-  <div id="chart"></div>
 
   <script>
     const logs = [];
@@ -52,14 +59,24 @@
         log('=== BASIC RENDERING TEST START ===');
         log(`Test data: ${testData.length} items`);
 
+        // D3-native Responsive Text Setup
+        const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+        ResponsiveTextUtils.createResponsivePage('.container');
+        ResponsiveTextUtils.setupResponsiveHeadings();
+        
         log('Step 1: Creating BubbleChart with D3-native fluent interface');
         // 🚀 D3-Native: Chart renders automatically when data is bound!
         const chart = BubbleChart.create('#chart')
           .withLabel('name')
           .withSize('value')
-          .withDimensions(600, 400)
           .withColor(d3.scaleOrdinal(d3.schemeCategory10))
           .withData(testData)    // ✨ Auto-renders here!
+          .withResponsive({
+            minWidth: 320,
+            minHeight: 300,
+            maxHeight: 400,
+            debounceMs: 200
+          })
           .build();              // Returns live chart (already rendered)
 
         log('Step 2: Chart created and rendered');

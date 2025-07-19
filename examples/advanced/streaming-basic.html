@@ -124,6 +124,17 @@
             margin-top: 0;
             color: #333;
         }
+        
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            body { padding: 10px; }
+            .container { padding: 15px; }
+            .header h1 { font-size: clamp(1.5rem, 5vw, 2.5rem); }
+            .controls { flex-wrap: wrap; gap: 8px; }
+            .controls button { font-size: clamp(0.75rem, 3vw, 0.85rem); }
+            .chart-container { min-height: 300px; padding: 15px; }
+            .code-example { font-size: 0.8rem; padding: 15px; }
+        }
     </style>
 </head>
 <body>
@@ -188,14 +199,31 @@ chart.update(currentData);      <span class="comment">// D3-native update with a
     </div>
 
     <script>
+        // D3-native Responsive Text Setup
+        const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+        
+        // Initialize responsive page layout
+        ResponsiveTextUtils.createResponsivePage('.container');
+        
+        // Setup responsive typography
+        ResponsiveTextUtils.setupResponsiveHeadings();
+        
         // Create chart using modern D3-native API
         const chart = BubbleChart.create('#chart')
             .withLabel('Company')
             .withSize('Revenues_M')
             .withColor('Sector')  // Color by sector automatically
-            .withDimensions(800, 480)
             .withKey((d) => d.Company) // Use company name as key to avoid screen clearing
             .withAnimations('gentle')  // Smooth animations for data updates
+            .withResponsive({
+                minWidth: 320,
+                minHeight: 350,
+                maxHeight: 600,
+                debounceMs: 200,
+                onResize: (dimensions) => {
+                    console.log('📏 Streaming Basic chart resized to:', dimensions);
+                }
+            })
             .build();
         
         // Track current dataset for D3-native updates

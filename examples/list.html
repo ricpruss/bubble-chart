@@ -14,7 +14,7 @@
       max-width: 700px;
       margin: 2rem auto;
       border: 1px solid #eee;
-      background: #fafafa;
+      /* No background - let SVG theme handle it */
       overflow-y: auto;
       max-height: 80vh;
     }
@@ -36,17 +36,24 @@
   <script>
     try {
       // Dataset provided as global `companiesFlat` from companies.js
+      // Limit to top 10 companies for debugging
+      const limitedData = window.companiesFlat.slice(0, 10);
+      
       // 🚀 D3-Native: Chart renders automatically when data is bound!
       const chart = BubbleChart.create('#list-container')
-        .withData(window.companiesFlat)  // ✨ Auto-renders here!
+        .withData(limitedData)           // ✨ Auto-renders here!
         .withLabel('name')
         .withSize('size')
         .withType('list')
-        .withTheme('corporate')          // Clean professional theme
-        .withDimensions(700, undefined)
+        .withTheme('slate')              // Dark slate theme
+        .withResponsive({
+          minWidth: 600,
+          debounceMs: 200
+        })
+        .withAnimations('gentle')        // Enable animations
         .build();                        // Returns live chart (already rendered)
       
-      document.getElementById('status').innerHTML = '✅ Chart rendered successfully!';
+      document.getElementById('status').innerHTML = '✅ Chart rendered successfully with ' + limitedData.length + ' companies!';
       document.getElementById('status').style.background = '#e7f6e7';
       document.getElementById('status').style.borderColor = '#b3e5b3';
 

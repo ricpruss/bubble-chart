@@ -2,24 +2,51 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Orbit Bubble Chart</title>
+  <title>Orbit Bubble Chart - Responsive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
+    body { margin: 0; background: #f5f5f5; }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 20px;
+    }
     #chart-container {
       width: 100%;
-      max-width: 800px;
-      height: 600px;
-      margin: auto;
+      height: 60vh;
+      min-height: 400px;
+      max-height: 600px;
       border: 1px solid #eee;
+      border-radius: 8px;
+      /* No background - let SVG theme handle it */
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e8f4f8;
+      border-radius: 6px;
+      color: #2c5866;
+    }
+    @media (max-width: 768px) {
+      #chart-container { height: 50vh; min-height: 350px; }
     }
   </style>
 </head>
 <body>
-  <h1>Orbit Bubble Chart</h1>
-  <div id="chart-container"></div>
+  <div class="container">
+    <h1>🪐 Orbit Bubble Chart - Responsive</h1>
+    <div id="chart-container"></div>
+    <div class="info">
+      <strong>Solar System:</strong> Watch the planets orbit around the center with D3-native responsive design.
+    </div>
+  </div>
 
   <script>
     const data = [
@@ -31,18 +58,33 @@
       { "label": "Saturn", "size": 35 }
     ];
 
-    // 🚀 D3-Native: Chart renders automatically when data is bound!
+    // 🎨 D3-Native: Set up responsive layout and typography
+    const { ResponsiveTextUtils } = BubbleChart;
+    
+    // Create responsive page container
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Set up responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
+
+    // 🚀 D3-Native: Chart with responsive orbital layout!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)          // ✨ Auto-renders here!
+      .withData(data)
       .withLabel("label")
       .withSize("size")
       .withColor("label")
       .withType("orbit")
-      .withTheme("slate")      // Modern neutral theme
-      .build();                // Returns live chart (already rendered)
-
-    // Note: Speed multiplier can be adjusted via the underlying builder if needed
-    // For the fluent API, we use the default orbital speed which is already optimized
+      .withTheme("slate")
+      .withResponsive({
+        minWidth: 320,
+        minHeight: 350,
+        maxHeight: 600,
+        debounceMs: 200,
+        onResize: (dimensions) => {
+          console.log('🪐 Orbit chart resized to:', dimensions);
+        }
+      })
+      .build();
   </script>
 </body>
 </html> 

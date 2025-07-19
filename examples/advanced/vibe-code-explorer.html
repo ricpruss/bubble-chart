@@ -368,14 +368,22 @@
         const containerWidth = chartContainer.offsetWidth || 1200;
         const containerHeight = chartContainer.offsetHeight || 400;
         
+        // D3-native Responsive Text Setup
+        const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+        
+        // Initialize responsive page layout  
+        ResponsiveTextUtils.createResponsivePage('.container');
+        
+        // Setup responsive typography
+        ResponsiveTextUtils.setupResponsiveHeadings();
+        
         this.bubbleChart = BubbleChart.create('#bubble-chart')
           .withType('motion')                    // Motion bubbles with physics
           .withSize('count')                     // Bubble size = video count
           .withLabel('category')                 // Category name as label
           .withColor('analysisType')             // Color by analysis type
           .withKey(d => d.id)                    // Key for D3 data binding
-          .withDimensions(containerWidth, containerHeight)  // Responsive dimensions
-          .withTheme('slate')                    // Dark theme for better visibility
+          .withTheme('corporate')                // Corporate theme for vibrant colors
           .withAnimations({                      // Configure animations to prevent replay
             enter: {
               duration: 800,
@@ -388,6 +396,15 @@
             exit: {
               duration: 600,
               easing: 'ease-in'
+            }
+          })
+          .withResponsive({
+            minWidth: 320,
+            minHeight: 300,
+            maxHeight: 500,
+            debounceMs: 200,
+            onResize: (dimensions) => {
+              console.log('📏 Vibe Code Explorer chart resized to:', dimensions);
             }
           })
           .build();

@@ -10,14 +10,14 @@
   <style>
     body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:20px;background:#f5f7fa}
     .panel{max-width:1400px;margin:0 auto;background:#fff;border-radius:12px;padding:25px;box-shadow:0 8px 25px rgba(0,0,0,.08)}
-    h1{font-weight:300;margin:0 0 10px;color:#333}
+    h1{font-weight:300;margin:0 0 10px;color:#333;font-size:clamp(1.5rem, 5vw, 2.5rem);}
     .subtitle{color:#666;margin-bottom:20px;font-size:16px}
     .controls{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0;align-items:center}
-    .controls button{background:#667eea;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-size:.9rem;transition:background .2s}
+    .controls button{background:#667eea;color:#fff;border:none;padding:10px 18px;border-radius:6px;cursor:pointer;font-size:clamp(0.75rem, 3vw, 0.9rem);transition:background .2s}
     .controls button:hover{background:#5a67d8}
-    .controls input, .controls select{padding:8px 12px;border:2px solid #e2e8f0;border-radius:6px;font-size:.9rem;width:120px}
+    .controls input, .controls select{padding:8px 12px;border:2px solid #e2e8f0;border-radius:6px;font-size:clamp(0.75rem, 3vw, 0.9rem);width:120px}
     .size-selector{display:flex;align-items:center;gap:8px}
-    #chart{background:#fafafa;border:2px solid #eee;border-radius:10px;min-height:700px;position:relative;padding:10px}
+    #chart{background:#fafafa;border:2px solid #eee;border-radius:10px;min-height:650px;position:relative;padding:10px}
     .status{margin-top:10px;padding:10px 15px;background:#f7fafc;border-left:4px solid #667eea;border-radius:6px;color:#333;font-size:.9rem}
     .tooltip{position:absolute;background:rgba(255,255,255,0.98);border-radius:8px;padding:15px;box-shadow:0 4px 20px rgba(0,0,0,0.15);pointer-events:none;font-size:14px;max-width:320px;border:1px solid #e2e8f0}
     .tooltip h3{margin:0 0 8px;font-size:18px;color:#2d3748;font-weight:600}
@@ -26,7 +26,7 @@
     .tooltip .profit{color:#38a169;font-weight:600}
     .tooltip .ceo{color:#805ad5;font-style:italic}
     .legend{display:flex;flex-wrap:wrap;gap:12px;margin:15px 0;padding:15px;background:#f7fafc;border-radius:8px}
-    .legend-item{display:flex;align-items:center;gap:6px;font-size:13px;padding:4px 8px;background:#fff;border-radius:4px;border:1px solid #e2e8f0}
+    .legend-item{display:flex;align-items:center;gap:6px;font-size:clamp(0.65rem, 2vw, 13px);padding:4px 8px;background:#fff;border-radius:4px;border:1px solid #e2e8f0}
     .legend-color{width:14px;height:14px;border-radius:3px}
     .stats{display:flex;gap:20px;margin:15px 0;font-size:14px;color:#666}
     .stat{text-align:center}
@@ -36,6 +36,12 @@
     .badge.female{background:#e53e3e}
     .badge.founder{background:#38a169}
     .badge.profitable{background:#3182ce}
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      body { padding: 10px; }
+      .panel {padding: 20px;}
+      #chart {min-height: 550px;}
+    }
   </style>
 </head>
 <body>
@@ -139,12 +145,11 @@
       const tooltip = d3.select('body').append('div')
         .attr('class', 'tooltip')
         .style('opacity', 0);
-
+      
       // Create chart using D3-native streaming API
       const chart = BubbleChart.create('#chart')
         .withLabel('name')
         .withSize('displaySize')
-        .withDimensions(1300, 700)
         .withKey(d => d.id) // ✨ Key function for D3 data binding - prevents screen clearing!
         .withAnimations({
           enter: {
@@ -162,6 +167,15 @@
           }
         })
         .withColor(d => colour(d.sector))
+        .withResponsive({
+          minWidth: 320,
+          minHeight: 450,
+          maxHeight: 700,
+          debounceMs: 200,
+          onResize: (dimensions) => {
+            console.log('📏 Streaming API Demo chart resized to:', dimensions);
+          }
+        })
         .build(); // Create empty chart for streaming
         
       // Attach D3-native event handlers

@@ -2,25 +2,56 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Motion Bubble Chart</title>
+  <title>Motion Bubble Chart - Responsive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
   <script src="js/companies.js"></script>
   <style>
-    body { font-family: sans-serif; margin: 20px; }
+    body { 
+      margin: 0; 
+      background: #f8f9fa;
+    }
+    .container {
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      text-align: center;
+      color: #333;
+      margin-bottom: 30px;
+    }
     #chart-container {
       width: 100%;
-      max-width: 800px;
-      height: 600px;
-      margin: auto;
-      border: 1px solid #eee;
+      min-height: 400px;
+      height: 60vh;
+      max-height: 700px;
+      border: 2px solid #e0e0e0;
+      border-radius: 8px;
+      background: #fafafa;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e3f2fd;
+      border-radius: 6px;
+      color: #1976d2;
+    }
+    @media (max-width: 768px) {
+      #chart-container { height: 50vh; min-height: 300px; }
     }
   </style>
 </head>
 <body>
-  <h1>Motion Bubble Chart</h1>
-  <div id="chart-container"></div>
+  <div class="container">
+    <h1>🌊 Motion Bubble Chart - Responsive</h1>
+    <div id="chart-container"></div>
+    <div class="info">
+      <strong>Responsive Features:</strong> This chart automatically adapts to screen size changes. 
+      Try resizing your browser window to see the responsive behavior in action.
+    </div>
+  </div>
 
   <script>
     // Map companies data to expected format
@@ -30,15 +61,34 @@
       size: d.profits
     }));
 
-    // 🚀 D3-Native: Chart renders automatically when data is bound!
+    // 🎨 D3-Native: Set up responsive layout and typography
+    const { ResponsiveTextUtils } = BubbleChart;
+    
+    // Create responsive page container
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Set up responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
+
+    // 🚀 D3-Native: Chart with responsive capabilities!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)          // ✨ Auto-renders here!
+      .withData(data)
       .withLabel("label")
       .withSize("size")
       .withType("motion")
       .withColor('sector')
-      .withTheme("wave")       // Dynamic wave theme
-      .build();                // Returns live chart (already rendered)
+      .withTheme("wave")
+      .withResponsive({
+        minWidth: 320,
+        maxWidth: 1200,
+        minHeight: 300,
+        maxHeight: 700,
+        debounceMs: 200,
+        onResize: (dimensions) => {
+          console.log('📏 Chart resized to:', dimensions);
+        }
+      })
+      .build();
   </script>
 </body>
 </html>

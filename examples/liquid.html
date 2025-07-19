@@ -2,23 +2,56 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Bubble Chart - Liquid Example</title>
+  <title>Liquid Bubble Chart - Responsive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../dist/bubble-chart.min.js"></script>
   <style>
-    body { font-family: sans-serif; }
+    body { 
+      margin: 0;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 8px 25px rgba(0,0,0,0.15);
+    }
+    h1 {
+      text-align: center;
+      color: #4338ca;
+      margin-bottom: 20px;
+    }
     #chart-container {
       width: 100%;
-      max-width: 800px;
-      margin: auto;
+      height: 60vh;
+      min-height: 400px;
+      max-height: 600px;
+      border: 2px solid #c7d2fe;
+      border-radius: 8px;
+      background: #f8fafc;
+      margin-bottom: 20px;
+    }
+    .info {
+      margin-top: 20px;
+      padding: 15px;
+      background: #e0e7ff;
+      border-radius: 6px;
+      color: #3730a3;
+    }
+    @media (max-width: 768px) {
+      #chart-container { height: 50vh; min-height: 350px; }
     }
   </style>
 </head>
 <body>
-
-  <h1>💧 D3-Native Liquid Bubbles (Auto-Rendering)</h1>
-  <div id="chart-container"></div>
+  <div class="container">
+    <h1>💧 Liquid Bubble Chart - Responsive</h1>
+    <div id="chart-container"></div>
+    <div class="info">
+      <strong>Liquid Gauge:</strong> Each bubble shows liquid-like fill animations with D3-native responsive design.
+    </div>
+  </div>
 
   <script>
     const data = [
@@ -29,16 +62,34 @@
       { "label": "Helium", "size": 70, "count": 70 }
     ];
 
-    // 🚀 D3-Native: Liquid animations render automatically on data binding
+    // 🎨 D3-Native: Set up responsive layout and typography
+    const { ResponsiveTextUtils } = BubbleChart;
+    
+    // Create responsive page container
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Set up responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
+
+    // 🚀 D3-Native: Liquid animations with responsive layout!
     const chart = BubbleChart.create("#chart-container")
-      .withData(data)                        // ✨ Auto-renders liquid bubbles!
+      .withData(data)
       .withLabel("label")
       .withSize("size")
       .withColor("label")
-      .withType("liquid")                    // Liquid gauge animations
-      .withPercentage((d) => d.count / 100)  // Fill level calculation
-      .withTheme("wave")                     // Use wave theme for liquid effect
-      .build();                              // Returns live animated chart
+      .withType("liquid")
+      .withPercentage((d) => d.count / 100)
+      .withTheme("wave")
+      .withResponsive({
+        minWidth: 320,
+        minHeight: 350,
+        maxHeight: 600,
+        debounceMs: 200,
+        onResize: (dimensions) => {
+          console.log('💧 Liquid chart resized to:', dimensions);
+        }
+      })
+      .build();
   </script>
 
 </body>

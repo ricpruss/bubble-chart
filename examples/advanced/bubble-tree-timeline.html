@@ -8,10 +8,14 @@
   <script src="../../dist/bubble-chart.min.js"></script>
   <script src="../js/tech-hierarchy.js"></script>
   <style>
-    body { font-family: sans-serif; }
+    body { font-family: sans-serif; margin: 0; padding: 0; }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 1rem;
+    }
     #controls {
       margin: 1rem auto;
-      max-width: 900px;
       display: flex;
       gap: 0.5rem;
       flex-wrap: wrap;
@@ -23,7 +27,7 @@
       padding: 0.25rem 0.75rem;
       border-radius: 4px;
       cursor: pointer;
-      font-size: 0.95rem;
+      font-size: clamp(0.8rem, 2vw, 0.95rem);
       user-select: none;
       transition: all 0.15s ease;
     }
@@ -33,17 +37,24 @@
       color: #fff;
       border-color: #4bc0c0;
     }
-    #tree-tl-container { width: 100%; max-width: 900px; height: 600px; margin: auto; }
+    #tree-tl-container { width: 100%; height: 600px; }
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .container { padding: 0.5rem; }
+      #tree-tl-container { height: 500px; }
+    }
   </style>
 </head>
 <body>
-  <h1>Bubble Tree – Timeline</h1>
+  <div class="container">
+    <h1>Bubble Tree – Timeline</h1>
 
-  <!-- Controls (year buttons) -->
-  <div id="controls"></div>
+    <!-- Controls (year buttons) -->
+    <div id="controls"></div>
 
-  <!-- Chart container -->
-  <div id="tree-tl-container"></div>
+    <!-- Chart container -->
+    <div id="tree-tl-container"></div>
+  </div>
 
   <script>
 
@@ -100,6 +111,17 @@
     }
 
     // ------------------------------------------------------------------
+    // D3-native Responsive Text Setup
+    // ------------------------------------------------------------------
+    const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+    
+    // Initialize responsive page layout
+    ResponsiveTextUtils.createResponsivePage('.container');
+    
+    // Setup responsive typography
+    ResponsiveTextUtils.setupResponsiveHeadings();
+
+    // ------------------------------------------------------------------
     // Chart instance
     // ------------------------------------------------------------------
     let chart = null;
@@ -120,6 +142,15 @@
           .withColor('name')         // Color by module/category name
           .withType('tree')
           .withAnimations('gentle')
+          .withResponsive({
+            minWidth: 320,
+            minHeight: 350,
+            maxHeight: 600,
+            debounceMs: 200,
+            onResize: (dimensions) => {
+              console.log('📏 Bubble Tree Timeline resized to:', dimensions);
+            }
+          })
           .build();                  // Returns live chart (already rendered)
       } else {
         // D3-native update: simply call update with new data

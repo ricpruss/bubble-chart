@@ -16,8 +16,32 @@
         window.showClickNotification = showClickNotification;
     </script>
 
+    <style>
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 0; }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1rem;
+        }
+        #test { width: 100%; height: 600px; }
+        /* Mobile optimizations */
+        @media (max-width: 768px) {
+            .container { padding: 0.5rem; }
+            #test { height: 500px; }
+        }
+    </style>
+
     <script>
         document.addEventListener('DOMContentLoaded', () => {
+            // D3-native Responsive Text Setup
+            const ResponsiveTextUtils = BubbleChart.ResponsiveTextUtils;
+            
+            // Initialize responsive page layout
+            ResponsiveTextUtils.createResponsivePage('.container');
+            
+            // Setup responsive typography
+            ResponsiveTextUtils.setupResponsiveHeadings();
+            
             // Map companies data to expected format
             const data = window.data.slice(0, 20).map(d => ({
                 ...d,
@@ -34,6 +58,15 @@
                 .withSize('size')
                 .withColor('category')   // Color by sector
                 .withAnimations('gentle') // ✨ Pure D3 staggered entrance animations!
+                .withResponsive({
+                    minWidth: 320,
+                    minHeight: 350,
+                    maxHeight: 600,
+                    debounceMs: 200,
+                    onResize: (dimensions) => {
+                        console.log('📏 Event Handling chart resized to:', dimensions);
+                    }
+                })
                 .build();                // Returns live chart (already rendered)
 
             // DOM event handlers using D3-native API
@@ -65,6 +98,8 @@
 </head>
 
 <body>
-    <h1>BubbleChart – Event Handling (Modern)</h1>
-    <div id="test" style="width: 800px; height: 600px;"></div>
+    <div class="container">
+        <h1>BubbleChart – Event Handling (Modern)</h1>
+        <div id="test"></div>
+    </div>
 </body>
