@@ -25,6 +25,9 @@ export {
   type LayoutNode 
 } from './rendering-pipeline.js';
 
+// Note: Complex animation engines removed in favor of D3's elegant alpha system
+// MotionBubble uses D3's built-in continuous animation with alphaTarget > 0
+
 
 /**
  * Core chart building system

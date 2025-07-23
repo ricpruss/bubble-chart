@@ -118,8 +118,11 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
           .attr('r', (d: any) => d.r)
           .style('opacity', 0.8);
         
-        // Set text opacity to 1 immediately (no separate animation)
+        // Animate text with same stagger delay as circles
         groupSelection.selectAll('text')
+          .transition()
+          .delay(i * staggerDelay)
+          .duration(duration)
           .style('opacity', 1);
       });
     } else {
@@ -194,13 +197,100 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
   },
 
   /**
-   * Create radius scale using D3DataUtils - centralized for all builders
-   * @param data - Processed data
+   * Create radius scale using D3's native scale patterns
+   * @param processedData - Processed data
    * @param range - Output range [min, max]
-   * @returns D3 radius scale
+   * @returns D3 square root scale
    */
-  createRadiusScale(data: any[], range: [number, number]): d3.ScalePower<number, number> {
-    return D3DataUtils.createRadiusScale(data, (d) => d.size, range);
+  createRadiusScale(processedData: any[], range: [number, number] = [8, 50]): any {
+    const sizeExtent = d3.extent(processedData, (d: any) => d.size) as [number, number];
+    return d3.scaleSqrt()
+      .domain([0, sizeExtent[1] || 1])
+      .range(range)
+      .clamp(true);
+  },
+
+  /**
+   * Create force layout nodes (NEW - for force-based layouts)
+   * @param processedData - Processed data
+   * @param dimensions - Container dimensions
+   * @param config - Force configuration
+   * @returns Array of force layout nodes
+   */
+  createForceLayout(
+    processedData: any[], 
+    dimensions: { width: number; height: number }
+  ): any[] {
+    // Create radius scale
+    const radiusScale = this.createRadiusScale(processedData, [8, Math.min(dimensions.width, dimensions.height) / 12]);
+    
+    // Use existing pack layout as starting positions for smoother initialization
+    const packNodes = D3DataUtils.createPackLayout(
+      processedData,
+      dimensions.width,
+      dimensions.height,
+      5
+    );
+    
+    // Convert to force simulation nodes with consistent data structure for D3 binding
+    return packNodes.map((node, index) => ({
+      id: node.data.data?.id || node.data.label || `node-${index}`,
+      x: node.x,
+      y: node.y,
+      r: radiusScale(node.data.size),
+      data: node.data,  // Keep same structure as pack layout for consistent key function
+      vx: 0,
+      vy: 0,
+      category: node.data.colorValue
+    }));
+  },
+
+  /**
+   * Create clustered force layout (NEW - for categorical grouping)
+   * @param processedData - Processed data
+   * @param dimensions - Container dimensions
+   * @param clusterField - Field to cluster by
+   * @returns Array of clustered layout nodes
+   */
+  createClusteredLayout(
+    processedData: any[], 
+    dimensions: { width: number; height: number },
+    clusterField: string
+  ): any[] {
+    // Group data by cluster field
+    const groups = d3.group(processedData, d => d.data ? d.data[clusterField] : d[clusterField]);
+    const clusterCount = groups.size;
+    const clusters = Array.from(groups.keys());
+    
+    // Calculate cluster center positions
+    const centerRadius = Math.min(dimensions.width, dimensions.height) * 0.3;
+    const angleStep = (2 * Math.PI) / clusterCount;
+    const centerX = dimensions.width / 2;
+    const centerY = dimensions.height / 2;
+    
+    const clusterCenters = new Map();
+    clusters.forEach((cluster, i) => {
+      const angle = i * angleStep;
+      clusterCenters.set(cluster, {
+        x: centerX + Math.cos(angle) * centerRadius,
+        y: centerY + Math.sin(angle) * centerRadius
+      });
+    });
+    
+    // Create force layout nodes with cluster information
+    const layoutNodes = this.createForceLayout(processedData, dimensions);
+    
+    // Add cluster center information to nodes
+    return layoutNodes.map(node => {
+      const clusterValue = node.data.data ? node.data.data[clusterField] : node.data[clusterField];
+      const clusterCenter = clusterCenters.get(clusterValue);
+      
+      return {
+        ...node,
+        cluster: clusterValue,
+        clusterCenter: clusterCenter || { x: centerX, y: centerY }
+      };
+    });
   },
 
   /**
@@ -227,7 +317,14 @@ processData<T extends BubbleChartData>(data: T[], config: BubbleChartOptions): a
         return String(config.keyFunction!(originalData));
       };
     }
-    return undefined;
+    
+    // Create default key function using node ID for force layouts
+    return (d: any) => {
+      if (d.id) return String(d.id);  // Force layout nodes have .id
+      if (d.data?.data?.id) return String(d.data.data.id);  // Pack layout nodes
+      if (d.data?.label) return String(d.data.label);
+      return `node-${Math.random().toString(36).substr(2, 9)}`;  // Fallback
+    };
   },
 
   /**

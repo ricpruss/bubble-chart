@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Entrance Animation Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <style>
+    body { 
+      font-family: system-ui, sans-serif; 
+      margin: 20px; 
+      background: #f8f9fa;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    #chart {
+      width: 100%;
+      height: 400px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      background: #fafafa;
+      margin: 20px 0;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      background: #007bff;
+      color: white;
+    }
+    button:hover { background: #0056b3; }
+    .status {
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 6px;
+      color: #1976d2;
+      font-weight: 500;
+      margin-bottom: 15px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎬 Entrance Animation Test</h1>
+    <p>Testing staggered entrance animations for BubbleBuilder with different animation presets. Both bubbles and text should animate together with the same stagger timing.</p>
+    
+    <div class="controls">
+      <button onclick="testGentle()">Test "Gentle" Preset</button>
+      <button onclick="testFast()">Test "Fast" Preset</button>
+      <button onclick="testCustom()">Test Custom Timing</button>
+      <button onclick="testNoAnimation()">Test No Animation</button>
+    </div>
+    
+    <div class="status" id="status">Ready to test entrance animations...</div>
+    <div id="chart"></div>
+  </div>
+
+  <script>
+    const testData = [
+      { label: "A", size: 40, category: "Group 1" },
+      { label: "B", size: 35, category: "Group 1" },
+      { label: "C", size: 60, category: "Group 2" },
+      { label: "D", size: 30, category: "Group 2" },
+      { label: "E", size: 25, category: "Group 3" },
+      { label: "F", size: 45, category: "Group 3" }
+    ];
+
+    function clearChart() {
+      document.getElementById('chart').innerHTML = '';
+    }
+
+    function updateStatus(message) {
+      document.getElementById('status').textContent = message;
+    }
+
+    function testGentle() {
+      clearChart();
+      updateStatus('Testing "gentle" preset - should see 800ms duration with 50ms stagger...');
+      
+      const chart = BubbleChart.create('#chart')
+        .withData(testData)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withTheme('corporate')
+        .withAnimations('gentle')  // 800ms duration, 50ms stagger
+        .build();
+        
+      setTimeout(() => {
+        updateStatus('Gentle animation complete - bubbles should have appeared with smooth stagger');
+      }, 1200);
+    }
+
+    function testFast() {
+      clearChart();
+      updateStatus('Testing "fast" preset - should see 400ms duration with 20ms stagger...');
+      
+      const chart = BubbleChart.create('#chart')
+        .withData(testData)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withTheme('ocean')
+        .withAnimations('fast')  // 400ms duration, 20ms stagger
+        .build();
+        
+      setTimeout(() => {
+        updateStatus('Fast animation complete - bubbles should have appeared quickly with rapid stagger');
+      }, 700);
+    }
+
+    function testCustom() {
+      clearChart();
+      updateStatus('Testing custom timing - should see 1000ms duration with 100ms stagger...');
+      
+      const chart = BubbleChart.create('#chart')
+        .withData(testData)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withTheme('forest')
+        .withAnimations({
+          enter: { duration: 1000, stagger: 100, easing: 'ease-out' },
+          update: { duration: 800, easing: 'ease-in-out' },
+          exit: { duration: 600, easing: 'ease-in' }
+        })
+        .build();
+        
+      setTimeout(() => {
+        updateStatus('Custom animation complete - bubbles should have appeared with noticeable stagger delay');
+      }, 1600);
+    }
+
+    function testNoAnimation() {
+      clearChart();
+      updateStatus('Testing no animation - bubbles should appear immediately...');
+      
+      const chart = BubbleChart.create('#chart')
+        .withData(testData)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withTheme('slate')
+        // No .withAnimations() call
+        .build();
+        
+      updateStatus('No animation test complete - all bubbles should appear instantly');
+    }
+
+    // Auto-run gentle test on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(testGentle, 1000);
+    });
+  </script>
+</body>
+</html> 

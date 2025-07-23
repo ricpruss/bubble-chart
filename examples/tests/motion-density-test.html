@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Motion Density Test</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <style>
+    body { 
+      font-family: system-ui, sans-serif; 
+      margin: 20px; 
+      background: #f8f9fa;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    #chart {
+      width: 100%;
+      height: 500px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      background: #fafafa;
+      margin: 20px 0;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      background: #007bff;
+      color: white;
+    }
+    button:hover { background: #0056b3; }
+    .info {
+      background: #e3f2fd;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 14px;
+      color: #1976d2;
+    }
+    .log {
+      background: #f5f5f5;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      padding: 10px;
+      margin: 10px 0;
+      font-family: 'Courier New', monospace;
+      font-size: 12px;
+      max-height: 200px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🎯 Motion Density Test</h1>
+    <p>Testing density-aware radius scaling for motion bubbles, including handling of negative values.</p>
+    
+    <div class="controls">
+      <button onclick="testSmallDataset()">Test Small Dataset (3 items)</button>
+      <button onclick="testMediumDataset()">Test Medium Dataset (12 items)</button>
+      <button onclick="testLargeDataset()">Test Large Dataset (50 items)</button>
+      <button onclick="testNegativeValues()">Test With Negative Values</button>
+      <button onclick="clearLog()">Clear Log</button>
+    </div>
+    
+    <div class="info" id="status">Ready to test motion bubble density scaling...</div>
+    <div id="chart"></div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    let currentChart = null;
+
+    function log(message) {
+      const logDiv = document.getElementById('log');
+      const timestamp = new Date().toLocaleTimeString();
+      logDiv.innerHTML += `[${timestamp}] ${message}\n`;
+      logDiv.scrollTop = logDiv.scrollHeight;
+      console.log(message);
+    }
+
+    function clearChart() {
+      document.getElementById('chart').innerHTML = '';
+      if (currentChart && currentChart.destroy) {
+        currentChart.destroy();
+      }
+      currentChart = null;
+    }
+
+    function clearLog() {
+      document.getElementById('log').innerHTML = '';
+    }
+
+    function updateStatus(message) {
+      document.getElementById('status').textContent = message;
+      log(`STATUS: ${message}`);
+    }
+
+    function testSmallDataset() {
+      clearChart();
+      updateStatus('Testing small dataset (3 items) - should see large bubbles...');
+      
+      const data = [
+        { label: "A", size: 100, category: "Group 1" },
+        { label: "B", size: 200, category: "Group 2" },
+        { label: "C", size: 150, category: "Group 3" }
+      ];
+
+      log(`Small dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
+
+      currentChart = BubbleChart.create('#chart')
+        .withData(data)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withType('motion')
+        .withTheme('corporate')
+        .build();
+
+      setTimeout(() => {
+        const circles = document.querySelectorAll('#chart circle');
+        log(`Small dataset result: ${circles.length} circles created`);
+        circles.forEach((circle, i) => {
+          const r = circle.getAttribute('r');
+          log(`  Circle ${i + 1}: radius = ${r}px`);
+        });
+      }, 1000);
+    }
+
+    function testMediumDataset() {
+      clearChart();
+      updateStatus('Testing medium dataset (12 items) - should see moderate sized bubbles...');
+      
+      const data = Array.from({length: 12}, (_, i) => ({
+        label: `Item ${i + 1}`,
+        size: 50 + (i * 25), // Range: 50-325
+        category: `Group ${(i % 3) + 1}`
+      }));
+
+      log(`Medium dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
+
+      currentChart = BubbleChart.create('#chart')
+        .withData(data)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withType('motion')
+        .withTheme('ocean')
+        .build();
+
+      setTimeout(() => {
+        const circles = document.querySelectorAll('#chart circle');
+        log(`Medium dataset result: ${circles.length} circles created`);
+        const radii = Array.from(circles).map(c => parseFloat(c.getAttribute('r')));
+        log(`  Radius range: ${Math.min(...radii).toFixed(1)} - ${Math.max(...radii).toFixed(1)}px`);
+      }, 1000);
+    }
+
+    function testLargeDataset() {
+      clearChart();
+      updateStatus('Testing large dataset (50 items) - should see smaller, densely packed bubbles...');
+      
+      const data = Array.from({length: 50}, (_, i) => ({
+        label: `Item ${i + 1}`,
+        size: 10 + (i * 5), // Range: 10-255
+        category: `Group ${(i % 5) + 1}`
+      }));
+
+      log(`Large dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
+
+      currentChart = BubbleChart.create('#chart')
+        .withData(data)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withType('motion')
+        .withTheme('forest')
+        .build();
+
+      setTimeout(() => {
+        const circles = document.querySelectorAll('#chart circle');
+        log(`Large dataset result: ${circles.length} circles created`);
+        const radii = Array.from(circles).map(c => parseFloat(c.getAttribute('r')));
+        log(`  Radius range: ${Math.min(...radii).toFixed(1)} - ${Math.max(...radii).toFixed(1)}px`);
+        log(`  Average radius: ${(radii.reduce((a, b) => a + b, 0) / radii.length).toFixed(1)}px`);
+      }, 1000);
+    }
+
+    function testNegativeValues() {
+      clearChart();
+      updateStatus('Testing dataset with negative values - should handle gracefully...');
+      
+      const data = [
+        { label: "Profitable A", size: 1000, category: "Profitable" },
+        { label: "Loss B", size: -500, category: "Loss" },
+        { label: "Profitable C", size: 750, category: "Profitable" },
+        { label: "Loss D", size: -200, category: "Loss" },
+        { label: "Break Even", size: 0, category: "Neutral" },
+        { label: "Big Profit", size: 2000, category: "Profitable" }
+      ];
+
+      log(`Negative values dataset: ${data.length} items`);
+      log(`  Size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
+      log(`  Negative values: ${data.filter(d => d.size < 0).length}`);
+
+      currentChart = BubbleChart.create('#chart')
+        .withData(data)
+        .withLabel('label')
+        .withSize('size')
+        .withColor('category')
+        .withType('motion')
+        .withTheme('sunset')
+        .build();
+
+      setTimeout(() => {
+        const circles = document.querySelectorAll('#chart circle');
+        log(`Negative values result: ${circles.length} circles created`);
+        circles.forEach((circle, i) => {
+          const r = parseFloat(circle.getAttribute('r'));
+          const dataPoint = data[i];
+          log(`  "${dataPoint.label}" (size: ${dataPoint.size}): radius = ${r.toFixed(1)}px`);
+        });
+      }, 1000);
+    }
+
+    // Auto-run small dataset test on load
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(testSmallDataset, 500);
+    });
+  </script>
+</body>
+</html> 

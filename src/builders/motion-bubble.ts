@@ -31,6 +31,7 @@ interface MotionConfig {
 export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
   private motionConfig: Required<MotionConfig>;
   private simulation: d3.Simulation<any, undefined> | null = null;
+
   private isFiltered: boolean = false;
   private currentFilter: string | null = null;
   private filterGroups: Map<string, any[]> = new Map();
@@ -39,6 +40,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   private positionsInitialized: boolean = false; // Track if positions have been set up
   private lastCanvasWidth: number = 0;
   private lastCanvasHeight: number = 0;
+  private maxDataValue: number = 0; // Track maximum data value across all updates for stable scaling
 
   constructor(config: BubbleChartOptions) {
     // Ensure we can modify the config by creating a mutable copy
@@ -88,10 +90,37 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       const { svg, dimensions } = svgElements;
 
       // Create scales using the shared ChartPipeline
-      const radiusScale = ChartPipeline.createRadiusScale(
-        this.processedData,
-        [8, Math.min(dimensions.width, dimensions.height) / 12]
-      );
+      // Advanced density-aware scaling for optimal page utilization
+      
+      // Update maximum data value for stable scaling across dynamic updates
+      const currentMaxValue = d3.max(this.processedData, (d: any) => d.size) || 0;
+      const currentMinValue = d3.min(this.processedData, (d: any) => d.size) || 0;
+      this.maxDataValue = Math.max(this.maxDataValue, currentMaxValue);
+      
+      // Calculate density-aware radius scaling
+      const { minRadius, maxRadius } = this.calculateDensityAwareRadius(dimensions, this.processedData.length);
+      
+      // Create custom radius scale with stable domain to prevent jarring scale jumps
+      // Handle negative values by using absolute values for radius calculation
+      const hasNegativeValues = currentMinValue < 0;
+      
+      let radiusScale;
+      if (hasNegativeValues) {
+        // For data with negative values, use absolute values for sizing
+        // but ensure minimum visibility for all bubbles
+        const maxAbsValue = Math.max(Math.abs(currentMinValue), this.maxDataValue);
+        radiusScale = (value: number) => {
+          const absValue = Math.abs(value);
+          const normalizedValue = absValue / maxAbsValue;
+          return minRadius + (maxRadius - minRadius) * Math.sqrt(normalizedValue);
+        };
+      } else {
+        // Standard sqrt scale for positive values only
+        radiusScale = d3.scaleSqrt()
+          .domain([0, this.maxDataValue])
+          .range([minRadius, maxRadius])
+          .clamp(true);
+      }
       
       const { colorScale, theme } = ChartPipeline.createColorScale(
         this.processedData,
@@ -275,6 +304,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       .force('collision', d3.forceCollide()
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))))
+
       .on('tick', () => {
         // Get current nodes from simulation
         const currentNodes = this.simulation ? this.simulation.nodes() : [];
@@ -367,6 +397,193 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     // Re-render with new data
     this.stopSimulation();
     this.update();
+  }
+
+  /**
+   * Reset the accumulated maximum data value for radius scaling
+   * Useful when starting with completely new data ranges
+   */
+  resetScaleDomain(): void {
+    this.maxDataValue = 0;
+  }
+
+  /**
+   * Calculate density-aware radius scaling for optimal page utilization
+   * Targets ~80% page coverage with adaptive scaling based on bubble count
+   * @param dimensions - Container dimensions
+   * @param bubbleCount - Number of bubbles to display
+   * @returns Object with minRadius and maxRadius values
+   */
+  private calculateDensityAwareRadius(dimensions: { width: number; height: number }, bubbleCount: number): { minRadius: number; maxRadius: number } {
+    const containerArea = dimensions.width * dimensions.height;
+    const targetCoverage = 0.8; // Target 80% page utilization
+    const targetArea = containerArea * targetCoverage;
+    
+    // Estimate average bubble area for even distribution
+    const avgBubbleArea = targetArea / Math.max(bubbleCount, 1);
+    const avgRadius = Math.sqrt(avgBubbleArea / Math.PI);
+    
+    // Scale factors based on bubble count for better distribution
+    let scaleFactor = 1.0;
+    if (bubbleCount <= 3) {
+      scaleFactor = 1.8; // Fewer bubbles = much larger
+    } else if (bubbleCount <= 6) {
+      scaleFactor = 1.5; // Small groups = larger
+    } else if (bubbleCount <= 12) {
+      scaleFactor = 1.2; // Medium groups = slightly larger
+    } else if (bubbleCount <= 20) {
+      scaleFactor = 1.0; // Good balance
+    } else {
+      scaleFactor = 0.8; // Many bubbles = smaller to fit
+    }
+    
+    // Calculate adaptive radius range
+    const baseMaxRadius = avgRadius * scaleFactor;
+    const maxRadius = Math.min(
+      baseMaxRadius,
+      Math.min(dimensions.width, dimensions.height) / 4 // Never exceed 1/4 of smallest dimension
+    );
+    
+    // Minimum radius scales with max but has reasonable floor
+    const minRadius = Math.max(8, maxRadius * 0.15);
+    
+    return {
+      minRadius: Math.round(minRadius),
+      maxRadius: Math.round(Math.max(maxRadius, minRadius + 5)) // Ensure reasonable range
+    };
+  }
+
+  /**
+   * @param nodeId - ID of the node to update
+   * @param newRadius - New radius value
+   */
+  updateRadius(nodeId: string, newRadius: number): void {
+    if (!this.simulation) {
+      console.warn('MotionBubble: Cannot update radius - no simulation running');
+      return;
+    }
+
+    console.log(`📏 MotionBubble: Updating radius for "${nodeId}" to ${newRadius}`);
+
+    // Get current nodes from simulation
+    const nodes = this.simulation.nodes();
+    
+    // Find and update the target node
+    const targetNode = nodes.find((n: any) => {
+      const nodeId_actual = n.data?.id || n.data?.label || JSON.stringify(n.data);
+      return nodeId_actual === nodeId;
+    });
+
+    if (!targetNode) {
+      console.warn(`MotionBubble: Node "${nodeId}" not found for radius update`);
+      return;
+    }
+
+    // Update the radius
+    const oldRadius = targetNode.r;
+    targetNode.r = newRadius;
+    
+    console.log(`📏 Node "${nodeId}" radius: ${oldRadius} → ${newRadius}`);
+
+    // Re-initialize collision force with new radius (critical!)
+    const { collidePadding, repulseStrength } = this.motionConfig;
+    this.simulation.force('collision', d3.forceCollide()
+      .radius((d: any) => d.r + collidePadding)
+      .strength(Math.max(0, Math.min(1, repulseStrength))));
+
+    // Boost alpha for smooth animation (D3's built-in approach!)
+    const currentAlpha = this.simulation.alpha();
+    const boostAlpha = Math.max(currentAlpha, 0.1); // Gentle boost
+    this.simulation.alpha(boostAlpha);
+    
+    console.log(`🎯 Alpha boosted from ${currentAlpha.toFixed(3)} to ${boostAlpha.toFixed(3)} for smooth radius transition`);
+
+    // Update the visual circle element
+    const svgElements = this.svgManager.getElements();
+    if (svgElements) {
+      svgElements.svg.selectAll('g.bubble')
+        .filter((d: any) => {
+          const nodeId_actual = d.data?.id || d.data?.label || JSON.stringify(d.data);
+          return nodeId_actual === nodeId;
+        })
+        .select('circle')
+        .transition()
+        .duration(300)
+        .attr('r', newRadius);
+    }
+  }
+
+  /**
+   * Set density preset (adapts MotionBubble's sophisticated forces)
+   * @param preset - Density preset name
+   */
+  setDensity(preset: 'sparse' | 'balanced' | 'dense' | 'compact'): void {
+    if (!this.simulation) {
+      console.warn('MotionBubble: Cannot set density - no simulation running');
+      return;
+    }
+
+    console.log(`🎛️ MotionBubble: Setting density to "${preset}"`);
+
+    // Adapt density to MotionBubble's existing sophisticated force system
+    const densityConfigs = {
+      sparse: {
+        repulseStrength: 0.8,    // Higher collision strength = more space
+        centerStrength: 0.02,    // Weaker center pull
+        collidePadding: 8        // More padding
+      },
+      balanced: {
+        repulseStrength: 0.4,    // Original balanced settings
+        centerStrength: 0.05,
+        collidePadding: 3
+      },
+      dense: {
+        repulseStrength: 0.2,    // Lower collision = tighter packing
+        centerStrength: 0.08,    // Stronger center pull
+        collidePadding: 1        // Less padding
+      },
+      compact: {
+        repulseStrength: 0.1,    // Minimal collision
+        centerStrength: 0.12,    // Strong center pull
+        collidePadding: 0        // No padding
+      }
+    };
+
+    const config = densityConfigs[preset];
+    
+    // Update motion config
+    this.motionConfig = { ...this.motionConfig, ...config };
+
+    // Update collision force
+    this.simulation.force('collision', d3.forceCollide()
+      .radius((d: any) => d.r + config.collidePadding)
+      .strength(Math.max(0, Math.min(1, config.repulseStrength))));
+
+    // Update category forces (preserve MotionBubble's sophisticated positioning)
+    this.simulation.force('category-x', d3.forceX()
+      .strength(config.centerStrength)
+      .x((d: any) => {
+        const analysisType = d.data.analysisType || 'default';
+        const categoryPos = this.categoryTypePositions.get(analysisType);
+        const svgElements = this.svgManager.getElements();
+        return categoryPos ? categoryPos.x : (svgElements?.dimensions.width || 800) / 2;
+      }));
+
+    this.simulation.force('category-y', d3.forceY()
+      .strength(config.centerStrength)
+      .y((d: any) => {
+        const analysisType = d.data.analysisType || 'default';
+        const categoryPos = this.categoryTypePositions.get(analysisType);
+        const svgElements = this.svgManager.getElements();
+        return categoryPos ? categoryPos.y : (svgElements?.dimensions.height || 600) / 2;
+      }));
+
+    // Boost alpha for smooth transition (D3's built-in approach!)
+    const currentAlpha = this.simulation.alpha();
+    const boostAlpha = Math.max(currentAlpha, 0.3); // Higher boost for force changes
+    this.simulation.alpha(boostAlpha);
+    
+    console.log(`🎯 Density "${preset}" applied. Alpha boosted from ${currentAlpha.toFixed(3)} to ${boostAlpha.toFixed(3)}`);
   }
 
   /**

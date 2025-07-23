@@ -309,6 +309,9 @@ export interface BubbleChartOptions<T extends BubbleChartData = BubbleChartData>
     debounceMs?: number;
     onResize?: (dimensions: { width: number; height: number }) => void;
   };
+
+  // Note: Force layout and density controls are handled by MotionBubble
+  // Use withType('motion') for sophisticated continuous force animation with D3's alpha system
 }
 
 /**

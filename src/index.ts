@@ -153,6 +153,9 @@ class D3FluentBuilder {
     this.config.responsive = options;
     return this;
   }
+
+  // Note: Density and force controls moved to MotionBubble
+  // Use .withType('motion') for sophisticated continuous force animation
   
   /**
    * Build the chart - creates builder instance and renders if data is available
@@ -241,9 +244,55 @@ class D3FluentBuilder {
             this.attachEvents();
           }
         }
+      },
+      // Force layout runtime methods (NEW)
+      setDensity: (preset: 'sparse' | 'balanced' | 'dense' | 'compact') => {
+        if (this.chartInstance && this.chartInstance.shouldUseForceLayout && this.chartInstance.shouldUseForceLayout()) {
+          // Update the config
+          console.log('setDensity: Use MotionBubble for density controls');
+          
+          // Call the builder's setDensity method directly
+          if (this.chartInstance.setDensity) {
+            this.chartInstance.setDensity(preset);
+          } else {
+            console.warn('ChartInterface.setDensity: Builder does not have setDensity method');
+          }
+        } else {
+          console.warn('ChartInterface.setDensity: Not using force layout or chart instance not available');
+        }
+      },
+      updateRadius: (nodeId: string, newRadius: number) => {
+        if (this.chartInstance && this.chartInstance.updateRadius) {
+          // Call the builder's updateRadius method
+          this.chartInstance.updateRadius(nodeId, newRadius);
+        } else if (this.chartInstance && this.chartInstance.radiusHandler) {
+          // Use the radiusHandler directly
+          this.chartInstance.radiusHandler.updateRadius([{
+            id: nodeId,
+            radius: newRadius,
+            duration: 300
+          }]);
+        }
+      },
+      // NEW: Runtime force configuration updates (fluent pattern)
+      setForces: (forces: any) => {
+        if (this.chartInstance && this.chartInstance.shouldUseForceLayout && this.chartInstance.shouldUseForceLayout()) {
+          // Update the config
+          console.log('setForces: Use MotionBubble for force controls');
+          
+          // Call the builder's setForces method
+          if (this.chartInstance.setForces) {
+            this.chartInstance.setForces(forces);
+          } else {
+            console.warn('ChartInterface.setForces: Builder does not have setForces method');
+          }
+        } else {
+          console.warn('ChartInterface.setForces: Not using force layout or chart instance not available');
+        }
       }
     };
   }
+
   
   /**
    * Auto-render when we have enough configuration
@@ -273,7 +322,8 @@ class D3FluentBuilder {
       ...(this.config.animation && { animation: this.config.animation }),
       ...(this.config.interactiveFiltering && { interactiveFiltering: this.config.interactiveFiltering }),
       ...(this.config.colour && { colour: this.config.colour }),
-      ...(this.config.responsive && { responsive: this.config.responsive })
+      ...(this.config.responsive && { responsive: this.config.responsive }),
+      // Note: Force layout configuration handled by MotionBubble
     };
     
     this.chartInstance = BuilderFactory.create(finalConfig);
@@ -325,6 +375,10 @@ interface ChartInterface {
     remove: (key: string) => void;
     clear: () => void;
   };
+  // Force layout methods (NEW)
+  updateRadius?: (nodeId: string, newRadius: number) => void;
+  setDensity?: (preset: 'sparse' | 'balanced' | 'dense' | 'compact') => void;
+  setForces?: (forces: any) => void;
 }
 
 /**
@@ -375,7 +429,7 @@ export {
 // Re-export individual builders for advanced usage
 export { BubbleBuilder } from './builders/bubble-builder.js';
 export { TreeBuilder } from './builders/tree-builder.js';
-export { MotionBubble } from './builders/motion-bubble.js';
+// export { MotionBubble } from './builders/motion-bubble.js'; // Temporarily disabled for force layout migration
 export { WaveBubble } from './builders/wave-bubble.js';
 export { LiquidBubble } from './builders/liquid-bubble.js';
 export { OrbitBuilder } from './builders/orbit-builder.js';

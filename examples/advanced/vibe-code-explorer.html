@@ -384,6 +384,7 @@
           .withColor('analysisType')             // Color by analysis type
           .withKey(d => d.id)                    // Key for D3 data binding
           .withTheme('corporate')                // Corporate theme for vibrant colors
+          .withDimensions(containerWidth, containerHeight)  // Explicit dimensions for better scaling
           .withAnimations({                      // Configure animations to prevent replay
             enter: {
               duration: 800,

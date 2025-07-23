@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <title>Dynamic Scaling Test - Motion Bubbles</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <script src="https://d3js.org/d3.v7.min.js"></script>
+  <script src="../../dist/bubble-chart.min.js"></script>
+  <style>
+    body { 
+      font-family: system-ui, sans-serif; 
+      margin: 0; 
+      padding: 20px; 
+      background: #f8f9fa;
+    }
+    .container {
+      max-width: 1000px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 20px;
+    }
+    .controls {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .controls button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 500;
+      transition: all 0.2s ease;
+    }
+    .start-btn { background: #28a745; color: white; }
+    .start-btn:hover { background: #218838; }
+    .add-btn { background: #007bff; color: white; }
+    .add-btn:hover { background: #0056b3; }
+    .large-btn { background: #ffc107; color: #333; }
+    .large-btn:hover { background: #e0a800; }
+    .reset-btn { background: #dc3545; color: white; }
+    .reset-btn:hover { background: #c82333; }
+    
+    #chart {
+      width: 100%;
+      height: 500px;
+      border: 2px solid #e9ecef;
+      border-radius: 8px;
+      background: #fafafa;
+      margin-bottom: 15px;
+    }
+    .status {
+      padding: 12px;
+      background: #e3f2fd;
+      border-radius: 6px;
+      color: #1976d2;
+      font-weight: 500;
+    }
+    .log {
+      margin-top: 15px;
+      padding: 12px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      font-family: monospace;
+      font-size: 14px;
+      max-height: 200px;
+      overflow-y: auto;
+      border: 1px solid #dee2e6;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔬 Dynamic Scaling Test - Motion Bubbles</h1>
+    <p class="subtitle">
+      Testing how MotionBubble handles dynamic data updates with varying size ranges without jarring scale jumps.
+    </p>
+    
+    <div class="controls">
+      <button class="start-btn" onclick="startWithSmallData()">Start with 3 Bubbles</button>
+      <button class="add-btn" onclick="addMediumData()">Add 2 More (5 total)</button>
+      <button class="large-btn" onclick="addLargeData()">Add 2 More (7 total)</button>
+      <button class="large-btn" onclick="addManyBubbles()">Add Many (15 total)</button>
+      <button class="reset-btn" onclick="resetChart()">Reset Chart</button>
+    </div>
+    
+    <div id="chart"></div>
+    <div class="status" id="status">Ready to test dynamic scaling...</div>
+    <div class="log" id="log"></div>
+  </div>
+
+  <script>
+    let chart = null;
+    let currentData = [];
+    let nextId = 1;
+    
+    const logElement = document.getElementById('log');
+    const statusElement = document.getElementById('status');
+    
+    function log(message) {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = `[${timestamp}] ${message}`;
+      console.log(logEntry);
+      
+      const div = document.createElement('div');
+      div.textContent = logEntry;
+      logElement.appendChild(div);
+      logElement.scrollTop = logElement.scrollHeight;
+    }
+    
+    function updateStatus(message) {
+      statusElement.textContent = message;
+    }
+    
+    function startWithSmallData() {
+      currentData = [
+        { id: `item-${nextId++}`, category: 'Small A', count: 3, analysisType: 'test' },
+        { id: `item-${nextId++}`, category: 'Small B', count: 5, analysisType: 'test' },
+        { id: `item-${nextId++}`, category: 'Small C', count: 8, analysisType: 'test' }
+      ];
+      
+      // Reset scale domain for fresh start
+      if (chart && chart.getBuilder && chart.getBuilder().resetScaleDomain) {
+        chart.getBuilder().resetScaleDomain();
+        log('Reset scale domain for fresh start');
+      }
+      
+      createChart();
+      log(`Started with 3 bubbles: sizes [3, 5, 8] - Density-aware scaling should make them LARGE to fill ~80% of space`);
+      updateStatus('Chart created with 3 bubbles. Should use ~80% of page space with large bubbles.');
+    }
+    
+    function addMediumData() {
+      const mediumData = [
+        { id: `item-${nextId++}`, category: 'Medium A', count: 25, analysisType: 'medium' },
+        { id: `item-${nextId++}`, category: 'Medium B', count: 35, analysisType: 'medium' }
+      ];
+      
+      currentData = [...currentData, ...mediumData];
+      chart.update(currentData);
+      
+      log(`Added 2 more bubbles (total: 5): sizes [25, 35] - Density scaling should adjust to maintain ~80% coverage`);
+      updateStatus('Now 5 bubbles total. Density scaling should shrink slightly to maintain good coverage.');
+    }
+    
+    function addLargeData() {
+      const largeData = [
+        { id: `item-${nextId++}`, category: 'Large A', count: 120, analysisType: 'large' },
+        { id: `item-${nextId++}`, category: 'Large B', count: 180, analysisType: 'large' }
+      ];
+      
+      currentData = [...currentData, ...largeData];
+      chart.update(currentData);
+      
+      log(`Added 2 more bubbles (total: 7): sizes [120, 180] - Density scaling adapts to more bubbles while maintaining coverage`);
+      updateStatus('Now 7 bubbles total. Density-aware scaling should balance size vs. count for optimal space usage.');
+    }
+    
+    function addManyBubbles() {
+      const manyData = [
+        { id: `item-${nextId++}`, category: 'Extra A', count: 15, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra B', count: 22, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra C', count: 18, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra D', count: 30, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra E', count: 12, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra F', count: 28, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra G', count: 25, analysisType: 'extra' },
+        { id: `item-${nextId++}`, category: 'Extra H', count: 35, analysisType: 'extra' }
+      ];
+      
+      currentData = [...currentData, ...manyData];
+      chart.update(currentData);
+      
+      log(`Added 8 more bubbles (total: 15) - Density scaling should reduce size significantly to maintain ~80% coverage`);
+      updateStatus('Now 15 bubbles total. Density scaling should make bubbles smaller to fit efficiently.');
+    }
+
+    function resetChart() {
+      currentData = [];
+      nextId = 1;
+      
+      if (chart) {
+        chart.update([]);
+        if (chart.getBuilder && chart.getBuilder().resetScaleDomain) {
+          chart.getBuilder().resetScaleDomain();
+        }
+      }
+      
+      logElement.innerHTML = '';
+      log('Chart reset - ready for new test');
+      updateStatus('Chart reset. Ready to start new scaling test.');
+    }
+    
+    function createChart() {
+      if (chart) {
+        chart.update(currentData);
+        return;
+      }
+      
+      chart = BubbleChart.create('#chart')
+        .withType('motion')
+        .withSize('count')
+        .withLabel('category')
+        .withColor('analysisType')
+        .withKey(d => d.id)
+        .withTheme('corporate')
+        .withData(currentData)
+        .build();
+      
+      log('Motion bubble chart created with stable scaling');
+    }
+    
+    // Auto-initialize for easy testing
+    document.addEventListener('DOMContentLoaded', () => {
+      log('Dynamic scaling test ready. Click "Start with Small Data" to begin.');
+    });
+  </script>
+</body>
+</html> 
