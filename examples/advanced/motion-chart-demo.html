@@ -394,6 +394,14 @@
         })
         .build();
       
+      // Set sparse density for better bubble spacing
+      if (chart && chart.getBuilder) {
+        const builder = chart.getBuilder();
+        if (builder.setDensity) {
+          builder.setDensity('sparse');
+        }
+      }
+      
     }
     
     function setupLegend() {

@@ -22,6 +22,8 @@ interface MotionConfig {
   alphaTarget?: number;
 }
 
+// Removed getBoundedPosition - using inline D3 approach for better performance
+
 /**
  * MotionBubble – animated, continuously moving bubbles using d3-force.
  * Migrated to compositional architecture with preserved force simulation.
@@ -31,12 +33,14 @@ interface MotionConfig {
 export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends BaseChartBuilder<T> {
   private motionConfig: Required<MotionConfig>;
   private simulation: d3.Simulation<any, undefined> | null = null;
+  private isResponsiveSetup: boolean = false;
 
   private isFiltered: boolean = false;
   private currentFilter: string | null = null;
   private filterGroups: Map<string, any[]> = new Map();
   private filterLabels: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
-  private categoryTypePositions: Map<string, {x: number, y: number}> = new Map(); // Category type spawn positions
+  private categoryTypePositions: Map<string, {x: number, y: number}> = new Map(); // Category type spawn positions (absolute)
+  private normalizedPositions: Map<string, {x: number, y: number}> = new Map(); // Category positions (0-1 normalized)
   private positionsInitialized: boolean = false; // Track if positions have been set up
   private lastCanvasWidth: number = 0;
   private lastCanvasHeight: number = 0;
@@ -47,14 +51,14 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     const mutableConfig = { ...config, type: 'motion' as const };
     super(mutableConfig);
     
-    // Merge animation defaults with user config
+    // Merge animation defaults with user config for smooth animations
     this.motionConfig = {
-      repulseStrength: 0.4,   // Balanced collision strength to prevent overlap
-      decay: 0.05,
-      collidePadding: 3,      // Moderate padding between bubbles
+      repulseStrength: 0.8,   // Strong collision strength to prevent overlap
+      decay: 0.2,             // Higher decay = smoother, less oscillation
+      collidePadding: 8,      // Sufficient padding between bubbles for all sizes
       centerStrength: 0.05,
-      alphaMin: 0.00001,
-      alphaTarget: 0.02,
+      alphaMin: 0.001,        // Higher min = stops sooner for stability
+      alphaTarget: 0.01,      // Lower target = calmer ongoing motion
       ...(this.config.animation as MotionConfig || {})
     };
     
@@ -88,6 +92,17 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       }
 
       const { svg, dimensions } = svgElements;
+
+      // Set up responsive behavior to handle radius recalculation on resize (only once)
+      if (!this.isResponsiveSetup) {
+        this.svgManager.makeResponsive({
+          onResize: () => {
+            this.handleResize();
+          },
+          debounceMs: 150 // Faster response for smooth radius updates
+        });
+        this.isResponsiveSetup = true;
+      }
 
       // Create scales using the shared ChartPipeline
       // Advanced density-aware scaling for optimal page utilization
@@ -164,17 +179,18 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
           
           const radius = radiusScale(d.size);
           
-          // Use exact category type position
-          const initialX = position.x;
-          const initialY = position.y;
-          
-          // Create new bubble at category position
+          // Constrain initial position to viewport bounds considering bubble radius
+          const padding = Math.max(5, radius * 0.1);
+          const constrainedPosition = {
+            x: Math.max(radius + padding, Math.min(dimensions.width - radius - padding, position.x)),
+            y: Math.max(radius + padding, Math.min(dimensions.height - radius - padding, position.y))
+          };
           
           const node = {
             data: d,
             r: radius,
-            x: initialX,
-            y: initialY,
+            x: constrainedPosition.x,
+            y: constrainedPosition.y,
             vx: 0,
             vy: 0
           };
@@ -279,11 +295,15 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   private startForceSimulation(nodes: any[], _bubbleGroups: any, dimensions: any): void {
     const { repulseStrength, decay, collidePadding, centerStrength, alphaMin, alphaTarget } = this.motionConfig;
     
-    // Starting force simulation with category-specific forces
+    // Get current dimensions for boundary calculations
+    const getCurrentDimensions = () => {
+      const svgElements = this.svgManager.getElements();
+      return svgElements ? svgElements.dimensions : dimensions;
+    };
     
     this.simulation = d3.forceSimulation(nodes)
       .velocityDecay(decay)
-      .alpha(1)  // Initial startup energy
+      .alpha(0.6)  // Gentler initial startup energy for smoother animation
       .alphaMin(alphaMin)
       .alphaTarget(alphaTarget)  // Maintain gentle ongoing motion
       // Category-specific forces instead of global center
@@ -304,66 +324,43 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       .force('collision', d3.forceCollide()
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))))
-
-      .on('tick', () => {
-        // Get current nodes from simulation
-        const currentNodes = this.simulation ? this.simulation.nodes() : [];
-        
-        // Log high-velocity nodes and track category drift
-        currentNodes.forEach(node => {
-          const velocity = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-          if (velocity > 10) { // Threshold for "violent" movement
-            console.log(`⚡ HIGH VELOCITY: "${node.data.label}" velocity=${velocity.toFixed(2)}, vx=${node.vx.toFixed(2)}, vy=${node.vy.toFixed(2)}, position=(${node.x.toFixed(0)}, ${node.y.toFixed(0)})`);
-          }
+      // Strong boundary containment forces - always pull toward safe center zones
+      .force('boundary-x', d3.forceX()
+        .strength(1.0)  // Strong but smooth boundary containment
+        .x((d: any) => {
+          const dims = getCurrentDimensions();
+          const radius = d.r || 0;
+          const safeLeft = radius + 20;
+          const safeRight = dims.width - radius - 20;
           
-          // Track distance from category center
-          const analysisType = node.data.analysisType || 'default';
-          const categoryPos = this.categoryTypePositions.get(analysisType);
-          if (categoryPos) {
-            const distance = Math.sqrt(Math.pow(node.x - categoryPos.x, 2) + Math.pow(node.y - categoryPos.y, 2));
-            if (distance > 100) { // Log if more than 100px away from category center
-              console.log(`🎯 CATEGORY DRIFT: "${node.data.label}" (${analysisType}) distance=${distance.toFixed(0)}px from center (${categoryPos.x.toFixed(0)}, ${categoryPos.y.toFixed(0)})`);
-            }
-          }
-        });
-        
-        // Constrain bubbles to canvas boundaries with damping
-        currentNodes.forEach(node => {
-          const radius = node.r;
-          const dampingFactor = 0.3; // Reduce velocity on bounce
-          const prevVx = node.vx;
-          const prevVy = node.vy;
-
-          // Bounce off boundaries with damping
-          if (node.x - radius < 0) {
-            node.x = radius;
-            node.vx = Math.abs(node.vx) * dampingFactor; // Damped bounce
-            if (Math.abs(prevVx) > 5) {
-              console.log(`🔄 LEFT BOUNCE: "${node.data.label}" vx: ${prevVx.toFixed(2)} -> ${node.vx.toFixed(2)}`);
-            }
-          } else if (node.x + radius > dimensions.width) {
-            node.x = dimensions.width - radius;
-            node.vx = -Math.abs(node.vx) * dampingFactor; // Damped bounce
-            if (Math.abs(prevVx) > 5) {
-              console.log(`🔄 RIGHT BOUNCE: "${node.data.label}" vx: ${prevVx.toFixed(2)} -> ${node.vx.toFixed(2)}`);
-            }
-          }
-          if (node.y - radius < 0) {
-            node.y = radius;
-            node.vy = Math.abs(node.vy) * dampingFactor; // Damped bounce
-            if (Math.abs(prevVy) > 5) {
-              console.log(`🔄 TOP BOUNCE: "${node.data.label}" vy: ${prevVy.toFixed(2)} -> ${node.vy.toFixed(2)}`);
-            }
-          } else if (node.y + radius > dimensions.height) {
-            node.y = dimensions.height - radius;
-            node.vy = -Math.abs(node.vy) * dampingFactor; // Damped bounce
-            if (Math.abs(prevVy) > 5) {
-              console.log(`🔄 BOTTOM BOUNCE: "${node.data.label}" vy: ${prevVy.toFixed(2)} -> ${node.vy.toFixed(2)}`);
-            }
-          }
-        });
-        
-        // Update ALL bubble groups in the SVG
+          // Always pull toward safe center if outside bounds
+          if (d.x < safeLeft) return safeLeft;
+          if (d.x > safeRight) return safeRight;
+          
+          // Even when in bounds, pull slightly toward center for stability
+          const center = dims.width / 2;
+          const pullFactor = 0.02; // Gentle center pull
+          return d.x + (center - d.x) * pullFactor;
+        }))
+      .force('boundary-y', d3.forceY()
+        .strength(1.0)  // Strong but smooth boundary containment
+        .y((d: any) => {
+          const dims = getCurrentDimensions();
+          const radius = d.r || 0;
+          const safeTop = radius + 20;
+          const safeBottom = dims.height - radius - 20;
+          
+          // Always pull toward safe center if outside bounds
+          if (d.y < safeTop) return safeTop;
+          if (d.y > safeBottom) return safeBottom;
+          
+          // Even when in bounds, pull slightly toward center for stability
+          const center = dims.height / 2;
+          const pullFactor = 0.02; // Gentle center pull
+          return d.y + (center - d.y) * pullFactor;
+        }))
+      // Minimal tick handler - only DOM updates (no manual physics)
+      .on('tick', () => {
         const svgElements = this.svgManager.getElements();
         if (svgElements) {
           svgElements.svg.selectAll('g.bubble')
@@ -463,8 +460,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       return;
     }
 
-    console.log(`📏 MotionBubble: Updating radius for "${nodeId}" to ${newRadius}`);
-
     // Get current nodes from simulation
     const nodes = this.simulation.nodes();
     
@@ -480,10 +475,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     }
 
     // Update the radius
-    const oldRadius = targetNode.r;
     targetNode.r = newRadius;
-    
-    console.log(`📏 Node "${nodeId}" radius: ${oldRadius} → ${newRadius}`);
 
     // Re-initialize collision force with new radius (critical!)
     const { collidePadding, repulseStrength } = this.motionConfig;
@@ -491,12 +483,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       .radius((d: any) => d.r + collidePadding)
       .strength(Math.max(0, Math.min(1, repulseStrength))));
 
-    // Boost alpha for smooth animation (D3's built-in approach!)
-    const currentAlpha = this.simulation.alpha();
-    const boostAlpha = Math.max(currentAlpha, 0.1); // Gentle boost
-    this.simulation.alpha(boostAlpha);
-    
-    console.log(`🎯 Alpha boosted from ${currentAlpha.toFixed(3)} to ${boostAlpha.toFixed(3)} for smooth radius transition`);
+    // Use D3's native restart for smooth animation
+    this.simulation.restart();
 
     // Update the visual circle element
     const svgElements = this.svgManager.getElements();
@@ -523,29 +511,27 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       return;
     }
 
-    console.log(`🎛️ MotionBubble: Setting density to "${preset}"`);
-
     // Adapt density to MotionBubble's existing sophisticated force system
     const densityConfigs = {
       sparse: {
-        repulseStrength: 0.8,    // Higher collision strength = more space
+        repulseStrength: 1.0,    // Maximum collision strength = more space
         centerStrength: 0.02,    // Weaker center pull
-        collidePadding: 8        // More padding
+        collidePadding: 12       // More padding
       },
       balanced: {
-        repulseStrength: 0.4,    // Original balanced settings
+        repulseStrength: 0.8,    // New balanced settings (stronger than old defaults)
         centerStrength: 0.05,
-        collidePadding: 3
+        collidePadding: 8
       },
       dense: {
-        repulseStrength: 0.2,    // Lower collision = tighter packing
+        repulseStrength: 0.6,    // Moderate collision = tighter packing
         centerStrength: 0.08,    // Stronger center pull
-        collidePadding: 1        // Less padding
+        collidePadding: 4        // Less padding
       },
       compact: {
-        repulseStrength: 0.1,    // Minimal collision
+        repulseStrength: 0.4,    // Lower collision
         centerStrength: 0.12,    // Strong center pull
-        collidePadding: 0        // No padding
+        collidePadding: 2        // Minimal padding
       }
     };
 
@@ -554,36 +540,26 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     // Update motion config
     this.motionConfig = { ...this.motionConfig, ...config };
 
-    // Update collision force
-    this.simulation.force('collision', d3.forceCollide()
-      .radius((d: any) => d.r + config.collidePadding)
-      .strength(Math.max(0, Math.min(1, config.repulseStrength))));
-
-    // Update category forces (preserve MotionBubble's sophisticated positioning)
-    this.simulation.force('category-x', d3.forceX()
-      .strength(config.centerStrength)
-      .x((d: any) => {
-        const analysisType = d.data.analysisType || 'default';
-        const categoryPos = this.categoryTypePositions.get(analysisType);
-        const svgElements = this.svgManager.getElements();
-        return categoryPos ? categoryPos.x : (svgElements?.dimensions.width || 800) / 2;
-      }));
-
-    this.simulation.force('category-y', d3.forceY()
-      .strength(config.centerStrength)
-      .y((d: any) => {
-        const analysisType = d.data.analysisType || 'default';
-        const categoryPos = this.categoryTypePositions.get(analysisType);
-        const svgElements = this.svgManager.getElements();
-        return categoryPos ? categoryPos.y : (svgElements?.dimensions.height || 600) / 2;
-      }));
-
-    // Boost alpha for smooth transition (D3's built-in approach!)
-    const currentAlpha = this.simulation.alpha();
-    const boostAlpha = Math.max(currentAlpha, 0.3); // Higher boost for force changes
-    this.simulation.alpha(boostAlpha);
+    // Update existing forces instead of recreating
+    const collisionForce = this.simulation.force('collision') as d3.ForceCollide<any>;
+    const categoryXForce = this.simulation.force('category-x') as d3.ForceX<any>;
+    const categoryYForce = this.simulation.force('category-y') as d3.ForceY<any>;
     
-    console.log(`🎯 Density "${preset}" applied. Alpha boosted from ${currentAlpha.toFixed(3)} to ${boostAlpha.toFixed(3)}`);
+    if (collisionForce) {
+      collisionForce.radius((d: any) => d.r + config.collidePadding);
+      collisionForce.strength(Math.max(0, Math.min(1, config.repulseStrength)));
+    }
+    
+    if (categoryXForce) {
+      categoryXForce.strength(config.centerStrength);
+    }
+    
+    if (categoryYForce) {
+      categoryYForce.strength(config.centerStrength);
+    }
+
+    // Use D3's native restart for smooth transition
+    this.simulation.restart();
   }
 
   /**
@@ -611,28 +587,21 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .alphaMin(alphaMin)
         .alphaTarget(alphaTarget);
         
-      // Update force strengths
-      const svgElements = this.svgManager.getElements();
-      if (svgElements) {
-        this.simulation
-          .force('category-x', d3.forceX()
-            .strength(centerStrength)
-            .x((d: any) => {
-              const analysisType = d.data.analysisType || 'default';
-              const categoryPos = this.categoryTypePositions.get(analysisType);
-              return categoryPos ? categoryPos.x : svgElements.dimensions.width / 2;
-            }))
-          .force('category-y', d3.forceY()
-            .strength(centerStrength)
-            .y((d: any) => {
-              const analysisType = d.data.analysisType || 'default';
-              const categoryPos = this.categoryTypePositions.get(analysisType);
-              return categoryPos ? categoryPos.y : svgElements.dimensions.height / 2;
-            }))
-          .force('collision', d3.forceCollide()
-            .radius((d: any) => d.r + collidePadding)
-            .strength(Math.max(0, Math.min(1, repulseStrength))));
+      // Update existing forces instead of recreating them
+      const categoryXForce = this.simulation.force('category-x') as d3.ForceX<any>;
+      const categoryYForce = this.simulation.force('category-y') as d3.ForceY<any>;
+      const collisionForce = this.simulation.force('collision') as d3.ForceCollide<any>;
+      const boundaryXForce = this.simulation.force('boundary-x') as d3.ForceX<any>;
+      const boundaryYForce = this.simulation.force('boundary-y') as d3.ForceY<any>;
+      
+      if (categoryXForce) categoryXForce.strength(centerStrength);
+      if (categoryYForce) categoryYForce.strength(centerStrength);
+      if (collisionForce) {
+        collisionForce.radius((d: any) => d.r + collidePadding);
+        collisionForce.strength(Math.max(0, Math.min(1, repulseStrength)));
       }
+      if (boundaryXForce) boundaryXForce.strength(1.0);
+      if (boundaryYForce) boundaryYForce.strength(1.0);
     }
     
     return this;
@@ -764,7 +733,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       
       // Apply a single X force that handles all groups
       this.simulation.force('filter-x', d3.forceX()
-        .strength(0.2)  // Reduced from 0.5 for gentler grouping
+        .strength(0.6)  // Moderate grouping force, subordinate to boundary forces
         .x((d: any) => {
           const originalData = d.data.data || d.data;
           const nodeGroup = originalData[filterField] || 'Other';
@@ -774,7 +743,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         
       // Apply a single Y force that handles all groups  
       this.simulation.force('filter-y', d3.forceY()
-        .strength(0.2)  // Reduced from 0.5 for gentler grouping
+        .strength(0.6)  // Moderate grouping force, subordinate to boundary forces
         .y((d: any) => {
           const originalData = d.data.data || d.data;
           const nodeGroup = originalData[filterField] || 'Other';
@@ -788,15 +757,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         .strength(0.7)); // Increased collision to prevent overlap
       
       // Update velocity decay for smoother animation
-      this.simulation.velocityDecay(0.4);
+      this.simulation.velocityDecay(0.3);
       
       
       // No restart needed - alphaTarget keeps simulation alive
-      console.log('🔄 Filter applied - simulation continues with existing energy');
-      
-      // Check if simulation is running
-      setTimeout(() => {
-      }, 100);
     }
 
     // Add filter labels
@@ -844,7 +808,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         }));
       
       // No restart needed - alphaTarget keeps simulation alive
-      console.log('🔄 Filter reset - simulation continues with existing energy');
     }
 
     // Remove filter labels
@@ -936,34 +899,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       // Update existing simulation with new nodes
       this.simulation.nodes(nodes);
       
-      // Update the tick function to handle the new bubble groups WITH boundary constraints
+      // Update tick handler to use minimal DOM-only approach (boundary force handles constraints)
       this.simulation.on('tick', () => {
-        // Get current nodes from simulation
-        const currentNodes = this.simulation ? this.simulation.nodes() : [];
-        
-        // Constrain bubbles to canvas boundaries with damping
-        currentNodes.forEach(node => {
-          const radius = node.r;
-          const dampingFactor = 0.3; // Reduce velocity on bounce
-          
-          // Bounce off boundaries with damping
-          if (node.x - radius < 0) {
-            node.x = radius;
-            node.vx = Math.abs(node.vx) * dampingFactor; // Damped bounce
-          } else if (node.x + radius > dimensions.width) {
-            node.x = dimensions.width - radius;
-            node.vx = -Math.abs(node.vx) * dampingFactor; // Damped bounce
-          }
-          if (node.y - radius < 0) {
-            node.y = radius;
-            node.vy = Math.abs(node.vy) * dampingFactor; // Damped bounce
-          } else if (node.y + radius > dimensions.height) {
-            node.y = dimensions.height - radius;
-            node.vy = -Math.abs(node.vy) * dampingFactor; // Damped bounce
-          }
-        });
-        
-        // Update ALL bubble groups in the SVG, not just the initial selection
         const svgElements = this.svgManager.getElements();
         if (svgElements) {
           svgElements.svg.selectAll('g.bubble')
@@ -977,14 +914,12 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       this.simulation.force('collision', d3.forceCollide()
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))));
-      
       // No restart needed - alphaTarget keeps simulation alive for new bubbles
-      console.log('➕ New bubbles added - simulation continues with existing energy');
       
-      // Log if any nodes have undefined velocity
+      // Check for any nodes with undefined velocity
       nodes.forEach(node => {
         if (node.vx === undefined || node.vy === undefined) {
-          console.log(`⚠️ Node with undefined velocity: ${JSON.stringify(node.data)}`);
+          console.warn(`Node with undefined velocity: ${JSON.stringify(node.data)}`);
         }
       });
     } else {
@@ -992,6 +927,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       this.startForceSimulation(nodes, bubbleGroups, dimensions);
     }
   }
+
+
 
   /**
    * Get the initial position for a given analysis type
@@ -1021,13 +958,10 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
    * This prevents violent movement by setting up stable positions once
    */
   private setupFixedCategoryPositions(): void {
-    // Initialize with default positions that will be scaled on first render
-    // These are proportional positions that get scaled to actual dimensions
-    this.categoryTypePositions.set('duration', { x: 0.5, y: 0.15 });     // Top center
-    this.categoryTypePositions.set('viewCount', { x: 0.15, y: 0.85 });   // Bottom left
-    this.categoryTypePositions.set('verification', { x: 0.85, y: 0.85 }); // Bottom right
-    
-    // Fixed category positions initialized
+    // Store normalized positions (0-1 range) with safe margins from edges
+    this.normalizedPositions.set('duration', { x: 0.5, y: 0.3 });      // Top center (safe margin)
+    this.normalizedPositions.set('viewCount', { x: 0.3, y: 0.7 });     // Bottom left (safe margin)
+    this.normalizedPositions.set('verification', { x: 0.7, y: 0.7 });  // Bottom right (safe margin)
   }
 
   /**
@@ -1046,16 +980,86 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     this.lastCanvasWidth = dimensions.width;
     this.lastCanvasHeight = dimensions.height;
     
-    // Always scale the fixed positions to actual canvas dimensions
-    // This ensures our fixed positions are always in the right coordinates
-    this.categoryTypePositions.forEach((pos, type) => {
-      this.categoryTypePositions.set(type, {
-        x: pos.x * dimensions.width,
-        y: pos.y * dimensions.height
-      });
+    // Scale normalized positions (0-1) to actual canvas dimensions
+    // This avoids double-scaling bug by always starting from normalized values
+    this.normalizedPositions.forEach((normalizedPos, type) => {
+      const absolutePos = {
+        x: normalizedPos.x * dimensions.width,
+        y: normalizedPos.y * dimensions.height
+      };
+      this.categoryTypePositions.set(type, absolutePos);
     });
     
     this.positionsInitialized = true;
+    
+    // Update force simulation with new category positions
+    this.updateCategoryForces(dimensions);
+  }
+
+  /**
+   * Update the D3 force simulation's category forces with current positions
+   * This is necessary because forces are closures that capture positions at creation time
+   */
+  private updateCategoryForces(dimensions: any): void {
+    if (!this.simulation) {
+      return;
+    }
+
+    const { centerStrength } = this.motionConfig;
+
+    // Update category forces with new positions (need to recreate due to target function changes)
+    this.simulation.force('category-x', d3.forceX()
+      .strength(centerStrength)
+      .x((d: any) => {
+        const analysisType = d.data.analysisType || 'default';
+        const categoryPos = this.categoryTypePositions.get(analysisType);
+        return categoryPos ? categoryPos.x : dimensions.width / 2;
+      }));
+
+    this.simulation.force('category-y', d3.forceY()
+      .strength(centerStrength)
+      .y((d: any) => {
+        const analysisType = d.data.analysisType || 'default';
+        const categoryPos = this.categoryTypePositions.get(analysisType);
+        return categoryPos ? categoryPos.y : dimensions.height / 2;
+      }));
+
+    // Update boundary forces with new dimensions (need to recreate due to target function changes)
+    this.simulation.force('boundary-x', d3.forceX()
+      .strength(1.0)
+      .x((d: any) => {
+        const radius = d.r || 0;
+        const safeLeft = radius + 20;
+        const safeRight = dimensions.width - radius - 20;
+        
+        // Always pull toward safe center if outside bounds
+        if (d.x < safeLeft) return safeLeft;
+        if (d.x > safeRight) return safeRight;
+        
+        // Even when in bounds, pull slightly toward center for stability
+        const center = dimensions.width / 2;
+        const pullFactor = 0.02; // Gentle center pull
+        return d.x + (center - d.x) * pullFactor;
+      }));
+    
+    this.simulation.force('boundary-y', d3.forceY()
+      .strength(1.0)
+      .y((d: any) => {
+        const radius = d.r || 0;
+        const safeTop = radius + 20;
+        const safeBottom = dimensions.height - radius - 20;
+        
+        // Always pull toward safe center if outside bounds
+        if (d.y < safeTop) return safeTop;
+        if (d.y > safeBottom) return safeBottom;
+        
+        // Even when in bounds, pull slightly toward center for stability
+        const center = dimensions.height / 2;
+        const pullFactor = 0.02; // Gentle center pull
+        return d.y + (center - d.y) * pullFactor;
+      }));
+
+
   }
 
   
@@ -1125,11 +1129,195 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   }
 
   /**
+   * Calculate optimal density preset based on node count and available area
+   * @param nodeCount - Number of nodes in the simulation
+   * @param area - Available container area (width * height)
+   * @returns Optimal density preset
+   */
+  private calculateOptimalDensity(nodeCount: number, area: number): 'sparse' | 'balanced' | 'dense' | 'compact' {
+    const nodePerArea = nodeCount / area;
+    const scaledDensity = nodePerArea * 1000000; // Scale for easier thresholds
+    
+    if (scaledDensity < 0.5) {
+      return 'sparse';
+    } else if (scaledDensity < 1.5) {
+      return 'balanced';
+    } else if (scaledDensity < 3.0) {
+      return 'dense';
+    } else {
+      return 'compact';
+    }
+  }
+
+  /**
+   * Comprehensive resize handler that recalculates density, positions, and bubble sizes
+   * Should be called when viewport or container dimensions change significantly
+   * 
+   * Features:
+   * - Automatically calculates optimal density based on viewport size and node count
+   * - Applies viewport-specific optimizations (mobile/tablet/desktop)
+   * - Recalculates bubble sizes with responsive scaling factors
+   * - Immediately constrains any out-of-bounds bubbles to new viewport
+   * - Updates force simulation with current dimensions (fixes stale dimension bug)
+   * - Provides smooth transitions with device-appropriate animation durations
+   */
+  private handleResize(): void {
+    const svgElements = this.svgManager.getElements();
+    if (!svgElements || !this.simulation) {
+      return;
+    }
+    
+    const { dimensions } = svgElements;
+    const nodes = this.simulation.nodes();
+    const nodeCount = nodes.length;
+    
+    if (nodeCount === 0) return;
+    
+
+    
+    // 1. Recalculate optimal density based on new container size
+    const area = dimensions.width * dimensions.height;
+    const optimalDensity = this.calculateOptimalDensity(nodeCount, area);
+    
+    // 2. Apply viewport-specific adjustments
+    const aspectRatio = dimensions.width / dimensions.height;
+    const isMobile = dimensions.width < 768;
+    const isTablet = dimensions.width >= 768 && dimensions.width < 1024;
+    const isPortrait = aspectRatio < 1;
+    
+    let adjustedDensity = optimalDensity;
+    
+    // Adjust density for different viewport types
+    if (isMobile) {
+      // Mobile devices: prefer less dense for touch interaction
+      if (adjustedDensity === 'compact') adjustedDensity = 'dense';
+      if (adjustedDensity === 'dense') adjustedDensity = 'balanced';
+    } else if (isTablet && isPortrait) {
+      // Tablet portrait: moderate density
+      if (adjustedDensity === 'compact') adjustedDensity = 'dense';
+    }
+    
+    // 3. Apply new density (this updates force simulation parameters)
+    this.setDensity(adjustedDensity);
+    
+    // 4. Update category positions for new canvas size
+    this.updatePositionsForCanvasSize(dimensions);
+    
+    // 5. Ensure category forces are updated with new positions (critical for resize)
+    this.updateCategoryForces(dimensions);
+    
+    // 6. Recalculate bubble radii for new container area with viewport-specific scaling
+    const { minRadius, maxRadius } = this.calculateDensityAwareRadius(dimensions, nodeCount);
+    
+    // Apply viewport-specific radius scaling
+    let radiusScale: (value: number) => number;
+    const baseScale = d3.scaleSqrt()
+      .domain([0, this.maxDataValue])
+      .range([minRadius, maxRadius])
+      .clamp(true);
+    
+    if (isMobile) {
+      // Slightly larger bubbles on mobile for better touch targets
+      radiusScale = (value: number) => Math.max(baseScale(value) * 1.1, 12);
+    } else if (isTablet) {
+      // Moderate scaling for tablets
+      radiusScale = (value: number) => Math.max(baseScale(value) * 1.05, 10);
+    } else {
+      // Standard scaling for desktop
+      radiusScale = baseScale;
+    }
+    
+    // Update maximum data value from current nodes if needed
+    const currentMaxValue = d3.max(nodes, (d: any) => d.data?.size || d.size) || 0;
+    this.maxDataValue = Math.max(this.maxDataValue, currentMaxValue);
+    
+    // 7. Update node radii in simulation and DOM
+    nodes.forEach(node => {
+      const newRadius = radiusScale(node.data?.size || node.size || 0);
+      node.r = newRadius;
+
+    });
+    
+    // 8. Update visual elements with device-appropriate animation duration
+    const animationDuration = isMobile ? 300 : 500; // Faster animations on mobile
+    svgElements.svg.selectAll('g.bubble circle')
+      .transition()
+      .duration(animationDuration)
+      .attr('r', (d: any) => d.r);
+    
+    // 9. Let the D3-native boundary force handle constraint enforcement
+    // The force system will automatically constrain nodes on the next tick
+    
+    // 10. Re-initialize collision force with new radii
+    const { collidePadding, repulseStrength } = this.motionConfig;
+    this.simulation.force('collision', d3.forceCollide()
+      .radius((d: any) => d.r + collidePadding)
+      .strength(Math.max(0, Math.min(1, repulseStrength))));
+    
+    // 11. Boost simulation energy for smooth transition (less aggressive on mobile)
+        // Use D3's native restart for resize transitions
+    this.simulation.restart();
+
+
+  }
+
+  /**
+   * Public method to trigger responsive recalculation
+   * Can be called externally when container size changes
+   */
+  public triggerResize(): void {
+    this.handleResize();
+  }
+
+  /**
+   * Debug method to check all bubble positions and log any that are out of bounds
+   * Can be called externally for debugging viewport issues
+   */
+  public debugBubblePositions(): void {
+    if (!this.simulation) {
+      console.log('DEBUG: No simulation active');
+      return;
+    }
+
+    const svgElements = this.svgManager.getElements();
+    if (!svgElements) {
+      console.log('DEBUG: No SVG elements available');
+      return;
+    }
+
+    const nodes = this.simulation.nodes();
+    const { width, height } = svgElements.dimensions;
+    let outOfBoundsCount = 0;
+
+    console.log(`DEBUGGING ${nodes.length} bubbles in ${width}×${height} viewport:`);
+
+    nodes.forEach((node, index) => {
+      const radius = node.r || 0;
+      const leftEdge = node.x - radius;
+      const rightEdge = node.x + radius;
+      const topEdge = node.y - radius;
+      const bottomEdge = node.y + radius;
+
+      const isOutOfBounds = leftEdge < 0 || rightEdge > width || topEdge < 0 || bottomEdge > height;
+      
+      if (isOutOfBounds) {
+        outOfBoundsCount++;
+        console.log(`   Bubble ${index}: (${node.x.toFixed(0)}, ${node.y.toFixed(0)}) radius=${radius.toFixed(0)} - Edges: L=${leftEdge.toFixed(0)}, R=${rightEdge.toFixed(0)}, T=${topEdge.toFixed(0)}, B=${bottomEdge.toFixed(0)}`);
+      }
+    });
+
+    console.log(`SUMMARY: ${outOfBoundsCount}/${nodes.length} bubbles are out of bounds`);
+  }
+
+
+
+  /**
    * Clean up resources and stop simulation
    */
   override destroy(): void {
     this.stopSimulation();
     this.removeFilterLabels();
+    this.isResponsiveSetup = false; // Reset for potential reinitialization
     super.destroy();
   }
 }

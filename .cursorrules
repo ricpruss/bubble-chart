@@ -6,6 +6,7 @@
 - Verify before claiming success
 - Preserve existing functionality
 - Minimal diffs
+- Make sure we do not reimpliment something D3 already does. This is supposed to be a high level API of the same fluent style as D3 but not reimplimenting things.
 
 ## **🖥️ DEVELOPMENT SERVER**
 **NEVER start servers** - User always runs `npm run dev` (Vite server)

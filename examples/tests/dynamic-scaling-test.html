@@ -142,6 +142,11 @@
     }
     
     function addMediumData() {
+      if (!chart) {
+        log('🔧 Auto-initializing chart with small data first...');
+        startWithSmallData();
+      }
+      
       const mediumData = [
         { id: `item-${nextId++}`, category: 'Medium A', count: 25, analysisType: 'medium' },
         { id: `item-${nextId++}`, category: 'Medium B', count: 35, analysisType: 'medium' }
@@ -155,6 +160,11 @@
     }
     
     function addLargeData() {
+      if (!chart) {
+        log('🔧 Auto-initializing chart with small data first...');
+        startWithSmallData();
+      }
+      
       const largeData = [
         { id: `item-${nextId++}`, category: 'Large A', count: 120, analysisType: 'large' },
         { id: `item-${nextId++}`, category: 'Large B', count: 180, analysisType: 'large' }
@@ -168,6 +178,11 @@
     }
     
     function addManyBubbles() {
+      if (!chart) {
+        log('🔧 Auto-initializing chart with small data first...');
+        startWithSmallData();
+      }
+      
       const manyData = [
         { id: `item-${nextId++}`, category: 'Extra A', count: 15, analysisType: 'extra' },
         { id: `item-${nextId++}`, category: 'Extra B', count: 22, analysisType: 'extra' },
