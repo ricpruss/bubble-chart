@@ -2,7 +2,7 @@
 <html>
 <head>
   <meta charset="utf-8">
-  <title>Motion Density Test</title>
+  <title>Motion Streaming & Resize Test</title>
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <script src="https://d3js.org/d3.v7.min.js"></script>
   <script src="../../dist/bubble-chart.min.js"></script>
@@ -27,23 +27,38 @@
       border-radius: 8px;
       background: #fafafa;
       margin: 20px 0;
+      resize: both;
+      overflow: auto;
+      min-width: 300px;
+      min-height: 200px;
     }
     .controls {
-      display: flex;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
       gap: 10px;
       margin-bottom: 20px;
-      flex-wrap: wrap;
     }
     button {
-      padding: 10px 16px;
+      padding: 12px 16px;
       border: none;
       border-radius: 6px;
       cursor: pointer;
       font-weight: 500;
       background: #007bff;
       color: white;
+      transition: background 0.2s;
     }
     button:hover { background: #0056b3; }
+    button.add-small { background: #28a745; }
+    button.add-medium { background: #ffc107; color: #000; }
+    button.add-large { background: #dc3545; }
+    button.reset { background: #6c757d; }
+    button.resize { background: #17a2b8; }
+    button:disabled { 
+      background: #6c757d; 
+      cursor: not-allowed; 
+      opacity: 0.6;
+    }
     .info {
       background: #e3f2fd;
       padding: 15px;
@@ -51,6 +66,14 @@
       margin: 10px 0;
       font-size: 14px;
       color: #1976d2;
+    }
+    .stats {
+      background: #f8f9fa;
+      padding: 15px;
+      border-radius: 8px;
+      margin: 10px 0;
+      font-size: 14px;
+      border-left: 4px solid #007bff;
     }
     .log {
       background: #f5f5f5;
@@ -67,24 +90,36 @@
 </head>
 <body>
   <div class="container">
-    <h1>🎯 Motion Density Test</h1>
-    <p>Testing density-aware radius scaling for motion bubbles, including handling of negative values.</p>
+    <h1>🎯 Motion Streaming & Resize Test</h1>
+    <p>Testing streaming bubble additions and responsive resizing for motion charts.</p>
     
     <div class="controls">
-      <button onclick="testSmallDataset()">Test Small Dataset (3 items)</button>
-      <button onclick="testMediumDataset()">Test Medium Dataset (12 items)</button>
-      <button onclick="testLargeDataset()">Test Large Dataset (50 items)</button>
-      <button onclick="testNegativeValues()">Test With Negative Values</button>
+      <button class="add-small" onclick="addSmallBatch()">Add Small Batch (3-5)</button>
+      <button class="add-medium" onclick="addMediumBatch()">Add Medium Batch (10-15)</button>
+      <button class="add-large" onclick="addLargeBatch()">Add Large Batch (20-30)</button>
+      <button class="reset" onclick="resetChart()">Reset Chart</button>
+      <button class="resize" onclick="testResize()">Test Auto-Resize</button>
       <button onclick="clearLog()">Clear Log</button>
     </div>
     
-    <div class="info" id="status">Ready to test motion bubble density scaling...</div>
+    <div class="stats" id="stats">
+      <strong>Chart Stats:</strong> 0 bubbles | Container: 0×0px
+    </div>
+    
+    <div class="info" id="status">Ready to test streaming bubble additions...</div>
     <div id="chart"></div>
     <div class="log" id="log"></div>
   </div>
 
   <script>
     let currentChart = null;
+    let bubbleData = [];
+    let bubbleCounter = 0;
+    let resizeObserver = null;
+
+    // Categories for bubble generation
+    const categories = ['Tech', 'Finance', 'Healthcare', 'Energy', 'Retail', 'Education', 'Media', 'Transport'];
+    const regions = ['North', 'South', 'East', 'West', 'Central'];
 
     function log(message) {
       const logDiv = document.getElementById('log');
@@ -92,14 +127,6 @@
       logDiv.innerHTML += `[${timestamp}] ${message}\n`;
       logDiv.scrollTop = logDiv.scrollHeight;
       console.log(message);
-    }
-
-    function clearChart() {
-      document.getElementById('chart').innerHTML = '';
-      if (currentChart && currentChart.destroy) {
-        currentChart.destroy();
-      }
-      currentChart = null;
     }
 
     function clearLog() {
@@ -111,136 +138,223 @@
       log(`STATUS: ${message}`);
     }
 
-    function testSmallDataset() {
-      clearChart();
-      updateStatus('Testing small dataset (3 items) - should see large bubbles...');
+    function updateStats() {
+      const chartDiv = document.getElementById('chart');
+      const rect = chartDiv.getBoundingClientRect();
+      const circles = document.querySelectorAll('#chart circle');
       
-      const data = [
-        { label: "A", size: 100, category: "Group 1" },
-        { label: "B", size: 200, category: "Group 2" },
-        { label: "C", size: 150, category: "Group 3" }
-      ];
+      document.getElementById('stats').innerHTML = 
+        `<strong>Chart Stats:</strong> ${bubbleData.length} bubbles | ` +
+        `Container: ${Math.round(rect.width)}×${Math.round(rect.height)}px | ` +
+        `Rendered: ${circles.length} circles`;
+    }
 
-      log(`Small dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
-
-      currentChart = BubbleChart.create('#chart')
-        .withData(data)
-        .withLabel('label')
-        .withSize('size')
-        .withColor('category')
-        .withType('motion')
-        .withTheme('corporate')
-        .build();
-
-      setTimeout(() => {
-        const circles = document.querySelectorAll('#chart circle');
-        log(`Small dataset result: ${circles.length} circles created`);
-        circles.forEach((circle, i) => {
-          const r = circle.getAttribute('r');
-          log(`  Circle ${i + 1}: radius = ${r}px`);
+    function generateBubbles(count) {
+      const newBubbles = [];
+      for (let i = 0; i < count; i++) {
+        bubbleCounter++;
+        const category = categories[Math.floor(Math.random() * categories.length)];
+        const region = regions[Math.floor(Math.random() * regions.length)];
+        
+        newBubbles.push({
+          id: `bubble-${bubbleCounter}`,
+          label: `B${bubbleCounter}`,
+          name: `Bubble ${bubbleCounter}`,
+          size: Math.floor(Math.random() * 200) + 50, // 50-250 range
+          category: category,
+          region: region,
+          colorValue: category,
+          analysisType: ['duration', 'viewCount', 'verification'][Math.floor(Math.random() * 3)]
         });
-      }, 1000);
+      }
+      return newBubbles;
     }
 
-    function testMediumDataset() {
-      clearChart();
-      updateStatus('Testing medium dataset (12 items) - should see moderate sized bubbles...');
+    function initializeChart() {
+      if (currentChart) return;
       
-      const data = Array.from({length: 12}, (_, i) => ({
-        label: `Item ${i + 1}`,
-        size: 50 + (i * 25), // Range: 50-325
-        category: `Group ${(i % 3) + 1}`
-      }));
-
-      log(`Medium dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
-
+      // Start with a small initial dataset
+      bubbleData = generateBubbles(2);
+      
+      log('Initializing motion chart with streaming support...');
+      
       currentChart = BubbleChart.create('#chart')
-        .withData(data)
+        .withData(bubbleData)
         .withLabel('label')
         .withSize('size')
         .withColor('category')
+        .withKey(d => d.id) // Important for streaming updates
         .withType('motion')
-        .withTheme('ocean')
+        .withTheme('wave')
+        .withTooltips(d => [
+          { name: 'Bubble', value: d.label },
+          { name: 'Category', value: d.category },
+          { name: 'Region', value: d.region },
+          { name: 'Size', value: d.size }
+        ])
+        .withResponsive({
+          minWidth: 300,
+          minHeight: 200,
+          debounceMs: 100,
+          onResize: (dimensions) => {
+            log(`📏 Chart resized to: ${dimensions.width}×${dimensions.height}px`);
+            updateStats();
+          }
+        })
         .build();
 
-      setTimeout(() => {
-        const circles = document.querySelectorAll('#chart circle');
-        log(`Medium dataset result: ${circles.length} circles created`);
-        const radii = Array.from(circles).map(c => parseFloat(c.getAttribute('r')));
-        log(`  Radius range: ${Math.min(...radii).toFixed(1)} - ${Math.max(...radii).toFixed(1)}px`);
-      }, 1000);
-    }
-
-    function testLargeDataset() {
-      clearChart();
-      updateStatus('Testing large dataset (50 items) - should see smaller, densely packed bubbles...');
+      // Set up ResizeObserver to monitor container changes
+      setupResizeObserver();
       
-      const data = Array.from({length: 50}, (_, i) => ({
-        label: `Item ${i + 1}`,
-        size: 10 + (i * 5), // Range: 10-255
-        category: `Group ${(i % 5) + 1}`
-      }));
-
-      log(`Large dataset: ${data.length} items, size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
-
-      currentChart = BubbleChart.create('#chart')
-        .withData(data)
-        .withLabel('label')
-        .withSize('size')
-        .withColor('category')
-        .withType('motion')
-        .withTheme('forest')
-        .build();
-
-      setTimeout(() => {
-        const circles = document.querySelectorAll('#chart circle');
-        log(`Large dataset result: ${circles.length} circles created`);
-        const radii = Array.from(circles).map(c => parseFloat(c.getAttribute('r')));
-        log(`  Radius range: ${Math.min(...radii).toFixed(1)} - ${Math.max(...radii).toFixed(1)}px`);
-        log(`  Average radius: ${(radii.reduce((a, b) => a + b, 0) / radii.length).toFixed(1)}px`);
-      }, 1000);
+      log(`Chart initialized with ${bubbleData.length} bubbles`);
+      updateStats();
     }
 
-    function testNegativeValues() {
-      clearChart();
-      updateStatus('Testing dataset with negative values - should handle gracefully...');
+    function setupResizeObserver() {
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
       
-      const data = [
-        { label: "Profitable A", size: 1000, category: "Profitable" },
-        { label: "Loss B", size: -500, category: "Loss" },
-        { label: "Profitable C", size: 750, category: "Profitable" },
-        { label: "Loss D", size: -200, category: "Loss" },
-        { label: "Break Even", size: 0, category: "Neutral" },
-        { label: "Big Profit", size: 2000, category: "Profitable" }
-      ];
-
-      log(`Negative values dataset: ${data.length} items`);
-      log(`  Size range: ${d3.min(data, d => d.size)} - ${d3.max(data, d => d.size)}`);
-      log(`  Negative values: ${data.filter(d => d.size < 0).length}`);
-
-      currentChart = BubbleChart.create('#chart')
-        .withData(data)
-        .withLabel('label')
-        .withSize('size')
-        .withColor('category')
-        .withType('motion')
-        .withTheme('sunset')
-        .build();
-
-      setTimeout(() => {
-        const circles = document.querySelectorAll('#chart circle');
-        log(`Negative values result: ${circles.length} circles created`);
-        circles.forEach((circle, i) => {
-          const r = parseFloat(circle.getAttribute('r'));
-          const dataPoint = data[i];
-          log(`  "${dataPoint.label}" (size: ${dataPoint.size}): radius = ${r.toFixed(1)}px`);
-        });
-      }, 1000);
+      resizeObserver = new ResizeObserver((entries) => {
+        for (let entry of entries) {
+          const { width, height } = entry.contentRect;
+          log(`🔍 Container resize detected: ${Math.round(width)}×${Math.round(height)}px`);
+          updateStats();
+        }
+      });
+      
+      resizeObserver.observe(document.getElementById('chart'));
     }
 
-    // Auto-run small dataset test on load
+    function addSmallBatch() {
+      if (!currentChart) initializeChart();
+      
+      const newBubbles = generateBubbles(Math.floor(Math.random() * 3) + 3); // 3-5 bubbles
+      bubbleData = [...bubbleData, ...newBubbles];
+      
+      log(`🟢 Adding small batch: ${newBubbles.length} bubbles`);
+      updateStatus(`Adding ${newBubbles.length} bubbles to chart...`);
+      
+      // Update chart with new data
+      currentChart.updateData(bubbleData);
+      
+      setTimeout(() => {
+        updateStats();
+        log(`Total bubbles now: ${bubbleData.length}`);
+      }, 500);
+    }
+
+    function addMediumBatch() {
+      if (!currentChart) initializeChart();
+      
+      const newBubbles = generateBubbles(Math.floor(Math.random() * 6) + 10); // 10-15 bubbles
+      bubbleData = [...bubbleData, ...newBubbles];
+      
+      log(`🟡 Adding medium batch: ${newBubbles.length} bubbles`);
+      updateStatus(`Adding ${newBubbles.length} bubbles to chart...`);
+      
+      currentChart.updateData(bubbleData);
+      
+      setTimeout(() => {
+        updateStats();
+        log(`Total bubbles now: ${bubbleData.length}`);
+      }, 500);
+    }
+
+    function addLargeBatch() {
+      if (!currentChart) initializeChart();
+      
+      const newBubbles = generateBubbles(Math.floor(Math.random() * 11) + 20); // 20-30 bubbles
+      bubbleData = [...bubbleData, ...newBubbles];
+      
+      log(`🔴 Adding large batch: ${newBubbles.length} bubbles`);
+      updateStatus(`Adding ${newBubbles.length} bubbles to chart...`);
+      
+      currentChart.updateData(bubbleData);
+      
+      setTimeout(() => {
+        updateStats();
+        log(`Total bubbles now: ${bubbleData.length}`);
+        
+        // Test density adjustment for large datasets
+        if (bubbleData.length > 30 && currentChart.getBuilder) {
+          const builder = currentChart.getBuilder();
+          if (builder.setDensity) {
+            builder.setDensity('dense');
+            log(`📦 Switched to dense layout for ${bubbleData.length} bubbles`);
+          }
+        }
+      }, 500);
+    }
+
+    function resetChart() {
+      log('🔄 Resetting chart...');
+      updateStatus('Resetting chart to initial state...');
+      
+      if (currentChart && currentChart.getBuilder) {
+        const builder = currentChart.getBuilder();
+        if (builder.destroy) {
+          builder.destroy();
+        }
+      }
+      
+      if (resizeObserver) {
+        resizeObserver.disconnect();
+      }
+      
+      document.getElementById('chart').innerHTML = '';
+      currentChart = null;
+      bubbleData = [];
+      bubbleCounter = 0;
+      
+      // Auto-reinitialize
+      setTimeout(() => {
+        initializeChart();
+        updateStatus('Chart reset complete. Ready for testing...');
+      }, 500);
+    }
+
+    function testResize() {
+      if (!currentChart) {
+        initializeChart();
+        setTimeout(testResize, 1000);
+        return;
+      }
+      
+      log('🔧 Testing automatic resize functionality...');
+      updateStatus('Testing resize functionality...');
+      
+      const chartDiv = document.getElementById('chart');
+      const originalHeight = chartDiv.style.height;
+      
+      // Simulate resize by changing container dimensions
+      chartDiv.style.height = '300px';
+      log('📐 Container height changed to 300px');
+      
+      setTimeout(() => {
+        chartDiv.style.height = '700px';
+        log('📐 Container height changed to 700px');
+      }, 2000);
+      
+      setTimeout(() => {
+        chartDiv.style.height = originalHeight || '500px';
+        log('📐 Container height restored to original');
+        updateStatus('Resize test complete. Check that bubbles adapted to size changes.');
+      }, 4000);
+    }
+
+    // Initialize chart when page loads
     document.addEventListener('DOMContentLoaded', () => {
-      setTimeout(testSmallDataset, 500);
+      log('🚀 Motion streaming test page loaded');
+      setTimeout(() => {
+        initializeChart();
+        updateStatus('Chart initialized. Click buttons to add bubbles and test streaming!');
+      }, 500);
+    });
+
+    // Update stats on window resize
+    window.addEventListener('resize', () => {
+      setTimeout(updateStats, 100);
     });
   </script>
 </body>

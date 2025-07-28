@@ -713,23 +713,49 @@
 
       toggleFilter(categoryData) {
         const categoryId = categoryData.id;
+        const categoryName = categoryData.category;
         
         if (this.activeFilters.has(categoryId)) {
           // Remove filter
           this.activeFilters.delete(categoryId);
+          // Hide indicator dots - pass the category name since that's what matches the bubble label
+          this.setFilterIndicator(categoryName, false);
         } else {
           // Add filter
           this.activeFilters.add(categoryId);
+          // Show indicator dots - pass the category name since that's what matches the bubble label
+          this.setFilterIndicator(categoryName, true);
         }
         
         this.applyFilters();
         this.updateFilterStatus();
       }
 
+      setFilterIndicator(categoryId, showIndicator) {
+        // Get the underlying motion bubble instance
+        const motionBubbleInstance = this.bubbleChart.getBuilder();
+        if (motionBubbleInstance && motionBubbleInstance.setFilterIndicators) {
+          motionBubbleInstance.setFilterIndicators(categoryId, showIndicator);
+        } else {
+          console.log('❌ Could not access MotionBubble setFilterIndicators method');
+        }
+      }
+
+      clearAllFilterIndicators() {
+        // Get the underlying motion bubble instance
+        const motionBubbleInstance = this.bubbleChart.getBuilder();
+        if (motionBubbleInstance && motionBubbleInstance.clearAllFilterIndicators) {
+          motionBubbleInstance.clearAllFilterIndicators();
+        } else {
+          console.log('❌ Could not access MotionBubble clearAllFilterIndicators method');
+        }
+      }
+
       applyFilters() {
         if (this.activeFilters.size === 0) {
-          // No filters active - show all videos
+          // No filters active - show all videos and clear all indicators
           this.filteredData = [...this.videoData];
+          this.clearAllFilterIndicators();
         } else {
           // Use categorizer's filtering method
           const categoryIds = Array.from(this.activeFilters);
