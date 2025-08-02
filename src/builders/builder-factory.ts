@@ -1,5 +1,4 @@
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions } from '../config/index.js';
+import type { BubbleChartData, BubbleChartOptions } from '../types.js';
 import { BubbleBuilder } from './bubble-builder.js';
 import { TreeBuilder } from './tree-builder.js';
 import { OrbitBuilder } from './orbit-builder.js';
@@ -21,6 +20,7 @@ export class BuilderFactory {
   static create<T extends BubbleChartData = BubbleChartData>(
     config: BubbleChartOptions
   ): BubbleBuilder<T> | TreeBuilder<T> | OrbitBuilder<T> | MotionBubble<T> | ListBuilder<T> | WaveBubble<T> | LiquidBubble<T> {
+    
     switch (config.type) {
       case 'orbit':
         return new OrbitBuilder<T>(config);

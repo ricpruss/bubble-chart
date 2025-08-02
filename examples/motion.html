@@ -78,11 +78,10 @@
       .withType("motion")
       .withColor('sector')
       .withTheme("wave")
-      .withResponsive({
-        minWidth: 320,
-        maxWidth: 1200,
-        minHeight: 300,
-        maxHeight: 700,
+              .withResponsive({
+          minWidth: 320,
+          minHeight: 300,
+          maxHeight: 700,
         debounceMs: 200,
         onResize: (dimensions) => {
           console.log('📏 Chart resized to:', dimensions);

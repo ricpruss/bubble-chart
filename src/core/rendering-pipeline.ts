@@ -4,10 +4,14 @@
  * Eliminates duplication across all chart builders
  */
 
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions, StreamingOptions, StreamingUpdateResult } from '../config/index.js';
-import { type ProcessedDataPoint } from './data-processor.js';
-import { D3DataUtils } from '../d3/index.js';
+import type { 
+  BubbleChartData, 
+  BubbleChartOptions, 
+  StreamingOptions, 
+  StreamingUpdateResult,
+  ProcessedDataPoint
+} from '../types.js';
+import { createPackLayout, formatLabel, createFontScale, getUniqueValues, createColorScale } from './utils.js';
 // import type { SVGElements } from './svg-manager.js';
 
 export interface RenderingContext {
@@ -80,8 +84,8 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
   ): StreamingUpdateResult {
     const { svg, width, height, config } = this.context;
 
-    // Create layout nodes from new data using D3DataUtils
-    const layoutNodes = D3DataUtils.createPackLayout(
+    // Create layout nodes from new data using createPackLayout
+    const layoutNodes = createPackLayout(
       data as any,
       width,
       height,
@@ -92,12 +96,12 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
     const radiusExtent = layoutNodes.length > 0 ? 
       [Math.min(...layoutNodes.map(d => d.r)), Math.max(...layoutNodes.map(d => d.r))] as [number, number] :
       [10, 50] as [number, number];
-    const fontScale = D3DataUtils.createFontScale(radiusExtent, [10, 20]);
+    const fontScale = createFontScale(radiusExtent, [10, 20]);
     
     // Create color scale if color data exists
-    const colorValues = D3DataUtils.getUniqueValues(data as any, 'colorValue');
+    const colorValues = getUniqueValues(data as any, 'colorValue');
     const colorScale = colorValues.length > 0 ? 
-      D3DataUtils.createColorScale(colorValues) : 
+      createColorScale(colorValues) : 
       () => config.defaultColor || '#ddd';
 
     // Create data binding with key function
@@ -143,20 +147,20 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
             .style('stroke', config.defaultColor || '#fff')
             .style('stroke-width', 2);
 
-          // Add labels to new bubbles
-          enterGroups.append('text')
-            .attr('text-anchor', 'middle')
-            .attr('dominant-baseline', 'central')
-            .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
-            .style('font-weight', 'bold')
-            .style('fill', '#333')
-            .style('pointer-events', 'none')
-            .text((d: LayoutNode) => {
-              const processedData = d.data;
-              const label = processedData?.label || 'Unknown';
-              const maxLength = Math.max(3, Math.floor(d.r / 4));
-              return D3DataUtils.formatLabel(label, maxLength);
-            });
+                  // Add labels to new bubbles
+        enterGroups.append('text')
+          .attr('text-anchor', 'middle')
+          .attr('dominant-baseline', 'central')
+          .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
+          .style('font-weight', 'bold')
+          .style('fill', '#333')
+          .style('pointer-events', 'none')
+          .text((d: LayoutNode) => {
+            const processedData = d.data;
+            const label = processedData?.label || 'Unknown';
+            const maxLength = Math.max(3, Math.floor(d.r / 4));
+            return formatLabel(label, maxLength);
+          });
 
           // Apply enter animation with D3 transitions
           enterGroups
@@ -200,17 +204,17 @@ export class RenderingPipeline<T extends BubbleChartData = BubbleChartData> {
               return processedData?.colorValue ? colorScale(processedData.colorValue) : (config.defaultColor || '#ddd');
             });
 
-          // Update labels
-          update.select('text')
-            .transition('update-text')
-            .duration(optimalUpdateDuration)
-            .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
-            .text((d: LayoutNode) => {
-              const processedData = d.data;
-              const label = processedData?.label || 'Unknown';
-              const maxLength = Math.max(3, Math.floor(d.r / 4));
-              return D3DataUtils.formatLabel(label, maxLength);
-            });
+                  // Update labels
+        update.select('text')
+          .transition('update-text')
+          .duration(optimalUpdateDuration)
+          .style('font-size', (d: LayoutNode) => `${fontScale(d.r)}px`)
+          .text((d: LayoutNode) => {
+            const processedData = d.data;
+            const label = processedData?.label || 'Unknown';
+            const maxLength = Math.max(3, Math.floor(d.r / 4));
+            return formatLabel(label, maxLength);
+          });
 
           return update;
         },

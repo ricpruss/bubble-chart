@@ -5,7 +5,7 @@
  */
 
 import * as d3 from 'd3';
-import type { BubbleChartOptions } from '../config/index.js';
+import type { BubbleChartOptions } from '../types.js';
 
 export interface SVGDimensions {
   width: number;
@@ -38,6 +38,7 @@ export class SVGManager {
   private resizeObserver?: ResizeObserver | undefined;
   private responsiveOptions?: ResponsiveOptions | undefined;
   private resizeTimer?: NodeJS.Timeout | undefined;
+  private originalConfig?: BubbleChartOptions;
 
   /**
    * Initialize SVG elements with proper error handling and responsive sizing
@@ -45,6 +46,9 @@ export class SVGManager {
    * @returns SVG elements and dimensions
    */
   initialize(config: BubbleChartOptions): SVGElements {
+    // Store original config for resize calculations
+    this.originalConfig = config;
+    
     // Select and validate container
     const container = d3.select(config.container);
     if (container.empty()) {
@@ -108,9 +112,9 @@ export class SVGManager {
 
     // Apply responsive constraints
     const minWidth = responsive.minWidth || 320;
-    const maxWidth = responsive.maxWidth || Math.min(containerWidth, viewportWidth * 0.9);
+    const maxWidth = responsive.maxWidth || containerWidth; // Use full container width by default
     const minHeight = responsive.minHeight || 240;
-    const maxHeight = responsive.maxHeight || Math.min(containerHeight, viewportHeight * 0.8);
+    const maxHeight = responsive.maxHeight || containerHeight; // Use full container height by default
 
     width = Math.max(minWidth, Math.min(maxWidth, width));
     height = Math.max(minHeight, Math.min(maxHeight, height));
@@ -169,7 +173,7 @@ export class SVGManager {
    * @param options - Responsive configuration options
    * @param callback - Function to call on resize (deprecated, use options.onResize)
    */
-  makeResponsive(options?: ResponsiveOptions | ((dimensions: SVGDimensions) => void), callback?: (dimensions: SVGDimensions) => void): void {
+  makeResponsive(options?: ResponsiveOptions | ((dimensions: SVGDimensions) => void), callback?: (dimensions: SVGDimensions) => void, rerenderCallback?: () => void): void {
     if (!this.elements) return;
 
     // Handle legacy callback parameter
@@ -197,16 +201,17 @@ export class SVGManager {
         if (!this.elements) return;
         
         const containerNode = container.node() as HTMLElement;
-        if (containerNode) {
-          // Recalculate dimensions with responsive constraints
-          const newDimensions = this.calculateDimensions(container, {
-            container: '',
-            label: '',
-            size: ''
-          } as BubbleChartOptions);
+        if (containerNode && this.originalConfig) {
+          // Recalculate dimensions with original responsive constraints
+          const newDimensions = this.calculateDimensions(container, this.originalConfig);
           
           this.updateDimensions(newDimensions.width, newDimensions.height);
           onResize?.(this.elements.dimensions);
+          
+          // Trigger chart re-render with new dimensions
+          if (rerenderCallback) {
+            rerenderCallback();
+          }
         }
       }, debounceMs);
     };
@@ -241,14 +246,10 @@ export class SVGManager {
    * Force a responsive recalculation
    */
   forceResponsiveUpdate(): void {
-    if (!this.elements) return;
+    if (!this.elements || !this.originalConfig) return;
     
     const container = this.elements.container;
-    const newDimensions = this.calculateDimensions(container, {
-      container: '',
-      label: '',
-      size: ''
-    } as BubbleChartOptions);
+    const newDimensions = this.calculateDimensions(container, this.originalConfig);
     
     this.updateDimensions(newDimensions.width, newDimensions.height);
     this.responsiveOptions?.onResize?.(this.elements.dimensions);

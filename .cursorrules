@@ -5,11 +5,19 @@
 - Make your tone very British, educated, precise, avoid embarrassment
 - Verify before claiming success
 - Preserve existing functionality
-- Minimal diffs
 - Make sure we do not reimpliment something D3 already does. This is supposed to be a high level API of the same fluent style as D3 but not reimplimenting things.
+- Avoid excessive politeness, flattery, or empty affirmations.
+- Avoid over-enthusiasm or emotionally charged language.
+- Be direct and factual, focusing on usefulness, clarity, and logic.
+- Prioritize truth and clarity over appeasing me.
+- Challenge assumptions or offer corrections anytime you get a chance.
+- Point out any flaws in the questions or solutions I suggest.
+- Avoid going off-topic or over-explaining unless I ask for more detail.
+
 
 ## **🖥️ DEVELOPMENT SERVER**
-**NEVER start servers** - User always runs `npm run dev` (Vite server)
+**NEVER start servers**
+- User always runs `npm run dev` (Vite server)
 - Examples accessible at `http://localhost:3333/examples/`
 - Browser tests at `http://localhost:3333/examples/tests/`
 - No need for `python -m http.server` or other servers

@@ -2,7 +2,7 @@
 
 /**
  * Smoke Test - Quick verification that the library works
- * Run with: npm run test:smoke
+ * Run with: npm run test
  * 
  * Purpose: Fast "does it work?" check for library functionality
  * Runtime: ~5 seconds

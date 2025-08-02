@@ -1,8 +1,6 @@
-import type { BubbleChartData, HierarchicalBubbleData } from '../data/index.js';
-import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
-import { BaseChartBuilder } from '../core/index.js';
-import { D3DataUtils } from '../d3/index.js';
-import { ChartPipeline } from './shared/index.js';
+import type { BubbleChartData, HierarchicalBubbleData, BubbleChartOptions, ChartHandle } from '../types.js';
+import { BaseChartBuilder } from '../core/base.js';
+import { ChartPipeline } from '../core/pipeline.js';
 import * as d3 from 'd3';
 
 /**
@@ -84,6 +82,8 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     
     const { svg, dimensions } = svgElements;
     
+
+    
     // Get the original hierarchical data structure
     // If we have a single hierarchical object, use it directly
     // If we have an array, wrap it in a root node
@@ -94,21 +94,38 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
       ? this.chartData[0] // Use the single hierarchical object directly
       : { children: this.chartData } as any; // Wrap array in root node
 
-    // Create hierarchical layout using D3DataUtils
-    const layoutNodes = D3DataUtils.createHierarchyLayout(
-      rootDatum,
-      dimensions.width,
-      dimensions.height,
-      5
-    );
+    // Create hierarchical layout using D3's pack layout for nested structure with margins
+    const strokeWidth = 2;
+    const margin = strokeWidth + 8; // Same margin logic as createPackLayout
+    const adjustedWidth = Math.max(100, dimensions.width - (margin * 2));
+    const adjustedHeight = Math.max(100, dimensions.height - (margin * 2));
+    
+
+    
+    const pack = d3.pack()
+      .size([adjustedWidth, adjustedHeight])
+      .padding(5);
+
+    const hierarchyRoot = d3.hierarchy(rootDatum)
+      .sum((d: any) => d.amount || d.size || 1)
+      .sort((a, b) => (b.value || 0) - (a.value || 0));
+
+    const packedRoot = pack(hierarchyRoot);
+    const layoutNodes = packedRoot.descendants().map(node => ({
+      x: node.x + margin, // Apply same margin offset as createPackLayout
+      y: node.y + margin, // Apply same margin offset as createPackLayout
+      r: node.r,
+      data: node.data,
+      depth: node.depth,
+      parent: node.parent?.data || null
+    }));
     
     // Create color scale for tree nodes using ChartPipeline for theme support
     const { colorScale, theme } = ChartPipeline.createColorScale(this.processedData, this.config);
     ChartPipeline.applyTheme(svgElements, theme);
 
-    // Create D3.js hierarchy for node information (parents vs children)
-    const root = d3.hierarchy(rootDatum);
-    const hierarchyNodes = root.descendants();
+    // Use the same hierarchy nodes for styling decisions
+    const hierarchyNodes = packedRoot.descendants();
     
     // Create bubble groups using centralized rendering
     const bubbleGroups = ChartPipeline.renderBubbleGroups(svg, layoutNodes, {
@@ -125,7 +142,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
     circles
       .filter((_d: any, i: number) => !!hierarchyNodes[i]?.children)
       .style('fill', 'none')
-      .style('stroke', '#ccc')
+      .style('stroke', theme?.strokeColor || '#ccc')
       .style('stroke-width', 2)
       .style('opacity', 0.8);
       
@@ -136,7 +153,7 @@ export class TreeBuilder<T extends BubbleChartData = HierarchicalBubbleData> ext
         const leafData = this.processedData.find(pd => pd.data === d.data);
         return leafData?.colorValue ? colorScale(leafData.colorValue) : (this.config.defaultColor || '#1f77b4');
       })
-      .attr('stroke', '#fff')
+      .attr('stroke', theme?.strokeColor || '#fff')
       .attr('stroke-width', 1.5)
       .style('cursor', 'pointer');
 

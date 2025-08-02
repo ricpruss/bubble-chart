@@ -4,30 +4,20 @@
  * Eliminates duplication across all chart builders
  */
 
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions } from '../config/index.js';
+import type { 
+  BubbleChartData, 
+  BubbleChartOptions,
+  ProcessedDataPoint
+} from '../types.js';
 import { 
   isFlatBubbleData, 
   isHierarchicalBubbleData, 
   isTimeSeriesBubbleData,
   getNumericValue,
   getStringValue
-} from '../data/index.js';
+} from '../types.js';
 
-export interface ProcessedDataPoint<T = BubbleChartData> {
-  /** Original data item */
-  data: T;
-  /** Extracted label value */
-  label: string;
-  /** Extracted size value */
-  size: number;
-  /** Extracted color key (optional) */
-  color?: string;
-  /** Extracted time value (optional) */
-  time?: number;
-  /** Calculated percentage (optional) */
-  percentage?: number;
-}
+// ProcessedDataPoint interface now defined in types.js
 
 /**
  * Data processor for consistent data handling across all chart types
@@ -73,7 +63,7 @@ export class DataProcessor<T extends BubbleChartData = BubbleChartData> {
 
     // Extract optional values
     if (this.config.colour || this.config.color) {
-      processed.color = this.extractColor(item);
+      processed.colorValue = this.extractColor(item);
     }
 
     if (this.config.time) {

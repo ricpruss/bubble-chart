@@ -431,15 +431,13 @@
         
         // Motion physics configuration for D3 force simulation
         const motionConfig = {
-          repulseStrength: 0.1,                // Very low repulsion for tighter clustering (default: 0.7)
-          decay: 0.04,                         // Moderate decay for gentle motion (default: 0.05)
-          centerStrength: 0.1,                 // Moderate center attraction to keep bubbles near category centers
-          collidePadding: 2,                   // Standard padding between bubbles (default: 2)
-          alphaTarget: 0.015,                  // Gentle energy level for subtle motion (default: 0.02)
-          alphaMin: 0.001                      // Low minimum alpha (default: 0.00001)
+          repulseStrength: 0.01,  // Increased from 0.1 to 0.6 for stronger collision avoidance
+          decay: 0.15,           // Increased from 0.04 to 0.15 for faster settling
+          collidePadding: 12,     // Increased from 2 to 6 for more space between bubbles
+          centerStrength: 0.0,   // Keep the same center pull strength
+          alphaMin: 0.001,       // Minimum alpha before simulation stops
+          alphaTarget: 0.0       // TESTING: Set to 0 to stop continuous simulation
         };
-        
-        // console.log('🔧 Motion Configuration:', motionConfig);
         
         // Create motion bubble chart - wrapper will pass config to BuilderFactory
         const chartContainer = document.getElementById('bubble-chart');
@@ -458,25 +456,12 @@
           .withKey(d => d.id)                    // Key for D3 data binding
           .withTheme('corporate')                // Corporate theme for vibrant colors
           // Let chart auto-size to container (no explicit dimensions)
-          .withAnimations({                      // Configure animations to prevent replay
-            enter: {
-              duration: 800,
-              easing: 'ease-out'
-            },
-            update: {
-              duration: 0,                       // No update animation for motion bubbles
-              easing: 'linear'
-            },
-            exit: {
-              duration: 600,
-              easing: 'ease-in'
-            }
-          })
+          .withAnimations(false)                  // Disable animations for testing
           .withResponsive({
             minWidth: 320,
             minHeight: 300,
             maxHeight: 500,
-            debounceMs: 200,
+            debounceMs: 80,
             onResize: (dimensions) => {
               console.log('📏 Vibe Code Explorer chart resized to:', dimensions);
               
@@ -490,14 +475,13 @@
           })
           .build();
         
+        
         // Get the underlying motion bubble instance and set motion config directly
         const motionBubbleInstance = this.bubbleChart.getBuilder();
         if (motionBubbleInstance && motionBubbleInstance.setMotionConfig) {
-          // console.log('⚙️ Setting motion config directly on MotionBubble instance');
           motionBubbleInstance.setMotionConfig(motionConfig);
-          // console.log('✅ Motion Config Applied:', motionBubbleInstance.getMotionConfig());
-        } else {
-          console.log('❌ Could not access MotionBubble instance or setMotionConfig method');
+          // Debug: verify motion config applied to builder
+          console.log('🛠️ Applied Motion Config:', motionBubbleInstance.getMotionConfig());
         }
 
         
@@ -531,7 +515,6 @@
         
         // Initialize categorizer with loaded data
         this.categorizer = new VideoCategorizer(this.videoData);
-        // console.log('📥 Video data sample:', this.videoData.slice(0, 3));
 
         
         this.updateStatus('Analyzing video categories...');
@@ -553,28 +536,83 @@
         // Stream duration categories with delay
         setTimeout(() => {
           const durationCategories = this.categorizer.categorizeByduration();
-          this.streamCategories(durationCategories, 50); // Stream with 50ms between each
+          this.streamCategories(durationCategories, 800); // Increased to 800ms for smooth physics settling
         }, 100);
         
-        // Stream view count categories with delay
+        // Stream view count categories with delay - much longer delays for physics settling
         setTimeout(() => {
           const viewCountCategories = this.categorizer.categorizeByViewCount();
-          this.streamCategories(viewCountCategories, 50);
-        }, 800);
+          this.streamCategories(viewCountCategories, 800); // Increased to 800ms
+        }, 3000); // Increased to 3000ms to allow previous categories to settle
         
-        // Stream verification categories with delay
+        // Stream verification categories with delay - even longer delays
         setTimeout(() => {
           const verificationCategories = this.categorizer.categorizeByVerification();
-          this.streamCategories(verificationCategories, 50);
-        }, 1500);
+          this.streamCategories(verificationCategories, 800); // Increased to 800ms
+        }, 6000); // Increased to 6000ms to allow all previous categories to settle
       }
       
       // Stream categories one by one with staggered animation
-      streamCategories(categories, delay = 50) {
+      streamCategories(categories, delay = 800) {  // Increased to 800ms for physics settling
         categories.forEach((category, index) => {
           setTimeout(() => {
             // Add category to current data
             this.currentCategories.push(category);
+            
+            // Special logging for Long Videos category
+            if (category.id === 'long') {
+              
+              // Add a special tracking for Long Videos bubble
+              setTimeout(() => {
+                // Find the Long Videos bubble in DOM
+                const longVideosBubble = document.querySelector('#bubble-chart .bubble[data-id="long"]');
+                if (longVideosBubble) {
+                  
+                  // DISABLED: MutationObserver to test if it causes redraw issue
+                  /*
+                  const observer = new MutationObserver((mutations) => {
+                    mutations.forEach((mutation) => {
+                      if (mutation.type === 'attributes' && mutation.attributeName === 'transform') {
+                        const transform = longVideosBubble.getAttribute('transform');
+                        if (transform) {
+                          // Extract x,y from transform="translate(x,y)"
+                          const match = transform.match(/translate\(([^,]+),([^)]+)\)/);
+                          if (match && match.length >= 3) {
+                            const x = parseFloat(match[1]);
+                            const y = parseFloat(match[2]);
+                            
+                            // Only log significant position changes (>10px)
+                            const lastPos = longVideosBubble._lastPosition || { x: 0, y: 0 };
+                            const dx = x - lastPos.x;
+                            const dy = y - lastPos.y;
+                            const dist = Math.sqrt(dx*dx + dy*dy);
+                            
+                            if (dist > 10) {
+                              longVideosBubble._lastPosition = { x, y };
+                            }
+                          }
+                        }
+                      }
+                    });
+                  });
+                  
+                  // Start observing
+                  observer.observe(longVideosBubble, { 
+                    attributes: true,
+                    attributeFilter: ['transform']
+                  });
+                  
+                  // Store observer for cleanup
+                  this.longVideosObserver = observer;
+                  */
+                }
+              }, 500); // Wait for DOM to update
+            }
+            
+            
+            // Add logging for chart updates
+            console.log(`[MotionBubble] performRender: ${this.currentCategories.length} nodes`);
+            console.log(`[MotionBubble] Existing: ${this.currentCategories.length - 1}, New: 1`);
             
             // Update chart with D3-native pattern
             this.bubbleChart.update(this.currentCategories);
@@ -664,8 +702,21 @@
               this.hideBubbleTooltip();
             });
           }
-        } else {
-          console.log('❌ No chart instance found');
+
+          // Add special event handler for Long Videos bubble
+          chartInstance.onBubble('long', (event, data) => {
+            
+            // Get current position
+            const element = event.target.closest('.bubble');
+            if (element) {
+              const transform = element.getAttribute('transform');
+              if (transform) {
+                const match = transform.match(/translate\(([^,]+),([^)]+)\)/);
+                if (match && match.length >= 3) {
+                }
+              }
+            }
+          });
         }
 
         // Also try the wrapper's event system as backup
@@ -698,13 +749,7 @@
         // Test: Add manual click listeners as fallback
         bubbles.forEach((bubble, index) => {
           bubble.addEventListener('click', (event) => {
-            console.log(`🎯 Manual click handler triggered on bubble ${index}`);
-            // Try to find the category data
-            const svg = document.querySelector('#bubble-chart svg');
-            if (svg) {
-              const allBubbles = svg.querySelectorAll('.bubble');
-              console.log(`SVG has ${allBubbles.length} bubbles`);
-            }
+            // Manual click handler for fallback
           });
         });
         
@@ -737,7 +782,6 @@
         if (motionBubbleInstance && motionBubbleInstance.setFilterIndicators) {
           motionBubbleInstance.setFilterIndicators(categoryId, showIndicator);
         } else {
-          console.log('❌ Could not access MotionBubble setFilterIndicators method');
         }
       }
 
@@ -747,7 +791,6 @@
         if (motionBubbleInstance && motionBubbleInstance.clearAllFilterIndicators) {
           motionBubbleInstance.clearAllFilterIndicators();
         } else {
-          console.log('❌ Could not access MotionBubble clearAllFilterIndicators method');
         }
       }
 
@@ -847,7 +890,7 @@
 
       openVideo(video) {
         // For now, just log the video - in a real app this would open the video
-        console.log('Opening video:', video.title, video.videoId);
+        // Open video: video.title, video.videoId
         // Could open in a modal, navigate to video page, etc.
       }
 
@@ -880,6 +923,14 @@
 
       updateStatus(message) {
         document.getElementById('status-text').textContent = message;
+      }
+
+      cleanup() {
+        // Remove Long Videos observer if it exists
+        if (this.longVideosObserver) {
+          this.longVideosObserver.disconnect();
+          this.longVideosObserver = null;
+        }
       }
     }
 

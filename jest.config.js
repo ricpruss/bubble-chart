@@ -2,7 +2,7 @@
 export default {
   preset: 'ts-jest/presets/default-esm',
   extensionsToTreatAsEsm: ['.ts'],
-  testEnvironment: 'node',
+  testEnvironment: 'jsdom',
   // Force CommonJS for D3 to avoid ESM transformation issues
   globals: {
     'ts-jest': {

@@ -1,8 +1,7 @@
 
-import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
-import type { BubbleChartData } from '../data/index.js';
-import { BaseChartBuilder } from '../core/index.js';
-import { ChartPipeline } from './shared/index.js';
+import type { BubbleChartOptions, ChartHandle, BubbleChartData } from '../types.js';
+import { BaseChartBuilder } from '../core/base.js';
+import { ChartPipeline } from '../core/pipeline.js';
 
 /**
  * BubbleBuilder - Focused on d3.pack() static layouts
@@ -41,7 +40,7 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
       }
       const { svg, dimensions } = svgElements;
 
-      console.log('📦 BubbleBuilder: Using d3.pack() static layout');
+      // Use static pack layout for bubble charts
 
       // Create pack layout using shared pipeline
       const layoutNodes = ChartPipeline.createBubbleLayout(
@@ -71,12 +70,14 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
             // Add circles (start with radius 0 for entrance animation)
             enterGroups.append('circle')
               .attr('r', this.config.animation ? 0 : (d: any) => d.r)
-              .style('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd'))
+                      .style('fill', (d: any) => {
+          return d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd');
+        })
               .style('stroke', '#fff')
               .style('stroke-width', 2)
               .style('opacity', this.config.animation ? 0 : 0.8);
 
-                                     // Add labels using shared pipeline
+            // Add labels using shared pipeline
             ChartPipeline.renderLabels(enterGroups, {
               radiusAccessor: (d: any) => d.r,
               labelAccessor: (d: any) => d.data?.label || '',
@@ -84,6 +85,26 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
               formatFunction: this.config.format?.text,
               initialOpacity: this.config.animation ? 0 : 1
             });
+
+            // Apply entrance animations only to new elements
+            if (this.config.animation?.enter) {
+              const { duration = 800, stagger = 50 } = this.config.animation.enter;
+              
+              // Animate circles growing and fading in
+              enterGroups.selectAll('circle')
+                .transition('enter-circle')
+                .delay((_d: any, i: number) => i * stagger)
+                .duration(duration)
+                .attr('r', (d: any) => d.r)
+                .style('opacity', 0.8);
+                
+              // Animate text fading in after circles
+              enterGroups.selectAll('text')
+                .transition('enter-text')
+                .delay((_d: any, i: number) => i * stagger + duration / 2)
+                .duration(duration / 2)
+                .style('opacity', 1);
+            }
 
             return enterGroups;
           },
@@ -97,7 +118,9 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
               .transition()
               .duration(300)
               .attr('r', (d: any) => d.r)
-              .style('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd'));
+                      .style('fill', (d: any) => {
+          return d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#ddd');
+        });
 
                          update.select('text')
                .transition()
@@ -118,9 +141,6 @@ export class BubbleBuilder<T extends BubbleChartData = BubbleChartData> extends 
 
       // Attach events using shared pipeline
       ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
-
-      // Apply entrance animations
-      ChartPipeline.applyEntranceAnimations(bubbleGroups, this.config);
 
       console.log('✅ BubbleBuilder: Pack layout rendered successfully');
 

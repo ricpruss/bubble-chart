@@ -11,7 +11,7 @@
 // For local development inside this repo we import the built ESM file so the
 // TypeScript compiler can resolve the declaration file that sits next to it.
 // BubbleChart now uses the modern fluent API by default
-import BubbleChart, { type BubbleChartData } from '../../dist/bubble-chart.esm.js';
+import { BubbleChart, type BubbleChartData } from '../../dist/bubble-chart.esm.js';
 
 interface LanguageDatum {
   id: string;

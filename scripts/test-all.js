@@ -9,10 +9,19 @@ import { spawnSync } from 'node:child_process';
 import { performance } from 'node:perf_hooks';
 
 function extractCounts(output) {
-  // Jest summary e.g. "Tests:       86 passed, 86 total"
+  // Jest summary e.g. "Tests:       86 passed, 86 total" or "Test Suites: 8 failed, 2 passed, 10 total"
   const jestMatch = output.match(/Tests:\s+(\d+)\s+passed[,\s]+(\d+)\s+total/);
   if (jestMatch) {
     return { passed: Number(jestMatch[1]), total: Number(jestMatch[2]) };
+  }
+  
+  // Jest test suites summary when there are failures
+  const jestSuiteMatch = output.match(/Test Suites:\s+(?:(\d+)\s+failed,\s*)?(\d+)\s+passed,\s+(\d+)\s+total/);
+  if (jestSuiteMatch) {
+    const failed = Number(jestSuiteMatch[1] || 0);
+    const passed = Number(jestSuiteMatch[2]);
+    const total = Number(jestSuiteMatch[3]);
+    return { passed, total, failed };
   }
 
   // Smoke script summary
@@ -39,7 +48,12 @@ function run(cmd, label) {
   const dur = ((performance.now() - start) / 1000).toFixed(2);
   const combined = (proc.stdout ?? '') + (proc.stderr ?? '');
   const counts = extractCounts(combined);
-  return { label, ok: proc.status === 0, dur, counts };
+  
+  // For Jest, if we have test suite failures, the command fails even if individual tests pass
+  // So we should show the failure status in the summary
+  const actualStatus = proc.status === 0;
+  
+  return { label, ok: actualStatus, dur, counts };
 }
 
 const results = [

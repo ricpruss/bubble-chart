@@ -57,9 +57,7 @@ jest.mock('d3', () => ({
 }));
 
 import { RenderingPipeline, type RenderingContext } from '../rendering-pipeline.js';
-import type { BubbleChartOptions } from '../../config/index.js';
-import type { ProcessedDataPoint } from '../data-processor.js';
-import type { FlatBubbleData } from '../../data/index.js';
+import type { BubbleChartOptions, ProcessedDataPoint, FlatBubbleData } from '../../types.js';
 
 // Test data
 interface TestData extends FlatBubbleData {
@@ -119,7 +117,7 @@ describe('RenderingPipeline', () => {
         data: d,
         label: d.name,
         size: d.value,
-        color: d.sector
+        colorValue: d.sector
       }));
 
       // Mock streaming options
@@ -164,8 +162,7 @@ describe('RenderingPipeline', () => {
         data: d,
         label: d.name,
         size: d.value,
-        color: d.sector,
-        colorValue: d.sector // Add colorValue for D3DataUtils compatibility
+        colorValue: d.sector
       }));
 
       const streamingOptions = {
@@ -186,7 +183,7 @@ describe('RenderingPipeline', () => {
         data: d,
         label: d.name,
         size: d.value,
-        color: d.sector
+        colorValue: d.sector
       }));
 
       // Test with high stagger delay to trigger timing optimization

@@ -1,8 +1,7 @@
 import * as d3 from 'd3';
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions } from '../config/index.js';
-import { BaseChartBuilder } from '../core/index.js';
-import { ChartPipeline } from './shared/index.js';
+import type { BubbleChartData, BubbleChartOptions } from '../types.js';
+import { BaseChartBuilder } from '../core/base.js';
+import { ChartPipeline } from '../core/pipeline.js';
 
 /**
  * Interface for wave animation data points

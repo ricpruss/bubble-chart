@@ -1,7 +1,6 @@
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
-import { BaseChartBuilder } from '../core/index.js';
-import { ChartPipeline } from './shared/index.js';
+import type { BubbleChartData, BubbleChartOptions, ChartHandle } from '../types.js';
+import { BaseChartBuilder } from '../core/base.js';
+import { ChartPipeline } from '../core/pipeline.js';
 import * as d3 from 'd3';
 
 
@@ -174,10 +173,7 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
       });
     };
 
-    // Initial positioning
-    updatePositions();
-
-    // Start animation timer using D3's timer
+    // Start animation timer using D3's timer (handles initial positioning)
     this.orbitTimer = d3.timer(updatePositions);
   }
 
@@ -208,8 +204,8 @@ export class OrbitBuilder<T extends BubbleChartData = BubbleChartData> extends B
     this.config = { ...this.config, ...newConfig } as BubbleChartOptions;
     
     // Update building blocks with new config if needed
-    if (this.dataProcessor && this.chartData.length) {
-      this.processedData = this.dataProcessor.process(this.chartData);
+    if (this.chartData.length) {
+      this.processedData = ChartPipeline.processData(this.chartData, this.config);
     }
     
     return this;

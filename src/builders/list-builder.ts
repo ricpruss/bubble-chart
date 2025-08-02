@@ -1,8 +1,7 @@
-import type { BubbleChartData } from '../data/index.js';
-import type { BubbleChartOptions, ChartHandle } from '../config/index.js';
-import { BaseChartBuilder } from '../core/index.js';
-import { D3DataUtils } from '../d3/index.js';
-import { ChartPipeline } from './shared/index.js';
+import type { BubbleChartData, BubbleChartOptions, ChartHandle } from '../types.js';
+import { BaseChartBuilder } from '../core/base.js';
+import { formatNumber } from '../core/utils.js';
+import { ChartPipeline } from '../core/pipeline.js';
 import * as d3 from 'd3';
 
 /**
@@ -122,7 +121,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .style('pointer-events', 'none')
           .text((d: any) => this.config.format!.number!(d.size || 0));
       } else {
-        // Default number formatting using D3DataUtils
+        // Default number formatting using formatNumber utility
         rows.append('text')
           .attr('x', maxRadius * 2 + padding)
           .attr('y', 0)
@@ -132,7 +131,7 @@ export class ListBuilder<T extends BubbleChartData = BubbleChartData> extends Ba
           .style('fill', themeTextColor)
           .style('opacity', 0.7)
           .style('pointer-events', 'none')
-          .text((d: any) => D3DataUtils.formatNumber(d.size || 0));
+          .text((d: any) => formatNumber(d.size || 0));
       }
 
       // Apply text wrapping for long labels

@@ -1,8 +1,8 @@
 import * as d3 from 'd3';
-import { BaseChartBuilder } from '../core/index.js';
-import type { BubbleChartOptions } from '../config/index.js';
-import type { BubbleChartData } from '../data/index.js';
-import { ChartPipeline } from './shared/index.js';
+import { BaseChartBuilder } from '../core/base.js';
+import type { BubbleChartOptions, BubbleChartData } from '../types.js';
+import { ChartPipeline } from '../core/pipeline.js';
+import { CategoryPositionManager } from '../core/coordinates.js';
 
 /**
  * Motion configuration for force simulation
@@ -37,12 +37,9 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   private currentFilter: string | null = null;
   private filterGroups: Map<string, any[]> = new Map();
   private filterLabels: d3.Selection<SVGGElement, unknown, null, undefined> | null = null;
-  private categoryTypePositions: Map<string, {x: number, y: number}> = new Map();
-  private normalizedPositions: Map<string, {x: number, y: number}> = new Map();
-  private positionsInitialized: boolean = false;
-  private lastCanvasWidth: number = 0;
-  private lastCanvasHeight: number = 0;
+  private positionManager: CategoryPositionManager = new CategoryPositionManager();
   private maxDataValue: number = 0;
+  private radiusScale: ((value: number) => number) | null = null;
 
   constructor(config: BubbleChartOptions) {
     const mutableConfig = { ...config, type: 'motion' as const };
@@ -52,7 +49,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       repulseStrength: 0.8,
       decay: 0.2,
       collidePadding: 8,
-      centerStrength: 0.05,
+      centerStrength: 0.0, // Disable centering force
       alphaMin: 0.001,
       alphaTarget: 0.01,
       ...(this.config.animation as MotionConfig || {})
@@ -72,7 +69,6 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
 
     try {
       this.processedData = ChartPipeline.processData(this.chartData, this.config);
-      
       const svgElements = this.svgManager.getElements();
       if (!svgElements) return;
 
@@ -96,12 +92,14 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         this.setupInteractiveFiltering(bubbleGroups, motionNodes, dimensions);
       }
 
+      // Update force simulation
       this.updateForceSimulation(motionNodes, bubbleGroups, dimensions);
 
     } catch (error) {
-      throw error;
+      console.error('Error rendering motion bubbles:', error);
     }
   }
+
 
   private setupResponsiveHandling(): void {
     if (!this.isResponsiveSetup) {
@@ -142,7 +140,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     const existingNodeMap = new Map();
     
     existingNodes.forEach(node => {
-      const key = node.data.id || node.data.label || JSON.stringify(node.data);
+      const key = this.getNodeKey(node.data);
       existingNodeMap.set(key, node);
     });
     
@@ -155,7 +153,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     const newNodes: any[] = [];
     
     this.processedData.forEach((d) => {
-      const key = d.id || d.label || JSON.stringify(d);
+      const key = this.getNodeKey(d);
       const existingNode = existingNodeMap.get(key);
       
       if (existingNode) {
@@ -163,7 +161,7 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
         existingNode.r = radiusScale(d.size);
         existingMotionNodes.push(existingNode);
       } else {
-        const analysisType = d.analysisType || 'default';
+        const analysisType = (d.data as any).analysisType || 'default';
         const position = this.getInitialPositionForType(analysisType);
         const radius = radiusScale(d.size);
         
@@ -191,90 +189,59 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   }
 
   private renderBubbleGroups(svg: any, motionNodes: any[], colorScale: any): any {
-    return svg.selectAll('g.bubble')
-      .data(motionNodes, (d: any) => d.data.id || d.data.label || JSON.stringify(d.data))
-      .join(
-        (enter: any) => {
-          const enterGroups = enter
-            .append('g')
-            .attr('class', 'bubble-chart bubble')
-            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+    // Use ChartPipeline for consistent data binding (fixes stuttering)
+    const bubbleGroups = ChartPipeline.renderBubbleGroups(svg, motionNodes, {
+      keyFunction: (d: any) => this.getNodeKey(d.data),
+      cssClass: 'bubble-chart bubble',
+      transform: false // IMPORTANT: Don't let ChartPipeline set transform - force simulation handles it!
+    });
+    
+    // Manually set transform only for new bubbles
+    bubbleGroups.each(function(this: SVGGElement, d: any) {
+      const elem = d3.select(this);
+      if (!elem.attr('transform')) {
+        elem.attr('transform', `translate(${d.x},${d.y})`);
+      }
+    });
 
-          enterGroups.selectAll('circle')
-            .data((d: any) => [d])
-            .join('circle')
-            .attr('r', (d: any) => d.r)
-            .style('opacity', 0.85)
-            .attr('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'))
-            .attr('stroke', '#fff')
-            .attr('stroke-width', 1.5);
+    // Add circles using centralized rendering
+    ChartPipeline.renderCircles(bubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      colorAccessor: (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'),
+      strokeColor: '#fff',
+      strokeWidth: 1.5,
+      opacity: 0.85,
+      initialRadius: (d: any) => d.r,
+      initialOpacity: 0.85
+    });
 
-          ChartPipeline.renderLabels(enterGroups, {
-            radiusAccessor: (d: any) => d.r,
-            labelAccessor: (d: any) => d.data?.label || d.label || '',
-            textColor: 'white',
-            formatFunction: this.config.format?.text,
-            initialOpacity: 1
-          });
+    // Add labels using centralized rendering
+    ChartPipeline.renderLabels(bubbleGroups, {
+      radiusAccessor: (d: any) => d.r,
+      labelAccessor: (d: any) => d.data?.label || d.label || '',
+      textColor: 'white',
+      formatFunction: this.config.format?.text,
+      initialOpacity: 1
+    });
 
-          enterGroups.style('opacity', 0)
-            .transition()
-            .duration(500)
-            .style('opacity', 1);
-
-          return enterGroups;
-        },
-        (update: any) => {
-          update.select('circle')
-            .transition()
-            .duration(300)
-            .attr('r', (d: any) => d.r)
-            .style('fill', (d: any) => d.data.colorValue ? colorScale(d.data.colorValue) : (this.config.defaultColor || '#1f77b4'));
-
-          update.select('text')
-            .transition()
-            .duration(300)
-            .text((d: any) => d.data?.label || d.label || '');
-
-          return update;
-        },
-        (exit: any) => {
-          exit.transition()
-            .duration(300)
-            .style('opacity', 0)
-            .remove();
-          return exit;
-        }
-      );
+    return bubbleGroups;
   }
 
   private startForceSimulation(nodes: any[], _bubbleGroups: any, dimensions: any): void {
-    const { repulseStrength, decay, collidePadding, centerStrength, alphaMin, alphaTarget } = this.motionConfig;
+    
+    const { repulseStrength, decay, collidePadding, alphaMin, alphaTarget } = this.motionConfig;
     
     const getCurrentDimensions = () => {
       const svgElements = this.svgManager.getElements();
       return svgElements ? svgElements.dimensions : dimensions;
     };
     
+    
     this.simulation = d3.forceSimulation(nodes)
       .velocityDecay(decay)
-      .alpha(0.6)
+      .alpha(0.2)  // Further reduced from 0.3 for even gentler startup
       .alphaMin(alphaMin)
       .alphaTarget(alphaTarget)
-      .force('category-x', d3.forceX()
-        .strength(centerStrength)
-        .x((d: any) => {
-          const analysisType = d.data.analysisType || 'default';
-          const categoryPos = this.categoryTypePositions.get(analysisType);
-          return categoryPos ? categoryPos.x : dimensions.width / 2;
-        }))
-      .force('category-y', d3.forceY()
-        .strength(centerStrength)
-        .y((d: any) => {
-          const analysisType = d.data.analysisType || 'default';
-          const categoryPos = this.categoryTypePositions.get(analysisType);
-          return categoryPos ? categoryPos.y : dimensions.height / 2;
-        }))
       .force('collision', d3.forceCollide()
         .radius((d: any) => d.r + collidePadding)
         .strength(Math.max(0, Math.min(1, repulseStrength))))
@@ -289,9 +256,8 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
           if (d.x < safeLeft) return safeLeft;
           if (d.x > safeRight) return safeRight;
           
-          const center = dims.width / 2;
-          const pullFactor = 0.02;
-          return d.x + (center - d.x) * pullFactor;
+          // Just keep within bounds, no center pulling
+          return d.x;
         }))
       .force('boundary-y', d3.forceY()
         .strength(1.0)
@@ -304,18 +270,18 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
           if (d.y < safeTop) return safeTop;
           if (d.y > safeBottom) return safeBottom;
           
-          const center = dims.height / 2;
-          const pullFactor = 0.02;
-          return d.y + (center - d.y) * pullFactor;
+          // Just keep within bounds, no center pulling
+          return d.y;
         }))
       .on('tick', () => {
         const svgElements = this.svgManager.getElements();
         if (svgElements) {
-          svgElements.svg.selectAll('g.bubble')
-            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
+          const bubbles = svgElements.svg.selectAll('g.bubble');
+          bubbles.attr('transform', (d: any) => `translate(${d.x},${d.y})`);
         }
       });
   }
+
 
   private stopSimulation(): void {
     if (this.simulation) {
@@ -327,18 +293,72 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   updateData(data: T[]): void {
     this.chartData = data;
     this.processedData = ChartPipeline.processData(data, this.config);
-    this.stopSimulation();
-    this.update();
+
+    // Update nodes without stopping simulation
+    if (this.simulation) {
+      const newNodes = this.createOrUpdateNodes(this.radiusScale!);
+      this.simulation.nodes(newNodes);
+      this.updateForceSimulation(newNodes, null, this.svgManager.getElements()!.dimensions);
+    }
+  }
+
+  /**
+   * Override update to prevent full re-render on data updates
+   */
+  override update(data?: T[]): this {
+    if (data) {
+      this.data(data);
+    }
+    
+    // If not initialized, do the initial render
+    if (!this.isInitialized) {
+      super.update();
+      return this;
+    }
+    
+    // For subsequent updates, handle incrementally
+    if (this.chartData.length > 0) {
+      const svgElements = this.svgManager.getElements();
+      if (!svgElements) return this;
+      
+      const { svg, dimensions } = svgElements;
+      
+      // Update data processing
+      this.updateMaxDataValue();
+      const radiusScale = this.createOptimizedRadiusScale(dimensions);
+      this.radiusScale = radiusScale;
+      
+      // Create/update nodes preserving existing positions
+      const motionNodes = this.createOrUpdateNodes(radiusScale);
+      
+      // Get color scale
+      const { colorScale } = ChartPipeline.createColorScale(this.processedData, this.config);
+      
+      // Update DOM with D3 data joins (enter/update/exit pattern)
+      const bubbleGroups = this.renderBubbleGroups(svg, motionNodes, colorScale);
+      
+      // Attach events
+      ChartPipeline.attachStandardEvents(bubbleGroups, this.interactionManager);
+      
+      // Update simulation without restarting
+      this.updateForceSimulation(motionNodes, bubbleGroups, dimensions);
+    } else {
+      // No data - clear chart
+      this.clearBubbles();
+    }
+    
+    return this;
   }
 
   resetScaleDomain(): void {
     this.maxDataValue = 0;
   }
 
+  private densityCoverage: number = 0.8; // Default coverage area (80%)
+
   private calculateDensityAwareRadius(dimensions: { width: number; height: number }, bubbleCount: number): { minRadius: number; maxRadius: number } {
     const containerArea = dimensions.width * dimensions.height;
-    const targetCoverage = 0.8;
-    const targetArea = containerArea * targetCoverage;
+    const targetArea = containerArea * this.densityCoverage;
     
     const avgBubbleArea = targetArea / Math.max(bubbleCount, 1);
     const avgRadius = Math.sqrt(avgBubbleArea / Math.PI);
@@ -404,32 +424,72 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     }
   }
 
-  setDensity(preset: 'sparse' | 'balanced' | 'dense' | 'compact'): void {
-    if (!this.simulation) return;
-
-    const densityConfigs = {
-      sparse: { repulseStrength: 1.0, centerStrength: 0.02, collidePadding: 12 },
-      balanced: { repulseStrength: 0.8, centerStrength: 0.05, collidePadding: 8 },
-      dense: { repulseStrength: 0.6, centerStrength: 0.08, collidePadding: 4 },
-      compact: { repulseStrength: 0.4, centerStrength: 0.12, collidePadding: 2 }
-    };
-
-    const config = densityConfigs[preset];
-    this.motionConfig = { ...this.motionConfig, ...config };
-
-    const collisionForce = this.simulation.force('collision') as d3.ForceCollide<any>;
-    const categoryXForce = this.simulation.force('category-x') as d3.ForceX<any>;
-    const categoryYForce = this.simulation.force('category-y') as d3.ForceY<any>;
+  /**
+   * Set density coverage - controls how much of the container area bubbles target to fill
+   * @param densityOrCoverage - Either a preset string ('sparse', 'balanced', 'dense', 'compact') or numeric value between 0.1 and 1.0
+   *   - 'sparse' or 0.3 = sparse (30% coverage)
+   *   - 'balanced' or 0.6 = balanced (60% coverage) 
+   *   - 'dense' or 0.8 = dense (80% coverage)
+   *   - 'compact' or 1.0 = maximum density (100% coverage)
+   */
+  setDensity(densityOrCoverage: number | 'sparse' | 'balanced' | 'dense' | 'compact'): void {
+    let coverage: number;
     
-    if (collisionForce) {
-      collisionForce.radius((d: any) => d.r + config.collidePadding);
-      collisionForce.strength(Math.max(0, Math.min(1, config.repulseStrength)));
+    // Handle string presets for backward compatibility
+    if (typeof densityOrCoverage === 'string') {
+      const presetMap: Record<string, number> = {
+        'sparse': 0.3,
+        'balanced': 0.6,
+        'dense': 0.8,
+        'compact': 1.0
+      };
+      coverage = presetMap[densityOrCoverage] || 0.6;
+    } else {
+      coverage = densityOrCoverage;
     }
+    // Clamp coverage between 0.1 and 1.0
+    this.densityCoverage = Math.max(0.1, Math.min(1.0, coverage));
     
-    if (categoryXForce) categoryXForce.strength(config.centerStrength);
-    if (categoryYForce) categoryYForce.strength(config.centerStrength);
-
-    this.simulation.restart();
+    // Recalculate bubble sizes with new density
+    const svgElements = this.svgManager.getElements();
+    if (!svgElements || !this.processedData) return;
+    
+    const { minRadius, maxRadius } = this.calculateDensityAwareRadius(
+      svgElements.dimensions, 
+      this.processedData.length
+    );
+    
+    // Update radius scale
+    this.radiusScale = d3.scaleSqrt()
+      .domain([0, this.maxDataValue])
+      .range([minRadius, maxRadius])
+      .clamp(true);
+    
+    // Update existing bubble sizes if simulation is running
+    if (this.simulation) {
+      const nodes = this.simulation.nodes();
+      nodes.forEach(node => {
+        const value = node.data?.size || 0;
+        node.r = this.radiusScale!(value);
+      });
+      
+      // Update collision force with new radii
+      const { collidePadding, repulseStrength } = this.motionConfig;
+      this.simulation.force('collision', d3.forceCollide()
+        .radius((d: any) => d.r + collidePadding)
+        .strength(Math.max(0, Math.min(1, repulseStrength))));
+      
+      // Update visual bubbles
+      svgElements.svg.selectAll('g.bubble circle')
+        .transition()
+        .duration(300)
+        .attr('r', (d: any) => d.r);
+      
+      // Gently reheat simulation if it's settled
+      if (this.simulation.alpha() < 0.1) {
+        this.simulation.alpha(0.2);
+      }
+    }
   }
 
   getMotionConfig(): Required<MotionConfig> {
@@ -437,6 +497,9 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
   }
 
   setMotionConfig(newConfig: Partial<MotionConfig>): this {
+    // Debug log: show merged motion config after applying new settings
+    const mergedConfig = { ...this.motionConfig, ...newConfig } as Required<MotionConfig>;
+    console.log('🛠️ [MotionBubble] setMotionConfig applied:', mergedConfig);
     this.motionConfig = { ...this.motionConfig, ...newConfig };
     
     if (this.simulation) {
@@ -675,134 +738,187 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
 
   private updateForceSimulation(nodes: any[], bubbleGroups: any, dimensions: any): void {
     if (this.simulation) {
+      // Position new nodes near their category positions
+      const existingNodes = this.simulation.nodes();
+      const existingIds = new Set(existingNodes.map(n => this.getNodeKey(n.data)));
+      
       nodes.forEach(node => {
-        if (node.vx === undefined) {
+        const nodeKey = this.getNodeKey(node.data);
+        if (!existingIds.has(nodeKey)) {
+          // New node - position it and initialize velocities
+          const analysisType = this.getAnalysisType(node.data);
+          const categoryPos = this.positionManager.getAbsolutePosition(analysisType, dimensions);
+          const position = this.findCollisionFreePosition(node, existingNodes, categoryPos, dimensions);
+          
+          node.x = position.x;
+          node.y = position.y;
           node.vx = 0;
           node.vy = 0;
         }
       });
       
+      // Update simulation nodes and gently restart
       this.simulation.nodes(nodes);
+      this.updateCollisionForce();
       
-      this.simulation.on('tick', () => {
-        const svgElements = this.svgManager.getElements();
-        if (svgElements) {
-          svgElements.svg.selectAll('g.bubble')
-            .attr('transform', (d: any) => `translate(${d.x},${d.y})`);
-        }
-      });
-      
-      const { collidePadding, repulseStrength } = this.motionConfig;
-      this.simulation.force('collision', d3.forceCollide()
-        .radius((d: any) => d.r + collidePadding)
-        .strength(Math.max(0, Math.min(1, repulseStrength))));
+      // Gentle restart for new nodes
+      if (this.simulation.alpha() < 0.1) {
+        this.simulation.alpha(0.15);
+      }
     } else {
       this.startForceSimulation(nodes, bubbleGroups, dimensions);
     }
   }
 
   private getInitialPositionForType(analysisType: string): {x: number, y: number} {
-    const position = this.categoryTypePositions.get(analysisType);
+    const svgElements = this.svgManager.getElements();
+    if (!svgElements) return { x: 0, y: 0 };
     
-    if (!position) {
-      const svgElements = this.svgManager.getElements();
-      if (svgElements) {
-        const centerX = svgElements.dimensions.width / 2;
-        const centerY = svgElements.dimensions.height / 2;
-        return { x: centerX, y: centerY };
-      }
-      return { x: 0, y: 0 };
-    }
-    
-    return position;
+    const position = this.positionManager.getAbsolutePosition(analysisType, svgElements.dimensions);
+    return { x: position.x, y: position.y };
   }
 
   private setupFixedCategoryPositions(): void {
-    this.normalizedPositions.set('duration', { x: 0.5, y: 0.3 });
-    this.normalizedPositions.set('viewCount', { x: 0.3, y: 0.7 });
-    this.normalizedPositions.set('verification', { x: 0.7, y: 0.7 });
+    this.positionManager.setNormalizedPosition('duration', 0.5, 0.3);
+    this.positionManager.setNormalizedPosition('viewCount', 0.3, 0.7);
+    this.positionManager.setNormalizedPosition('verification', 0.7, 0.7);
+  }
+
+  /**
+   * Find a collision-free position near the target using spiral search
+   */
+  private findCollisionFreePosition(
+    node: any,
+    existingNodes: any[],
+    categoryPos: { x: number; y: number },
+    dimensions: { width: number; height: number }
+  ): { x: number; y: number } {
+    // Calculate node radius with padding for clearance
+    const nodeRadius = this.getNodeRadius(node.data);
+    const collidePadding = this.motionConfig.collidePadding || 2;
+    const clearance = nodeRadius + collidePadding + 10; // Extra 10px safety margin
+    
+    // Start at the category position (already in absolute pixels)
+    let x = categoryPos.x;
+    let y = categoryPos.y;
+    
+    // If no existing nodes, just return the category position
+    if (existingNodes.length === 0) {
+      return { x, y };
+    }
+    
+    // Check if the initial position is free
+    if (this.isPositionFree(x, y, clearance, existingNodes)) {
+      return { x, y };
+    }
+    
+    // Spiral search for a free position
+    const maxAttempts = 100;
+    const stepSize = clearance * 0.5;
+    let angle = 0;
+    let radius = stepSize;
+    
+    for (let i = 0; i < maxAttempts; i++) {
+      // Calculate position on spiral
+      const testX = x + radius * Math.cos(angle);
+      const testY = y + radius * Math.sin(angle);
+      
+      // Check if position is within bounds
+      if (
+        testX >= clearance &&
+        testX <= dimensions.width - clearance &&
+        testY >= clearance &&
+        testY <= dimensions.height - clearance
+      ) {
+        // Check if position is free from collisions
+        if (this.isPositionFree(testX, testY, clearance, existingNodes)) {
+          
+          return { x: testX, y: testY };
+        }
+      }
+      
+      // Increase angle and radius for next spiral step
+      angle += Math.PI * 0.5;
+      radius += stepSize * 0.5;
+    }
+    
+    // If we couldn't find a free position, return a position near the edge
+    
+    return {
+      x: Math.max(clearance, Math.min(dimensions.width - clearance, x)),
+      y: Math.max(clearance, Math.min(dimensions.height - clearance, y))
+    };
+  }
+
+  /**
+   * Check if a position has sufficient clearance from existing nodes
+   */
+  private isPositionFree(x: number, y: number, clearance: number, existingNodes: any[]): boolean {
+    for (const existing of existingNodes) {
+      if (existing.x === undefined || existing.y === undefined) continue;
+      
+      const existingRadius = this.getNodeRadius(existing.data);
+      const distance = Math.sqrt(Math.pow(existing.x - x, 2) + Math.pow(existing.y - y, 2));
+      
+      if (distance < clearance + existingRadius) {
+        return false;
+      }
+    }
+    return true;
   }
 
   private updatePositionsForCanvasSize(dimensions: any): void {
-    const sizeChanged = this.lastCanvasWidth !== dimensions.width || this.lastCanvasHeight !== dimensions.height;
-    
-    if (!sizeChanged && this.positionsInitialized) return;
-    
-    this.lastCanvasWidth = dimensions.width;
-    this.lastCanvasHeight = dimensions.height;
-    
-    this.normalizedPositions.forEach((normalizedPos, type) => {
-      const absolutePos = {
-        x: normalizedPos.x * dimensions.width,
-        y: normalizedPos.y * dimensions.height
-      };
-      this.categoryTypePositions.set(type, absolutePos);
-    });
-    
-    this.positionsInitialized = true;
+    // Let the positionManager handle the coordinate updates
+    this.positionManager.updateAbsolutePositions(dimensions);
     this.updateCategoryForces(dimensions);
   }
 
   private updateCategoryForces(dimensions: any): void {
     if (!this.simulation) return;
-
-    const { centerStrength } = this.motionConfig;
-
-    this.simulation.force('category-x', d3.forceX()
-      .strength(centerStrength)
-      .x((d: any) => {
-        const analysisType = d.data.analysisType || 'default';
-        const categoryPos = this.categoryTypePositions.get(analysisType);
-        return categoryPos ? categoryPos.x : dimensions.width / 2;
-      }));
-
-    this.simulation.force('category-y', d3.forceY()
-      .strength(centerStrength)
-      .y((d: any) => {
-        const analysisType = d.data.analysisType || 'default';
-        const categoryPos = this.categoryTypePositions.get(analysisType);
-        return categoryPos ? categoryPos.y : dimensions.height / 2;
-      }));
-
-    this.simulation.force('boundary-x', d3.forceX()
-      .strength(1.0)
-      .x((d: any) => {
-        const radius = d.r || 0;
-        const safeLeft = radius + 20;
-        const safeRight = dimensions.width - radius - 20;
-        
-        if (d.x < safeLeft) return safeLeft;
-        if (d.x > safeRight) return safeRight;
-        
-        const center = dimensions.width / 2;
-        const pullFactor = 0.02;
-        return d.x + (center - d.x) * pullFactor;
-      }));
     
-    this.simulation.force('boundary-y', d3.forceY()
-      .strength(1.0)
-      .y((d: any) => {
-        const radius = d.r || 0;
-        const safeTop = radius + 20;
-        const safeBottom = dimensions.height - radius - 20;
-        
-        if (d.y < safeTop) return safeTop;
-        if (d.y > safeBottom) return safeBottom;
-        
-        const center = dimensions.height / 2;
-        const pullFactor = 0.02;
-        return d.y + (center - d.y) * pullFactor;
-      }));
-              }
+    // Only update boundary forces since category forces are disabled
+    const boundaryXForce = this.simulation.force('boundary-x') as d3.ForceX<any>;
+    const boundaryYForce = this.simulation.force('boundary-y') as d3.ForceY<any>;
+    
+    if (boundaryXForce) {
+      boundaryXForce.strength(1.0)
+        .x((d: any) => {
+          const radius = d.r || 0;
+          const safeLeft = radius + 20;
+          const safeRight = dimensions.width - radius - 20;
+          
+          if (d.x < safeLeft) return safeLeft;
+          if (d.x > safeRight) return safeRight;
+          
+          // Just keep within bounds, no center pulling
+          return d.x;
+        });
+    }
+    
+    if (boundaryYForce) {
+      boundaryYForce.strength(1.0)
+        .y((d: any) => {
+          const radius = d.r || 0;
+          const safeTop = radius + 20;
+          const safeBottom = dimensions.height - radius - 20;
+          
+          if (d.y < safeTop) return safeTop;
+          if (d.y > safeBottom) return safeBottom;
+          
+          // Just keep within bounds, no center pulling
+          return d.y;
+        });
+    }
+  }
 
-    private calculateOptimalDensity(nodeCount: number, area: number): 'sparse' | 'balanced' | 'dense' | 'compact' {
+    private calculateOptimalDensity(nodeCount: number, area: number): number {
     const nodePerArea = nodeCount / area;
     const scaledDensity = nodePerArea * 1000000;
     
-    if (scaledDensity < 0.5) return 'sparse';
-    else if (scaledDensity < 1.5) return 'balanced';
-    else if (scaledDensity < 3.0) return 'dense';
-    else return 'compact';
+    if (scaledDensity < 0.5) return 0.3; // sparse
+    else if (scaledDensity < 1.5) return 0.6; // balanced
+    else if (scaledDensity < 3.0) return 0.8; // dense
+    else return 1.0; // compact
   }
 
   private handleResize(): void {
@@ -826,13 +942,18 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
     let adjustedDensity = optimalDensity;
     
     if (isMobile) {
-      if (adjustedDensity === 'compact') adjustedDensity = 'dense';
-      if (adjustedDensity === 'dense') adjustedDensity = 'balanced';
+      if (adjustedDensity === 1.0) adjustedDensity = 0.8; // compact -> dense
+      if (adjustedDensity === 0.8) adjustedDensity = 0.6; // dense -> balanced
     } else if (isTablet && isPortrait) {
-      if (adjustedDensity === 'compact') adjustedDensity = 'dense';
+      if (adjustedDensity === 1.0) adjustedDensity = 0.8; // compact -> dense
     }
     
-    this.setDensity(adjustedDensity);
+    // Only change density when simulation is settled to avoid disrupting existing motion
+    const currentAlpha = this.simulation?.alpha() || 0;
+    if (currentAlpha < 0.1 || !this.simulation) {
+      this.setDensity(adjustedDensity);
+    }
+    
     this.updatePositionsForCanvasSize(dimensions);
     this.updateCategoryForces(dimensions);
     
@@ -988,10 +1109,153 @@ export class MotionBubble<T extends BubbleChartData = BubbleChartData> extends B
       .remove();
   }
 
+  /**
+   * Add event handler for a specific bubble by ID
+   * @param bubbleId The ID of the bubble to attach the handler to
+   * @param handler The event handler function
+   * @param eventType The event type (default: 'click')
+   */
+  public onBubble(bubbleId: string, handler: (event: Event, data: any) => void, eventType: string = 'click'): this {
+    const svgElements = this.svgManager.getElements();
+    if (!svgElements) return this;
+
+    const { svg } = svgElements;
+    
+    // Find the bubble group for this ID
+    const bubbleGroup = svg.selectAll('g.bubble-chart.bubble')
+      .filter((d: any) => {
+        // Try multiple paths to find the ID
+        const id = d.data?.id || d.data?.data?.id || d.id;
+        return id === bubbleId;
+      });
+    
+    if (!bubbleGroup.empty()) {
+      // Attach event handler
+      bubbleGroup.on(eventType, function(this: SVGGElement, event: Event) {
+        const data = d3.select(this).datum();
+        handler(event, data);
+      });
+      
+      // Event handler attached
+    } else {
+      // Could not find bubble
+      
+      // Set up a MutationObserver to watch for the bubble to be added to the DOM
+      const observer = new MutationObserver((mutations) => {
+        mutations.forEach((mutation) => {
+          if (mutation.type === 'childList' && mutation.addedNodes.length > 0) {
+            // Check if our bubble has been added
+            const bubbleGroup = svg.selectAll('g.bubble-chart.bubble')
+              .filter((d: any) => {
+                const id = d.data?.id || d.data?.data?.id || d.id;
+                return id === bubbleId;
+              });
+            
+            if (!bubbleGroup.empty()) {
+              // Attach event handler
+              bubbleGroup.on(eventType, function(this: SVGGElement, event: Event) {
+                const data = d3.select(this).datum();
+                handler(event, data);
+              });
+              
+              // Event handler attached via observer
+              
+              // Stop observing
+              observer.disconnect();
+            }
+          }
+        });
+      });
+      
+      // Start observing
+      const chartContainer = svg.node()?.parentNode;
+      if (chartContainer) {
+        observer.observe(chartContainer, { 
+          childList: true,
+          subtree: true
+        });
+        
+        // Watching for bubble to be added to DOM
+      }
+    }
+    
+    return this;
+  }
+
   override destroy(): void {
     this.stopSimulation();
     this.removeFilterLabels();
     this.isResponsiveSetup = false;
     super.destroy();
   }
+
+  /**
+   * Get the radius of a node based on its data
+   */
+  private getNodeRadius(nodeData: any): number {
+    if (!nodeData) return 30; // Default radius
+    
+    // If we have a radiusScale, use it
+    if (this.radiusScale) {
+      const value = this.getRadiusValue(nodeData);
+      return this.radiusScale(value);
+    }
+    
+    // If the node already has a radius, use it
+    if (nodeData.r) return nodeData.r;
+    
+    // Default radius based on count if available
+    return nodeData.count ? Math.sqrt(nodeData.count) * 5 + 10 : 30;
+  }
+
+  /**
+   * Get the value to use for radius calculation
+   */
+  private getRadiusValue(data: any): number {
+    if (!data) return 1;
+    
+    // Use count property if available
+    if (data.count !== undefined) return data.count;
+    
+    // Use size property if available
+    if (data.size !== undefined) return data.size;
+    
+    // Use value property if available
+    if (data.value !== undefined) return data.value;
+    
+    return 1;
+  }
+
+  /**
+   * Get a unique key for a node based on its data
+   */
+  private getNodeKey(data: any): string {
+    return data?.id || data?.label || JSON.stringify(data);
+  }
+
+  /**
+   * Extract analysis type from node data
+   */
+  private getAnalysisType(data: any): string {
+    const rawData = data?.data || data;
+    return rawData?.analysisType || data?.analysisType || 'default';
+  }
+
+  /**
+   * Update collision force with current configuration
+   */
+  private updateCollisionForce(): void {
+    if (!this.simulation) return;
+    
+    const { collidePadding, repulseStrength } = this.motionConfig;
+    const collisionForce = this.simulation.force('collision') as d3.ForceCollide<any>;
+    
+    if (collisionForce) {
+      collisionForce
+        .radius((d: any) => d.r + collidePadding)
+        .strength(Math.max(0, Math.min(1, repulseStrength)));
+    }
+  }
+
+
 }
